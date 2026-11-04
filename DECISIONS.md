@@ -88,3 +88,18 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - **Context Safety**: Callback methods (`connect`, `disconnect`, `onTick`) can be passed directly to React Native lifecycle effects (e.g. `useEffect(() => feed.connect(), [])`) without `.bind(this)` or arrow wrapper overhead.
   - **Determinism**: The factory accepts a seedable RNG and configurable intervals, fully controllable via Jest fake timers.
 
+---
+
+### ADR 010: Pure Functional React Native Architecture Across All Layers
+- **Context**: Object-oriented patterns (classes, mutable instances, prototype inheritance) introduce subtle bugs in React Native applications: loss of `this` context when passing methods to React hooks or event handlers, prototype resolution overhead on Hermes, and unpredictable state mutation paths.
+- **Decision**:
+  - Enforce a 100% functional architecture across the entire project:
+    1. **Domain Layer**: All calculations, order mutations, formatting, and tick merging are pure functions without side effects (`src/domain/`).
+    2. **State & Feed Layer**: Stores (`createPriceStore`, `createPortfolioStore`, `createWatchlistStore`), network clients (`createOhlcClient`), and feeds (`createSimulatedFeed`) are functional factories with private lexical closures. Zero classes, zero prototype chains.
+    3. **UI Layer**: All components are React Functional Components wrapped in `React.memo` where appropriate, reading state via custom hooks (`usePrice`, `useQuoteField`, `useSyncExternalStore`). Zero class components.
+- **Rationale**:
+  - Completely eliminates `this` rebinding errors in React effect teardowns and event callbacks.
+  - Leverages Hermes engine optimizations for plain closures and flat object literals.
+  - Enables effortless unit and integration testing without mocking prototypes or constructor state.
+
+

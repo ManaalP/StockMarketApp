@@ -148,7 +148,8 @@ type Holding = { symbol: string; qty: number; avgPaise: Paise };
 
 ## 6. Tick simulator contract (from the spec)
 
-- Separate module that behaves like a socket client: `connect()`, `disconnect()`, `onTick(handler)`. Screens must not be able to tell it is fake.
+- Separate functional factory `createSimulatedFeed(initialQuotes, options)` that implements `PriceFeed` (`connect()`, `disconnect()`, `onTick(handler)`). Screens must not be able to tell it is fake.
+- 100% functional architecture: internal state (interval timers, sequence maps, listener sets) is encapsulated in private lexical closures without ES6 classes or prototype chains.
 - About **20 ticks per second** across all symbols.
 - Each tick moves **one symbol's `ltp` by up to ±0.2%** and may also change `high`, `low`, `volume`.
 - A tick is a **partial update:** `{ symbol, seq, ltp?, high?, low?, volume? }`. Only changed fields are present.
@@ -158,6 +159,7 @@ type Holding = { symbol: string; qty: number; avgPaise: Paise };
 
 ## 7. Client behaviour checklist (API layer)
 
+- Implemented via a functional API client `createOhlcClient(options)`. No classes, no `this`.
 - One request for all symbols at start; one more per pull-to-refresh. No polling, no retry loops. Retry only when the user taps Retry.
 - Accept any 2xx. Expect 201. Read `message.data`. If `message` or `data` is missing, treat as a parse error.
 - Timeout (suggested 8 s) via `AbortController`. Typed errors: `network | timeout | http | parse`.

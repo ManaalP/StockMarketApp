@@ -28,6 +28,11 @@ detail, and a Buy/Sell sheet. Orders are local only.
 - Fetch the OHLC API once at start and on pull-to-refresh only. Never poll.
 - Feed ticks are partial updates `{ symbol, seq, ltp?, high?, low?, volume? }`. Ignore a tick whose
   `seq <= lastSeq[symbol]`.
+- **100% Functional Architecture (Functional React Native using Expo, zero classes, zero `this`)**:
+  - Domain calculations and state transitions are **pure functions** in `src/domain`.
+  - State stores, feed simulator, and API clients use **functional factories with closures** (e.g. `createSimulatedFeed`, `createPriceStore`, `createOhlcClient`). No ES6 classes, no prototype chains, no `this` context binding hazards.
+  - UI components are **React Functional Components with hooks** (`React.memo`, `useSyncExternalStore`, custom hooks). Zero class components.
+  - Fully optimized for the Hermes engine: closures provide complete lexical privacy without runtime prototype lookup overhead.
 - Do not add features beyond the spec until the core is done.
 
 ## Data contract
@@ -41,8 +46,8 @@ fetch once per load and on refresh only, never poll.
 ```
 src/
   domain/      pure functions + types (money, format, pnl, holdings, summary, orders, tickMerge)
-  feed/        PriceFeed interface, SimulatedFeed (swappable for a real socket)
-  stores/      priceStore (external, useSyncExternalStore), portfolioStore, watchlistStore
+  feed/        PriceFeed interface, createSimulatedFeed (functional factory, swappable for real socket)
+  stores/      priceStore (external functional store, useSyncExternalStore), portfolioStore, watchlistStore
   api/         ohlcClient (HTTP 201, message.data, timeout, retry)
   data/        holdings.csv + parser
   theme/       tokens (light, dark), useTheme

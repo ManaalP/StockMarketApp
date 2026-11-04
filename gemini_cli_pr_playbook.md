@@ -34,6 +34,7 @@ How to use: do **Part A once**, then run the PRs in order. For each PR: create t
    ## Checklist
    - [ ] typecheck, lint, tests pass
    - [ ] no `any`, no float money math
+   - [ ] 100% functional architecture (pure functions, closures, zero classes, no `this`)
    - [ ] "--" for missing prices
    - [ ] DECISIONS.md updated
    - [ ] I can explain every file in this PR
@@ -48,7 +49,8 @@ How to use: do **Part A once**, then run the PRs in order. For each PR: create t
    gh pr view --web               # review on GitHub, then merge
    ```
    Useful in-session commands: `@path/to/file` to attach a file or image (use it for Stitch `screen.png`), `/memory show` to confirm context, `/help` to see the rest. Start a fresh `gemini` session per PR so context stays small.
-8. **Your rule as reviewer:** if you cannot explain a file, ask Gemini "explain this file line by line, and why not <alternative>" before merging.
+8. **Functional React Native & Expo rule:** The entire project strictly adheres to a functional architecture. No ES6 classes, no `this` binding context bugs. Domain logic uses pure functions. Stores, feeds, and network clients use closure-based functional factories (`createPriceStore`, `createSimulatedFeed`, `createOhlcClient`). UI is built with React Functional Components and hooks (`React.memo`, `useSyncExternalStore`).
+9. **Your rule as reviewer:** if you cannot explain a file, ask Gemini "explain this file line by line, and why not <alternative>" before merging.
 
 ---
 
@@ -123,29 +125,29 @@ Tests: reconciliation (sum of displayed rows == totals), OLDCO unpriced, all unp
 Task: feed layer. Branch: feat/feed-simulator. Tests first.
 - src/feed/types.ts: Tick {symbol, seq, ltp?, high?, low?, volume?}; PriceFeed {connect(); disconnect(); onTick(handler): () => void}.
 - src/domain/tickMerge.ts: pure function mergeTick(state: Record<symbol, Quote & {seq}>, tick) => new state or the SAME reference if the tick is late (seq <= lastSeq) or empty. High/low must widen, never shrink, when ltp passes them.
-- src/feed/SimulatedFeed.ts implements PriceFeed. Constructor takes initial quotes, a seedable RNG, and an injectable clock/timers so tests are deterministic.
+- src/feed/SimulatedFeed.ts implements PriceFeed via functional factory `createSimulatedFeed(initialQuotes, options)` (plus `SimulatedFeed` wrapper). Factory takes initial quotes, a seedable RNG, and injectable clock/timers with closure-encapsulated state so tests are deterministic.
   ~20 ticks/s across all symbols, each moves one symbol's ltp by up to ±0.2%, may change high/low/volume, per-symbol increasing seq, ~2% of ticks delivered late/out of order (older seq), and roughly once a minute the feed goes silent for 5 s then resumes.
-- Screens must not know it is fake: nothing outside src/feed imports SimulatedFeed except the composition root.
+- Screens must not know it is fake: nothing outside src/feed imports createSimulatedFeed except the composition root.
 Tests (fake timers): rate, late ticks ignored by mergeTick, silence window, disconnect stops emissions, onTick unsubscribe.
 ```
-**You verify:** the `seq` rule, why the same-reference return matters for performance, why the feed is behind an interface.
+**You verify:** the `seq` rule, why the same-reference return matters for performance, why the feed is behind an interface and built as a closure factory.
 
 ### PR 4: `feat/price-store`
 ```
 Task: external price store. Branch: feat/price-store. Tests first.
-- src/stores/priceStore.ts: framework-free store holding quotes by symbol. API: getQuote(symbol), subscribe(symbol, cb), subscribeAll(cb) (for summary), seed(quotes), applyTicks(ticks[]).
+- src/stores/priceStore.ts: functional framework-free store factory `createPriceStore()` holding quotes by symbol in private closure state. API: getQuote(symbol), subscribe(symbol, cb), subscribeAll(cb) (for summary), seed(quotes), applyTicks(ticks[]). No classes, no `this`.
 - Batch: incoming ticks are queued and flushed every ~100 ms; only symbols whose quote object changed notify their own subscribers.
 - Track lastTickAt. A `paused` flag becomes true when no tick arrived for > 2 s and false on the next tick; expose usePaused().
 - Hooks: usePrice(symbol) and useQuoteField(symbol, selector) built on useSyncExternalStore with stable getSnapshot (return the same reference when unchanged). 
 - Wire the feed in one composition root (src/app/bootstrap.ts) so feed -> store is the only link.
 Tests: a tick for RELIANCE notifies only RELIANCE subscribers; late ticks do nothing; paused toggles with fake timers; batching coalesces.
 ```
-**You verify:** why `useSyncExternalStore`, what a stable snapshot is, why 100 ms batching.
+**You verify:** why `useSyncExternalStore`, what a stable snapshot is, why 100 ms batching, why closure-based store.
 
 ### PR 5: `feat/api-and-seed`
 ```
 Task: API client and bundled holdings. Branch: feat/api-and-seed.
-- src/api/ohlcClient.ts: POST https://api.v2.liquide.life/api/markets/ohlc {"symbols":[...]} for all 25 + OLDCO in ONE request. Success is HTTP 201 (accept any 2xx); list at message.data; symbols not returned are simply absent (OLDCO). Timeout with AbortController (8 s), typed errors (network, timeout, http, parse). Validate the shape defensively (no `any`; use a type guard). Convert floats to paise at this boundary.
+- src/api/ohlcClient.ts: functional client `createOhlcClient()`: POST https://api.v2.liquide.life/api/markets/ohlc {"symbols":[...]} for all 25 + OLDCO in ONE request. Success is HTTP 201 (accept any 2xx); list at message.data; symbols not returned are simply absent (OLDCO). Timeout with AbortController (8 s), typed functional errors (network, timeout, http, parse). Validate the shape defensively (no `any`; use a type guard). Convert floats to paise at this boundary.
 - Return a typed result; a `retry` helper with a small backoff for the retry button (not polling).
 - src/data/holdings.csv bundled exactly as in the spec, plus a typed parser that converts to Holding (avg to paise). Tests for the parser.
 - Bootstrap: on start fetch once, seed the store, then connect the feed. Pull-to-refresh calls the same fetch and re-seeds WITHOUT resetting seq tracking incorrectly (document the rule).

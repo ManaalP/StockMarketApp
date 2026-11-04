@@ -10,6 +10,7 @@ Companion to `GEMINI.md` and `gemini_cli_pr_playbook.md`. The detailed test case
 2. Cover every flow in the spec with a repeatable test, plus the edge cases around it.
 3. Have a **dummy user** that can walk the whole app on an emulator, deterministically (scripted) and exploratively (agent).
 4. Keep it small enough to finish in 3 days. Unit tests first, E2E second, agent last.
+5. Strictly adhere to 100% functional architecture (pure functions, closure-based state factories, zero ES6 classes, React functional components).
 
 ## 2. Test layers
 
@@ -162,7 +163,7 @@ Task: testability hooks. Branch: chore/testability. Do not change user-visible b
 1. Add testIDs using the convention screen.element[.symbol] to every interactive and value element
    (list in testing_plan_and_qa_agent.md section 3). Create src/testing/ids.ts exporting typed id builders
    so components and tests share them.
-2. Make SimulatedFeed fully deterministic with a seedable RNG and injectable clock via QA_SEED.
+2. Make functional feed simulator createSimulatedFeed fully deterministic with a seedable RNG and injectable clock via QA_SEED.
 3. Add EXPO_PUBLIC_API_MODE = live | mock | slow | fail | partial | empty | malformed.
    `mock` serves fixtures/ohlc.json (all 25 symbols except OLDCO).
 4. Add a dev-only QA scenario controller: panel plus deep link liveportfolio://qa?reset=1&seed=42&freeze=1

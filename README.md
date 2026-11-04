@@ -22,6 +22,12 @@ A high-performance, real-time stock portfolio tracker built with **React Native 
    - Native gesture-driven interactive price charts powered by `react-native-wagmi-charts` and Reanimated.
    - Semantic design tokens matching Stitch design specs with full Light / Dark theme support.
 
+4. **100% Functional Architecture (React Native + Expo)**
+   - **Pure Domain Functions**: All calculations (P&L, valuations, allocations, tick-merging) are deterministic pure functions with zero side effects.
+   - **Closure-Based State Factories**: State stores, feed simulator, and API clients use functional factories (`createPriceStore`, `createSimulatedFeed`, `createOhlcClient`) with private lexical closures. No ES6 classes, no prototypes, no `this` context binding hazards.
+   - **Functional UI Components**: All screens and presentation rows are React Functional Components utilizing `React.memo`, `useSyncExternalStore`, and custom hooks.
+   - **Hermes Engine Optimized**: Maximizes execution speed and memory efficiency on React Native's Hermes engine by bypassing prototype resolution.
+
 ---
 
 ## 25 Allowed NSE Symbols
