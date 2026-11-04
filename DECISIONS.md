@@ -119,4 +119,18 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Guarantees that a price tick for `RELIANCE` re-renders only the `RELIANCE` row.
   - Throttled summary subscriptions receive a single notification per batch instead of 20 uncoalesced renders.
 
+---
+
+### ADR 012: Single-Batch OHLC Ingestion and Sequence Preservation on Refresh
+- **Context**: The app fetches market quotes once on bootstrap and on manual pull-to-refresh without polling. The remote API endpoint returns HTTP 201 with `message.data`. Absent symbols (like `OLDCO`) are omitted without error.
+- **Decision**:
+  - Request all 25 equity symbols plus `OLDCO` in one batch POST request using `createOhlcClient`.
+  - Defensively validate raw response shape using `isOhlcResponse` and convert floats to integer `Paise` exclusively at this boundary via `toPaise(val)`.
+  - Symbols missing from the API response are assigned `ltp: null` (rendering `"--"`).
+  - **Sequence Preservation Rule on Refresh**: When pull-to-refresh re-seeds `priceStore`, existing per-symbol sequence numbers (`seq`) are strictly preserved (`seq: state[sym]?.seq ?? 0`).
+- **Rationale**:
+  - If a refresh reset sequence numbers to 0 while the simulator or socket feed continued generating higher sequence numbers (`seq >= 100`), incoming ticks would be erroneously dropped or stale market data could overwrite newer quotes.
+  - Preserving sequence counters guarantees monotonic progress and continuous feed stability across network refreshes.
+
+
 
