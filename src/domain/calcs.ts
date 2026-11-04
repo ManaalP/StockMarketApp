@@ -8,8 +8,6 @@ import {
 } from './types';
 import { mulQty, safePercent, type Paise } from './money';
 
-export * from './types';
-
 /**
  * Typed domain error for invalid order requests.
  */

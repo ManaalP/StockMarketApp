@@ -6,8 +6,8 @@ import {
   summarize,
   applyOrder,
   OrderValidationError,
-} from '@/domain/calcs';
-import { toPaise } from '@/domain/money';
+  toPaise,
+} from '@/domain';
 
 describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
   const sampleQuotePriced: Quote = {
