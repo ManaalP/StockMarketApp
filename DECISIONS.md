@@ -33,7 +33,7 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Perform P&L percentages using scaled integer math: `Math.round((pnlPaise * 10000) / investedPaise) / 100`.
 - **Edge Case Trade-off (IEEE-754 Rounding)**:
   - In IEEE-754 double precision, `1.005` is stored internally as `1.00499999999999989...`. Thus, `1.005 * 100` evaluates to `100.49999999999999`, which `Math.round()` rounds down to `100` paise.
-  - Conversely, `0.005` is stored as `0.0050000000000000001...`, which multiplies to `0.5000000000000001` and rounds up to `1` paise.
+  - Conversely, `0.005` is stored as `0.00500000000000000010...`, which multiplies to `0.5000000000000001` and rounds up to `1` paise.
   - Converting once at the boundary bounds this unavoidable binary representation anomaly to input parsing, preventing it from corrupting ongoing domain arithmetic.
 
 ---
@@ -42,3 +42,22 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Context**: Indian currency requires non-standard digit grouping: the rightmost 3 digits are grouped, followed by successive pairs of 2 digits (e.g., `₹12,34,567.89` for lakhs/crores).
 - **Decision**: Write our own zero-dependency regex formatter in `src/domain/format.ts` using `slice(-3)` and `/\B(?=(\d{2})+(?!\d))/g`. Never rely on `Intl.NumberFormat`.
 - **Trade-off**: The Hermes JavaScript engine on Android has historically bundled incomplete ICU data depending on build flags, causing `Intl` to fall back to western thousands separators (`₹1,234,567.89`) or crash on older engine distributions. A pure algorithmic string formatter guarantees 100% deterministic, hermetic rendering on all target platforms and in node-based unit tests.
+
+---
+
+### ADR 006: Portfolio Summary Reconciliation & Unpriced Holdings
+- **Context**: Unpriced holdings (like `OLDCO`) have known cost basis (`investedPaise`) but no market quote (`ltp === null`). If unpriced stocks are assigned a price of 0, the user's portfolio falsely shows an instant 100% loss on that position.
+- **Decision**:
+  - Unpriced stocks render `"--"` for price, current value, and P&L.
+  - In `summarize()`, unpriced stocks are excluded from current value, total P&L, today's P&L, and from the invested capital figure used to calculate portfolio P&L percentage (`totalPnlPct = safePercent(totalPnlPaise, pricedInvestedPaise)`).
+  - Unpriced invested capital is segregated into `unpricedInvestedPaise` and displayed in an informative footnote on the summary card.
+  - **Reconciliation Invariant**: Summary totals are calculated as the arithmetic sum of the already-rounded individual rows (`sum(row.valuePaise)`), guaranteeing that the displayed summary number reconciles to the exact rupee and paise with the list of displayed rows.
+
+---
+
+### ADR 007: Today's P&L and Intraday Session Order Treatment
+- **Context**: Need a uniform, deterministic calculation for "Today's P&L" across holdings, including positions updated via buy/sell orders during the current trading session.
+- **Decision**:
+  - Calculate row Day P&L uniformly as: `dayPnlPaise = qty * (ltp - prevClose)`.
+  - For positions increased or bought intraday, apply the same formula against `prevClose`.
+  - **Rationale**: In Indian brokerages (Zerodha Kite, Groww), Day's P&L on equity holdings is measured against the previous trading session's official exchange closing price (`prevClose`). Tracking intraday tax lots or FIFO buckets for local orders would introduce unwarranted state complexity without changing the underlying product requirement.
