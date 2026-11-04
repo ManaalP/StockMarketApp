@@ -61,3 +61,26 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Calculate row Day P&L uniformly as: `dayPnlPaise = qty * (ltp - prevClose)`.
   - For positions increased or bought intraday, apply the same formula against `prevClose`.
   - **Rationale**: In Indian brokerages (Zerodha Kite, Groww), Day's P&L on equity holdings is measured against the previous trading session's official exchange closing price (`prevClose`). Tracking intraday tax lots or FIFO buckets for local orders would introduce unwarranted state complexity without changing the underlying product requirement.
+
+---
+
+### ADR 008: Sequence-Based Tick Dropping, Boundary Widening, and Exact Reference Identity
+- **Context**: In high-frequency market streaming (~20 ticks/s), network packets can arrive out-of-order, duplicated, or delayed. In React Native, triggering unnecessary state emissions degrades UI frame rates.
+- **Decision**:
+  - `mergeTick(state, tick)` tracks per-symbol sequence numbers (`seq`).
+  - If `tick.seq <= currentQuote.seq`, the tick is dropped immediately and the function returns the **exact same state reference** (`state === mergeTick(state, tick)`).
+  - High and low boundaries must strictly widen, never shrink, when `ltp` passes them.
+  - Volume is monotonic (never decreases).
+  - If a tick produces no state differences, the existing state reference is returned untouched.
+- **Rationale**: Returning identical object references allows `useSyncExternalStore` and `React.memo` to skip re-renders entirely for dropped or duplicate packets, preserving 60 FPS under rapid streaming.
+
+---
+
+### ADR 009: Decoupled `PriceFeed` Interface and Deterministic Simulator
+- **Context**: The app requires realistic high-frequency market data (~20 ticks/sec across 25 symbols, ±0.2% price jitter, periodic 5s silence windows, and ~2% out-of-order packets) while remaining completely decoupled from network transport protocols.
+- **Decision**:
+  - Define an abstract `PriceFeed` interface (`connect`, `disconnect`, `onTick`) in `src/feed/types.ts`.
+  - Implement `SimulatedFeed` accepting seedable RNG and configurable intervals, fully controllable via Jest fake timers.
+  - Restrict imports of `SimulatedFeed` exclusively to the application composition root (`src/app/bootstrap.ts`). UI screens and stores depend solely on the `PriceFeed` contract.
+- **Rationale**: Enables deterministic test suites without flakiness while ensuring the simulator can be swapped for a real exchange WebSocket with zero modifications to screens, hooks, or stores.
+
