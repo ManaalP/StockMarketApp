@@ -88,3 +88,35 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - **Context Safety**: Callback methods (`connect`, `disconnect`, `onTick`) can be passed directly to React Native lifecycle effects (e.g. `useEffect(() => feed.connect(), [])`) without `.bind(this)` or arrow wrapper overhead.
   - **Determinism**: The factory accepts a seedable RNG and configurable intervals, fully controllable via Jest fake timers.
 
+---
+
+### ADR 010: Pure Functional React Native Architecture Across All Layers
+- **Context**: Object-oriented patterns (classes, mutable instances, prototype inheritance) introduce subtle bugs in React Native applications: loss of `this` context when passing methods to React hooks or event handlers, prototype resolution overhead on Hermes, and unpredictable state mutation paths.
+- **Decision**:
+  - Enforce a 100% functional architecture across the entire project:
+    1. **Domain Layer**: All calculations, order mutations, formatting, and tick merging are pure functions without side effects (`src/domain/`).
+    2. **State & Feed Layer**: Stores (`createPriceStore`, `createPortfolioStore`, `createWatchlistStore`), network clients (`createOhlcClient`), and feeds (`createSimulatedFeed`) are functional factories with private lexical closures. Zero classes, zero prototype chains.
+    3. **UI Layer**: All components are React Functional Components wrapped in `React.memo` where appropriate, reading state via custom hooks (`usePrice`, `useQuoteField`, `useSyncExternalStore`). Zero class components.
+- **Rationale**:
+  - Completely eliminates `this` rebinding errors in React effect teardowns and event callbacks.
+  - Leverages Hermes engine optimizations for plain closures and flat object literals.
+  - Enables effortless unit and integration testing without mocking prototypes or constructor state.
+
+---
+
+### ADR 011: Granular Per-Symbol Subscriptions and Batched Coalescing PriceStore
+- **Context**: With 25 symbols ticking ~20 times per second, managing market quotes directly inside React component state (`useState` / Context) causes whole-tree re-renders on every tick (~20 renders/sec for the entire list), dropping frame rates well below 60 FPS.
+- **Decision**:
+  - Implement an external price store outside React via functional factory `createPriceStore()`.
+  - Provide granular per-symbol subscriptions (`store.subscribe(symbol, callback)`).
+  - Batch incoming ticks into a queue and flush at ~100 ms intervals.
+  - During flush, only symbols whose quote reference actually changed notify their own subscribers. Other rows stay completely idle.
+  - React rows subscribe via `usePrice(symbol)`, leveraging `useSyncExternalStore` with stable snapshot references.
+  - Detect feed stalls (> 2 s without ticks) using an event-driven `setTimeout` (O(1), zero battery drain) to drive the `usePaused()` hook.
+  - Wire the feed exclusively at the composition root (`src/app/bootstrap.ts`).
+- **Rationale**:
+  - Decouples high-frequency tick ingestion from the React commit phase.
+  - Guarantees that a price tick for `RELIANCE` re-renders only the `RELIANCE` row.
+  - Throttled summary subscriptions receive a single notification per batch instead of 20 uncoalesced renders.
+
+
