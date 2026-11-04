@@ -30,144 +30,92 @@ export interface SimulatedFeedOptions {
 }
 
 /**
- * Realistic market feed simulator that emits high-frequency partial ticks.
+ * Functional factory creating a PriceFeed instance with private closure state.
  *
  * Simulates:
- * - ~20 ticks/sec across symbols.
+ * - ~20 ticks/sec across symbols with private closure timers.
  * - Random price walks bounded within ±0.2% per tick.
- * - Sequence tracking per symbol.
+ * - Per-symbol sequence tracking (`seq`).
  * - Out-of-order/late ticks (~2%).
  * - Silence window (5 seconds every minute) to test "paused" UI state.
+ * - Zero prototype lookup overhead; immune to `this` binding loss in React Native.
  */
-export class SimulatedFeed implements PriceFeed {
-  private readonly rng: () => number;
-  private readonly tickIntervalMs: number;
-  private readonly silenceIntervalMs: number;
-  private readonly silenceDurationMs: number;
-  private readonly lateTickRate: number;
+export function createSimulatedFeed(
+  initialQuotes: Record<string, Quote>,
+  options: SimulatedFeedOptions = {}
+): PriceFeed {
+  const rng = options.rng ?? Math.random;
+  const rateHz = options.tickRateHz ?? 20;
+  const tickIntervalMs = Math.max(1, Math.round(1000 / rateHz));
+  const silenceIntervalMs = options.silenceIntervalMs ?? 60_000;
+  const silenceDurationMs = options.silenceDurationMs ?? 5_000;
+  const lateTickRate = options.lateTickRate ?? 0.02;
 
-  private readonly quotes: Record<string, Quote>;
-  private readonly pricedSymbols: string[];
-  private readonly seqMap = new Map<string, number>();
-  private readonly listeners = new Set<TickHandler>();
-
-  private tickTimer: ReturnType<typeof setInterval> | null = null;
-  private silenceIntervalTimer: ReturnType<typeof setInterval> | null = null;
-  private silenceTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
-  private isSilent = false;
-
-  constructor(initialQuotes: Record<string, Quote>, options: SimulatedFeedOptions = {}) {
-    this.rng = options.rng ?? Math.random;
-    const rateHz = options.tickRateHz ?? 20;
-    this.tickIntervalMs = Math.max(1, Math.round(1000 / rateHz));
-    this.silenceIntervalMs = options.silenceIntervalMs ?? 60_000;
-    this.silenceDurationMs = options.silenceDurationMs ?? 5_000;
-    this.lateTickRate = options.lateTickRate ?? 0.02;
-
-    // Clone initial quotes and extract symbols with priced quotes (ltp !== null)
-    this.quotes = {};
-    const symbols: string[] = [];
-    for (const [sym, quote] of Object.entries(initialQuotes)) {
-      this.quotes[sym] = { ...quote };
-      if (quote.ltp !== null) {
-        symbols.push(sym);
-      }
+  // Closure-encapsulated quotes: strictly private and inaccessible outside
+  const quotes: Record<string, Quote> = {};
+  const pricedSymbols: string[] = [];
+  for (const [sym, quote] of Object.entries(initialQuotes)) {
+    quotes[sym] = { ...quote };
+    if (quote.ltp !== null) {
+      pricedSymbols.push(sym);
     }
-    this.pricedSymbols = symbols;
   }
 
-  public connect(): void {
-    if (this.tickTimer !== null) {
-      return; // Already connected
-    }
+  const seqMap = new Map<string, number>();
+  const listeners = new Set<TickHandler>();
 
-    this.isSilent = false;
+  let tickTimer: ReturnType<typeof setInterval> | null = null;
+  let silenceIntervalTimer: ReturnType<typeof setInterval> | null = null;
+  let silenceTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+  let isSilent = false;
 
-    // Start tick generation timer
-    this.tickTimer = setInterval(() => {
-      this.emitNextTick();
-    }, this.tickIntervalMs);
+  const triggerSilenceWindow = (): void => {
+    isSilent = true;
+    silenceTimeoutTimer = setTimeout(() => {
+      isSilent = false;
+      silenceTimeoutTimer = null;
+    }, silenceDurationMs);
+  };
 
-    // Start recurring silence window schedule
-    this.silenceIntervalTimer = setInterval(() => {
-      this.triggerSilenceWindow();
-    }, this.silenceIntervalMs);
-  }
-
-  public disconnect(): void {
-    if (this.tickTimer !== null) {
-      clearInterval(this.tickTimer);
-      this.tickTimer = null;
-    }
-    if (this.silenceIntervalTimer !== null) {
-      clearInterval(this.silenceIntervalTimer);
-      this.silenceIntervalTimer = null;
-    }
-    if (this.silenceTimeoutTimer !== null) {
-      clearTimeout(this.silenceTimeoutTimer);
-      this.silenceTimeoutTimer = null;
-    }
-    this.isSilent = false;
-  }
-
-  public onTick(handler: TickHandler): () => void {
-    this.listeners.add(handler);
-    return () => {
-      this.listeners.delete(handler);
-    };
-  }
-
-  private triggerSilenceWindow(): void {
-    this.isSilent = true;
-
-    this.silenceTimeoutTimer = setTimeout(() => {
-      this.isSilent = false;
-      this.silenceTimeoutTimer = null;
-    }, this.silenceDurationMs);
-  }
-
-  private emitNextTick(): void {
-    if (this.isSilent || this.pricedSymbols.length === 0) {
+  const emitNextTick = (): void => {
+    if (isSilent || pricedSymbols.length === 0) {
       return;
     }
 
-    // Pick random priced symbol
-    const symbolIdx = Math.floor(this.rng() * this.pricedSymbols.length);
-    const symbol = this.pricedSymbols[symbolIdx];
+    const symbolIdx = Math.floor(rng() * pricedSymbols.length);
+    const symbol = pricedSymbols[symbolIdx];
     if (!symbol) return;
 
-    const current = this.quotes[symbol];
+    const current = quotes[symbol];
     if (!current || current.ltp === null) return;
 
-    const currentSeq = this.seqMap.get(symbol) ?? 0;
-    const isLateTick = this.rng() < this.lateTickRate && currentSeq > 1;
+    const currentSeq = seqMap.get(symbol) ?? 0;
+    const isLateTick = rng() < lateTickRate && currentSeq > 1;
 
     let tickSeq: number;
     let newLtp: Paise;
 
     if (isLateTick) {
-      // Intentionally emit with an older sequence number to simulate network re-ordering
       tickSeq = Math.max(1, currentSeq - 1);
       newLtp = current.ltp;
     } else {
       tickSeq = currentSeq + 1;
-      this.seqMap.set(symbol, tickSeq);
+      seqMap.set(symbol, tickSeq);
 
       // Random price walk within ±0.2%
-      // (rng() * 0.004) - 0.002 yields range [-0.002, +0.002]
-      const deltaPct = this.rng() * 0.004 - 0.002;
+      const deltaPct = rng() * 0.004 - 0.002;
       let deltaPaise = Math.round(current.ltp * deltaPct);
       if (deltaPaise === 0) {
-        deltaPaise = this.rng() >= 0.5 ? 1 : -1;
+        deltaPaise = rng() >= 0.5 ? 1 : -1;
       }
 
       newLtp = Math.max(1, current.ltp + deltaPaise) as Paise;
       const newHigh = Math.max(current.high, newLtp) as Paise;
       const newLow = Math.min(current.low, newLtp) as Paise;
-      const volDelta = Math.floor(this.rng() * 90) + 10;
+      const volDelta = Math.floor(rng() * 90) + 10;
       const newVolume = current.volume + volDelta;
 
-      this.quotes[symbol] = {
+      quotes[symbol] = {
         ...current,
         ltp: newLtp,
         high: newHigh,
@@ -176,7 +124,7 @@ export class SimulatedFeed implements PriceFeed {
       };
     }
 
-    const updated = this.quotes[symbol];
+    const updated = quotes[symbol];
     if (!updated) return;
 
     const tick: Tick = {
@@ -188,8 +136,70 @@ export class SimulatedFeed implements PriceFeed {
       volume: updated.volume,
     };
 
-    for (const listener of this.listeners) {
+    for (const listener of listeners) {
       listener(tick);
     }
+  };
+
+  const connect = (): void => {
+    if (tickTimer !== null) {
+      return;
+    }
+    isSilent = false;
+    tickTimer = setInterval(emitNextTick, tickIntervalMs);
+    silenceIntervalTimer = setInterval(triggerSilenceWindow, silenceIntervalMs);
+  };
+
+  const disconnect = (): void => {
+    if (tickTimer !== null) {
+      clearInterval(tickTimer);
+      tickTimer = null;
+    }
+    if (silenceIntervalTimer !== null) {
+      clearInterval(silenceIntervalTimer);
+      silenceIntervalTimer = null;
+    }
+    if (silenceTimeoutTimer !== null) {
+      clearTimeout(silenceTimeoutTimer);
+      silenceTimeoutTimer = null;
+    }
+    isSilent = false;
+  };
+
+  const onTick = (handler: TickHandler): (() => void) => {
+    listeners.add(handler);
+    return () => {
+      listeners.delete(handler);
+    };
+  };
+
+  return {
+    connect,
+    disconnect,
+    onTick,
+  };
+}
+
+/**
+ * Class wrapper for consumers adopting `new SimulatedFeed(...)` style instantiation.
+ * Delegates directly to the functional `createSimulatedFeed` factory.
+ */
+export class SimulatedFeed implements PriceFeed {
+  private readonly feed: PriceFeed;
+
+  constructor(initialQuotes: Record<string, Quote>, options: SimulatedFeedOptions = {}) {
+    this.feed = createSimulatedFeed(initialQuotes, options);
   }
+
+  public connect = (): void => {
+    this.feed.connect();
+  };
+
+  public disconnect = (): void => {
+    this.feed.disconnect();
+  };
+
+  public onTick = (handler: TickHandler): (() => void) => {
+    return this.feed.onTick(handler);
+  };
 }

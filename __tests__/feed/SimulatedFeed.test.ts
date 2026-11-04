@@ -1,9 +1,9 @@
-import { SimulatedFeed } from '../../src/feed/SimulatedFeed';
+import { createSimulatedFeed, SimulatedFeed } from '../../src/feed/SimulatedFeed';
 import { toPaise } from '../../src/domain/money';
 import type { Quote } from '../../src/domain/types';
 import type { Tick } from '../../src/feed/types';
 
-describe('SimulatedFeed (PriceFeed implementation)', () => {
+describe('Feed Layer: Functional createSimulatedFeed & SimulatedFeed wrapper', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -39,8 +39,8 @@ describe('SimulatedFeed (PriceFeed implementation)', () => {
     },
   };
 
-  test('connects and emits ticks at ~20 Hz (~50 ms per tick)', () => {
-    const feed = new SimulatedFeed(initialQuotes, { tickRateHz: 20 });
+  test('createSimulatedFeed connects and emits ticks at ~20 Hz (~50 ms per tick)', () => {
+    const feed = createSimulatedFeed(initialQuotes, { tickRateHz: 20 });
     const ticks: Tick[] = [];
     feed.onTick((tick) => ticks.push(tick));
 
@@ -59,7 +59,7 @@ describe('SimulatedFeed (PriceFeed implementation)', () => {
   });
 
   test('ticks contain valid price in paise, sequence numbers, and never select unpriced symbols', () => {
-    const feed = new SimulatedFeed(initialQuotes, { tickRateHz: 20 });
+    const feed = createSimulatedFeed(initialQuotes, { tickRateHz: 20 });
     const ticks: Tick[] = [];
     feed.onTick((tick) => ticks.push(tick));
 
@@ -79,7 +79,7 @@ describe('SimulatedFeed (PriceFeed implementation)', () => {
   });
 
   test('price movement per tick is bounded within ±0.2%', () => {
-    const feed = new SimulatedFeed(initialQuotes, {
+    const feed = createSimulatedFeed(initialQuotes, {
       tickRateHz: 20,
       lateTickRate: 0, // disable out-of-order for this test
     });
@@ -103,7 +103,7 @@ describe('SimulatedFeed (PriceFeed implementation)', () => {
   });
 
   test('disconnect stops all emissions and cleans up timers', () => {
-    const feed = new SimulatedFeed(initialQuotes);
+    const feed = createSimulatedFeed(initialQuotes);
     const ticks: Tick[] = [];
     feed.onTick((tick) => ticks.push(tick));
 
@@ -117,7 +117,7 @@ describe('SimulatedFeed (PriceFeed implementation)', () => {
   });
 
   test('onTick returns an unsubscribe function that isolates listeners', () => {
-    const feed = new SimulatedFeed(initialQuotes);
+    const feed = createSimulatedFeed(initialQuotes);
     const listener1Ticks: Tick[] = [];
     const listener2Ticks: Tick[] = [];
 
@@ -139,8 +139,7 @@ describe('SimulatedFeed (PriceFeed implementation)', () => {
   });
 
   test('emits late/out-of-order ticks when configured', () => {
-    // With lateTickRate: 0.3, roughly 30% of ticks after sequence > 1 are emitted with older seq
-    const feed = new SimulatedFeed(initialQuotes, {
+    const feed = createSimulatedFeed(initialQuotes, {
       tickRateHz: 20,
       lateTickRate: 0.3,
     });
@@ -162,7 +161,7 @@ describe('SimulatedFeed (PriceFeed implementation)', () => {
   });
 
   test('enters a silence window (5s) roughly once a minute then resumes', () => {
-    const feed = new SimulatedFeed(initialQuotes, {
+    const feed = createSimulatedFeed(initialQuotes, {
       tickRateHz: 20,
       silenceIntervalMs: 60000,
       silenceDurationMs: 5000,
@@ -188,6 +187,19 @@ describe('SimulatedFeed (PriceFeed implementation)', () => {
     const ticksAfterSilence = ticks.length - ticksAtSilenceStart;
     expect(ticksAfterSilence).toBe(20);
 
+    feed.disconnect();
+  });
+
+  test('SimulatedFeed class wrapper behaves identically to functional factory', () => {
+    const feed = new SimulatedFeed(initialQuotes, { tickRateHz: 20 });
+    const ticks: Tick[] = [];
+    const unsub = feed.onTick((t) => ticks.push(t));
+
+    feed.connect();
+    jest.advanceTimersByTime(100);
+    expect(ticks.length).toBe(2);
+
+    unsub();
     feed.disconnect();
   });
 });

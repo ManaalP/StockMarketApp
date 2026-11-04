@@ -76,11 +76,15 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 
 ---
 
-### ADR 009: Decoupled `PriceFeed` Interface and Deterministic Simulator
-- **Context**: The app requires realistic high-frequency market data (~20 ticks/sec across 25 symbols, ±0.2% price jitter, periodic 5s silence windows, and ~2% out-of-order packets) while remaining completely decoupled from network transport protocols.
+### ADR 009: Decoupled `PriceFeed` Interface and Functional Simulator Factory
+- **Context**: The app requires realistic high-frequency market data (~20 ticks/sec across 25 symbols, ±0.2% price jitter, periodic 5s silence windows, and ~2% out-of-order packets) while remaining completely decoupled from network transport protocols. Furthermore, modern React Native architectures favor functional composition over classical object-oriented state.
 - **Decision**:
   - Define an abstract `PriceFeed` interface (`connect`, `disconnect`, `onTick`) in `src/feed/types.ts`.
-  - Implement `SimulatedFeed` accepting seedable RNG and configurable intervals, fully controllable via Jest fake timers.
-  - Restrict imports of `SimulatedFeed` exclusively to the application composition root (`src/app/bootstrap.ts`). UI screens and stores depend solely on the `PriceFeed` contract.
-- **Rationale**: Enables deterministic test suites without flakiness while ensuring the simulator can be swapped for a real exchange WebSocket with zero modifications to screens, hooks, or stores.
+  - Implement a closure-encapsulated functional factory `createSimulatedFeed` in `src/feed/SimulatedFeed.ts` (with an optional backward-compatible `SimulatedFeed` class wrapper).
+  - Internal state (interval timers, sequence maps, listener sets) is held entirely in private function closures without prototype chains or `this` context binding risks.
+  - Restrict imports of `createSimulatedFeed` exclusively to the application composition root (`src/app/bootstrap.ts`). UI screens, hooks, and stores depend solely on the `PriceFeed` contract.
+- **Rationale**:
+  - **Hermes Optimization**: Functional closures avoid class prototype lookups and memory indirection on Hermes.
+  - **Context Safety**: Callback methods (`connect`, `disconnect`, `onTick`) can be passed directly to React Native lifecycle effects (e.g. `useEffect(() => feed.connect(), [])`) without `.bind(this)` or arrow wrapper overhead.
+  - **Determinism**: The factory accepts a seedable RNG and configurable intervals, fully controllable via Jest fake timers.
 
