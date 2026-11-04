@@ -30,6 +30,13 @@ detail, and a Buy/Sell sheet. Orders are local only.
   `seq <= lastSeq[symbol]`.
 - Do not add features beyond the spec until the core is done.
 
+## Data contract
+The exact API request/response, the 25 symbols, the starting holdings CSV (21 holdings, OLDCO unpriced),
+field mappings, derived-value formulas, simulator contract, and test oracle values are in
+`docs/api_and_data_reference.md`. Read it before touching `src/api`, `src/data`, `src/feed`, or `src/domain`.
+Key facts: POST returns HTTP 201 (not 200), list at `message.data`, unknown symbols are silently omitted,
+fetch once per load and on refresh only, never poll.
+
 ## Architecture
 ```
 src/
