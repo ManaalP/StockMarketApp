@@ -1,0 +1,183 @@
+import {
+  type Quote,
+  type Holding,
+  type Order,
+  type RowMetrics,
+  type PortfolioSummary,
+  type SummaryTotals,
+} from './types';
+import { mulQty, safePercent, type Paise } from './money';
+
+export * from './types';
+
+/**
+ * Typed domain error for invalid order requests.
+ */
+export class OrderValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'OrderValidationError';
+  }
+}
+
+/**
+ * Computes metrics for an individual holding row.
+ * Rounding to paise is performed per row so displayed values are exact.
+ *
+ * Missing price rule: If quote or ltp is null, price-dependent metrics are null.
+ * OLDCO and unpriced stocks are never assigned 0 as price.
+ */
+export function rowMetrics(holding: Holding, quote: Quote | null): RowMetrics {
+  const investedPaise = mulQty(holding.avgPaise, holding.qty);
+
+  if (!quote || quote.ltp === null) {
+    return {
+      symbol: holding.symbol,
+      qty: holding.qty,
+      avgPaise: holding.avgPaise,
+      investedPaise,
+      valuePaise: null,
+      pnlPaise: null,
+      pnlPct: null,
+      dayPnlPaise: null,
+      isPriced: false,
+    };
+  }
+
+  const valuePaise = mulQty(quote.ltp, holding.qty);
+  const pnlPaise = valuePaise - investedPaise;
+  const pnlPct = safePercent(pnlPaise, investedPaise);
+  // Today's P&L = qty * (ltp - prevClose)
+  const dayPnlPaise = mulQty(quote.ltp - quote.prevClose, holding.qty);
+
+  return {
+    symbol: holding.symbol,
+    qty: holding.qty,
+    avgPaise: holding.avgPaise,
+    investedPaise,
+    valuePaise,
+    pnlPaise,
+    pnlPct,
+    dayPnlPaise,
+    isPriced: true,
+  };
+}
+
+/**
+ * Derives portfolio summary by summing the already-rounded rows.
+ *
+ * RECONCILIATION HARD RULE:
+ * Summary totals MUST equal the sum of the displayed rows exactly.
+ * Unpriced rows are excluded from current value, P&L, today's P&L,
+ * and from the invested figure used for portfolio P&L%.
+ */
+export function summarize(rows: RowMetrics[]): PortfolioSummary {
+  let pricedCount = 0;
+  let unpricedCount = 0;
+  let unpricedInvestedPaise: Paise = 0;
+
+  let currentValuePaise: Paise = 0;
+  let totalInvestedPaise: Paise = 0;
+  let totalPnlPaise: Paise = 0;
+  let todayPnlPaise: Paise = 0;
+  let prevDayValuePaise: Paise = 0;
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row) continue;
+
+    if (!row.isPriced || row.valuePaise === null) {
+      unpricedCount++;
+      unpricedInvestedPaise += row.investedPaise;
+    } else {
+      pricedCount++;
+      currentValuePaise += row.valuePaise;
+      totalInvestedPaise += row.investedPaise;
+      totalPnlPaise += (row.pnlPaise ?? 0);
+      todayPnlPaise += (row.dayPnlPaise ?? 0);
+      prevDayValuePaise += (row.valuePaise - (row.dayPnlPaise ?? 0));
+    }
+  }
+
+  if (pricedCount === 0) {
+    return {
+      pricedCount,
+      unpricedCount,
+      unpricedInvestedPaise,
+      totals: null,
+    };
+  }
+
+  const totals: SummaryTotals = {
+    currentValuePaise,
+    totalInvestedPaise,
+    totalPnlPaise,
+    totalPnlPct: safePercent(totalPnlPaise, totalInvestedPaise),
+    todayPnlPaise,
+    todayPnlPct: safePercent(todayPnlPaise, prevDayValuePaise),
+  };
+
+  return {
+    pricedCount,
+    unpricedCount,
+    unpricedInvestedPaise,
+    totals,
+  };
+}
+
+/**
+ * Applies a buy or sell order to holdings immutably.
+ *
+ * Rules:
+ *   - BUY: New average price = round((oldQty * oldAvg + qty * fill) / newQty) in paise.
+ *   - SELL: Leaves average price unchanged.
+ *   - SELL ALL: Completely removes the holding.
+ *   - Validation: Throws OrderValidationError if qty <= 0, fractional, or sell > held.
+ */
+export function applyOrder(holdings: Holding[], order: Order): Holding[] {
+  if (typeof order.qty !== 'number' || order.qty <= 0 || !Number.isInteger(order.qty)) {
+    throw new OrderValidationError('Order quantity must be a positive whole number');
+  }
+
+  const existingIndex = holdings.findIndex((h) => h.symbol === order.symbol);
+  const existing = existingIndex >= 0 ? holdings[existingIndex] : undefined;
+
+  if (order.side === 'BUY') {
+    if (!existing) {
+      return [...holdings, { symbol: order.symbol, qty: order.qty, avgPaise: order.fillPaise }];
+    }
+
+    const newQty = existing.qty + order.qty;
+    const totalCost = existing.qty * existing.avgPaise + order.qty * order.fillPaise;
+    const newAvg = Math.round(totalCost / newQty);
+
+    const updated = [...holdings];
+    updated[existingIndex] = {
+      symbol: existing.symbol,
+      qty: newQty,
+      avgPaise: newAvg,
+    };
+    return updated;
+  }
+
+  // SELL
+  if (!existing || existing.qty < order.qty) {
+    const held = existing ? existing.qty : 0;
+    throw new OrderValidationError(
+      `Cannot sell ${order.qty} shares of ${order.symbol}. Currently held: ${held}`
+    );
+  }
+
+  if (existing.qty === order.qty) {
+    // Selling all shares removes the holding
+    return holdings.filter((_, idx) => idx !== existingIndex);
+  }
+
+  // Partial sell: quantity drops, average price is unchanged
+  const updated = [...holdings];
+  updated[existingIndex] = {
+    ...existing,
+    qty: existing.qty - order.qty,
+  };
+  return updated;
+}
