@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta content="mobile_tab" name="shell-type"/>
+<title>Watchlist</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+  @layer base {
+    html, body {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      overscroll-behavior-y: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .pt-safe {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    main > :first-child {
+      margin-top: 0 !important;
+    }
+    main > :last-child {
+      margin-bottom: 0 !important;
+    }
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "tertiary-container": "#d52022",
+          "on-background": "#131b2e",
+          "surface-variant": "#dae2fd",
+          "on-tertiary-container": "#ffecea",
+          "on-secondary-container": "#007230",
+          "surface-container-low": "#f2f3ff",
+          "surface-tint": "#0053db",
+          "inverse-on-surface": "#eef0ff",
+          "on-secondary-fixed-variant": "#005320",
+          "on-error-container": "#93000a",
+          "tertiary-fixed": "#ffdad6",
+          "secondary-container": "#7cf994",
+          "secondary": "#006e2d",
+          "background": "#faf8ff",
+          "surface-container": "#eaedff",
+          "on-primary": "#ffffff",
+          "on-primary-container": "#eeefff",
+          "surface-container-highest": "#dae2fd",
+          "on-primary-fixed": "#00174b",
+          "surface": "#faf8ff",
+          "on-secondary": "#ffffff",
+          "inverse-primary": "#b4c5ff",
+          "outline": "#737686",
+          "inverse-surface": "#283044",
+          "surface-container-lowest": "#ffffff",
+          "tertiary": "#ae0010",
+          "on-error": "#ffffff",
+          "primary-container": "#2563eb",
+          "tertiary-fixed-dim": "#ffb4ab",
+          "primary-fixed-dim": "#b4c5ff",
+          "error": "#ba1a1a",
+          "surface-bright": "#faf8ff",
+          "on-tertiary": "#ffffff",
+          "primary": "#004ac6",
+          "on-tertiary-fixed-variant": "#93000b",
+          "error-container": "#ffdad6",
+          "on-primary-fixed-variant": "#003ea8",
+          "on-surface-variant": "#434655",
+          "on-surface": "#131b2e",
+          "secondary-fixed-dim": "#62df7d",
+          "secondary-fixed": "#7ffc97",
+          "surface-dim": "#d2d9f4",
+          "surface-container-high": "#e2e7ff",
+          "primary-fixed": "#dbe1ff",
+          "on-tertiary-fixed": "#410002",
+          "outline-variant": "#c3c6d7",
+          "on-secondary-fixed": "#002109",
+          "accent": "#2563eb",
+          "text-muted": "#64748B"
+        },
+        borderRadius: {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        spacing: {
+          "space-xl": "2rem",
+          "space-xs": "0.25rem",
+          "space-md": "1rem",
+          "space-sm": "0.5rem",
+          "margin-sm": "0.75rem",
+          "gutter-md": "1rem",
+          "margin": "1rem",
+          "gutter": "0.5rem",
+          "space-lg": "1.5rem"
+        },
+        fontFamily: {
+          "headline-md": ["Inter", "sans-serif"],
+          "headline-sm": ["Inter", "sans-serif"],
+          "body-md": ["Inter", "sans-serif"],
+          "body-sm": ["Inter", "sans-serif"],
+          "label-sm": ["Inter", "sans-serif"],
+          "data-metric-md": ["Inter", "sans-serif"],
+          "data-metric-lg": ["Inter", "sans-serif"]
+        },
+        fontSize: {
+          "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.015em", fontWeight: "600" }],
+          "headline-sm": ["17px", { lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "600" }],
+          "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }],
+          "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" }],
+          "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }],
+          "data-metric-md": ["15px", { lineHeight: "20px", letterSpacing: "-0.01em", fontWeight: "600" }],
+          "data-metric-lg": ["24px", { lineHeight: "28px", letterSpacing: "-0.02em", fontWeight: "700" }]
+        }
+      }
+    }
+  }
+</script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen">
+<header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_6px_rgba(0,0,0,0.03)] pt-safe">
+<div class="h-14 px-margin flex items-center justify-between">
+<h1 class="font-headline-md text-headline-md text-on-surface tracking-tight truncate">Watchlist</h1>
+<div class="flex items-center gap-space-xs">
+<button aria-label="Search or add asset" class="min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[22px]">search</span>
+</button>
+<button aria-label="More actions" class="min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[22px]">more_vert</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 flex flex-col relative w-full pt-14 pb-20 bg-surface"><div class="flex flex-col w-full relative">
+<!-- Underlying Watchlist Screen Background (Partially Visible / Dimmed) -->
+<div class="px-margin pt-space-sm pb-space-lg flex flex-col gap-space-md opacity-40 select-none pointer-events-none">
+<!-- Watchlist Overview Stat Card -->
+<div class="bg-surface-container p-space-md rounded-xl shadow-sm flex flex-col gap-space-xs">
+<div class="flex justify-between items-center text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<span>NIFTY 50 Overview</span>
+<span class="text-secondary font-data-metric-sm text-data-metric-sm">+1.14%</span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-data-metric-lg text-data-metric-lg text-on-surface">22,485.60</span>
+<span class="font-body-sm text-body-sm text-secondary font-medium">+254.20 pts</span>
+</div>
+</div>
+<!-- Active Watchlist Category Chips -->
+<div class="flex items-center gap-space-xs overflow-x-hidden">
+<span class="px-space-md py-1.5 bg-on-surface text-surface rounded-lg font-label-md text-label-md">Nifty Core (6)</span>
+<span class="px-space-md py-1.5 bg-surface-container-high text-on-surface-variant rounded-lg font-label-md text-label-md">High Beta</span>
+<span class="px-space-md py-1.5 bg-surface-container-high text-on-surface-variant rounded-lg font-label-md text-label-md">IT &amp; Tech</span>
+</div>
+<!-- Current Holding Items Sample Mock in Background -->
+<div class="flex flex-col rounded-xl overflow-hidden shadow-sm bg-surface-container-lowest">
+<div class="p-space-md flex justify-between items-center bg-surface-container-low">
+<div class="flex flex-col">
+<span class="font-data-metric-md text-data-metric-md text-on-surface">RELIANCE</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">₹2,980.40</span>
+</div>
+<span class="font-data-metric-md text-data-metric-md text-secondary">+0.85%</span>
+</div>
+<div class="p-space-md flex justify-between items-center bg-surface-container-lowest">
+<div class="flex flex-col">
+<span class="font-data-metric-md text-data-metric-md text-on-surface">TCS</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">₹3,842.10</span>
+</div>
+<span class="font-data-metric-md text-data-metric-md text-secondary">+1.40%</span>
+</div>
+</div>
+</div>
+<!-- Modal Backdrop Overlay -->
+<div class="fixed inset-0 z-40 bg-on-surface/40 backdrop-blur-[2px] transition-opacity duration-200" id="modal-backdrop"></div>
+<!-- Bottom Sheet Presentation Layer -->
+<div class="fixed inset-x-0 bottom-0 z-50 flex flex-col max-h-[777px] bg-surface-container-lowest rounded-t-[16px] shadow-2xl transition-transform duration-300 ease-out" id="bottom-sheet">
+<!-- Drag Pill & Top Header -->
+<div class="pt-space-sm px-margin pb-space-sm flex flex-col items-center bg-surface-container-lowest rounded-t-[16px]">
+<div class="w-9 h-1 rounded-full bg-outline-variant mb-space-sm"></div>
+<div class="w-full flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Add to watchlist</h2>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant" id="watch-counter">6 added</span>
+</div>
+<button aria-label="Dismiss sheet" class="min-w-[44px] min-h-[44px] flex items-center justify-end text-primary font-headline-sm text-headline-sm hover:opacity-80 active:opacity-60 transition-opacity" id="close-sheet-btn">
+          Done
+        </button>
+</div>
+</div>
+<!-- Search Field Box -->
+<div class="px-margin pb-space-md pt-space-xs bg-surface-container-lowest">
+<div class="relative flex items-center w-full bg-surface-container-low rounded-lg px-space-md h-12 shadow-sm focus-within:shadow-md transition-shadow">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant mr-space-sm select-none">search</span>
+<input autocomplete="off" class="w-full bg-transparent font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none" id="symbol-search-input" placeholder="Search symbol or company (NSE/BSE)" spellcheck="false" type="text"/>
+<button class="hidden text-on-surface-variant hover:text-on-surface p-1 focus:outline-none" id="clear-search-btn">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+</button>
+</div>
+</div>
+<!-- Scrollable Stock Catalog (25 Indian Market Bluechips) -->
+<div class="flex-1 overflow-y-auto px-margin pb-space-xl flex flex-col overscroll-contain" id="symbol-list-container">
+<!-- 1. RELIANCE (Pre-added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Reliance Industries" data-symbol="RELIANCE">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">RELIANCE</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Reliance Industries</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-low text-primary transition-colors" data-added="true">
+<span class="material-symbols-outlined text-[16px] text-primary">check</span>
+<span class="font-label-sm text-label-sm text-primary">Added</span>
+</button>
+</div>
+<!-- 2. TCS (Pre-added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Tata Consultancy Services" data-symbol="TCS">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">TCS</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Tata Consultancy Services</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-low text-primary transition-colors" data-added="true">
+<span class="material-symbols-outlined text-[16px] text-primary">check</span>
+<span class="font-label-sm text-label-sm text-primary">Added</span>
+</button>
+</div>
+<!-- 3. HDFCBANK (Pre-added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="HDFC Bank" data-symbol="HDFCBANK">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">HDFCBANK</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">HDFC Bank</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-low text-primary transition-colors" data-added="true">
+<span class="material-symbols-outlined text-[16px] text-primary">check</span>
+<span class="font-label-sm text-label-sm text-primary">Added</span>
+</button>
+</div>
+<!-- 4. INFY (Pre-added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Infosys" data-symbol="INFY">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">INFY</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Infosys</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-low text-primary transition-colors" data-added="true">
+<span class="material-symbols-outlined text-[16px] text-primary">check</span>
+<span class="font-label-sm text-label-sm text-primary">Added</span>
+</button>
+</div>
+<!-- 5. ITC (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="ITC Limited" data-symbol="ITC">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">ITC</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">ITC Limited</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 6. ICICIBANK (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="ICICI Bank" data-symbol="ICICIBANK">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">ICICIBANK</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">ICICI Bank</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 7. SBIN (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="State Bank of India" data-symbol="SBIN">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">SBIN</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">State Bank of India</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 8. LT (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Larsen &amp; Toubro" data-symbol="LT">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">LT</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Larsen &amp; Toubro</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 9. BHARTIARTL (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Bharti Airtel" data-symbol="BHARTIARTL">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">BHARTIARTL</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Bharti Airtel</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 10. KOTAKBANK (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Kotak Mahindra Bank" data-symbol="KOTAKBANK">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">KOTAKBANK</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Kotak Mahindra Bank</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 11. AXISBANK (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Axis Bank" data-symbol="AXISBANK">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">AXISBANK</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Axis Bank</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 12. HINDUNILVR (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Hindustan Unilever" data-symbol="HINDUNILVR">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">HINDUNILVR</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Hindustan Unilever</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 13. MARUTI (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Maruti Suzuki" data-symbol="MARUTI">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">MARUTI</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Maruti Suzuki</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 14. ASIANPAINT (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Asian Paints" data-symbol="ASIANPAINT">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">ASIANPAINT</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Asian Paints</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 15. TITAN (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Titan Company" data-symbol="TITAN">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">TITAN</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Titan Company</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 16. SUNPHARMA (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Sun Pharma" data-symbol="SUNPHARMA">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">SUNPHARMA</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Sun Pharma</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 17. BAJFINANCE (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Bajaj Finance" data-symbol="BAJFINANCE">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">BAJFINANCE</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Bajaj Finance</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 18. TATASTEEL (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Tata Steel" data-symbol="TATASTEEL">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">TATASTEEL</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Tata Steel</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 19. ADANIENT (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Adani Enterprises" data-symbol="ADANIENT">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">ADANIENT</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Adani Enterprises</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 20. NTPC (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="NTPC" data-symbol="NTPC">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">NTPC</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">NTPC</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 21. POWERGRID (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Power Grid" data-symbol="POWERGRID">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">POWERGRID</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Power Grid</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 22. ULTRACEMCO (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="UltraTech Cement" data-symbol="ULTRACEMCO">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">ULTRACEMCO</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">UltraTech Cement</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 23. COALINDIA (Not added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Coal India" data-symbol="COALINDIA">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">COALINDIA</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Coal India</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors" data-added="false">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="font-label-sm text-label-sm">Add</span>
+</button>
+</div>
+<!-- 24. WIPRO (Pre-added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="Wipro" data-symbol="WIPRO">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">WIPRO</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">NSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Wipro</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-low text-primary transition-colors" data-added="true">
+<span class="material-symbols-outlined text-[16px] text-primary">check</span>
+<span class="font-label-sm text-label-sm text-primary">Added</span>
+</button>
+</div>
+<!-- 25. OLDCO (Pre-added) -->
+<div class="stock-item flex items-center justify-between min-h-[54px] py-2 bg-surface-container-lowest" data-company="OLDCO" data-symbol="OLDCO">
+<div class="flex flex-col min-w-0 pr-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-data-metric-md text-data-metric-md text-on-surface truncate">OLDCO</span>
+<span class="font-label-sm text-label-sm px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant">BSE</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">OLDCO Holding Group</span>
+</div>
+<button class="watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-low text-primary transition-colors" data-added="true">
+<span class="material-symbols-outlined text-[16px] text-primary">check</span>
+<span class="font-label-sm text-label-sm text-primary">Added</span>
+</button>
+</div>
+<!-- Zero-Results Empty State (hidden by default) -->
+<div class="hidden flex flex-col items-center justify-center py-space-xl text-center" id="no-results-state">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant mb-space-sm">
+<span class="material-symbols-outlined text-[24px]">manage_search</span>
+</div>
+<span class="font-data-metric-md text-data-metric-md text-on-surface">No securities found</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Check the spelling or try searching another ticker</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initWatchlistSheet() {
+    const searchInput = document.getElementById('symbol-search-input');
+    const clearBtn = document.getElementById('clear-search-btn');
+    const stockItems = document.querySelectorAll('.stock-item');
+    const noResultsState = document.getElementById('no-results-state');
+    const counterBadge = document.getElementById('watch-counter');
+    const closeBtn = document.getElementById('close-sheet-btn');
+    const backdrop = document.getElementById('modal-backdrop');
+    const sheet = document.getElementById('bottom-sheet');
+
+    function updateCount() {
+      const addedCount = document.querySelectorAll('.watchlist-toggle-btn[data-added="true"]').length;
+      if (counterBadge) {
+        counterBadge.textContent = `${addedCount} added`;
+      }
+    }
+
+    // Search and filter behavior
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        let matchCount = 0;
+
+        if (clearBtn) {
+          clearBtn.classList.toggle('hidden', query.length === 0);
+        }
+
+        stockItems.forEach((item) => {
+          const sym = (item.dataset.symbol || '').toLowerCase();
+          const comp = (item.dataset.company || '').toLowerCase();
+          if (sym.includes(query) || comp.includes(query)) {
+            item.classList.remove('hidden');
+            matchCount++;
+          } else {
+            item.classList.add('hidden');
+          }
+        });
+
+        if (noResultsState) {
+          noResultsState.classList.toggle('hidden', matchCount > 0);
+        }
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.dispatchEvent(new Event('input'));
+          searchInput.focus();
+        }
+      });
+    }
+
+    // Toggle add/added status with tactile visual feedback
+    document.querySelectorAll('.watchlist-toggle-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isAdded = btn.getAttribute('data-added') === 'true';
+
+        if (isAdded) {
+          btn.setAttribute('data-added', 'false');
+          btn.className = 'watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-surface-container-low transition-colors';
+          btn.innerHTML = `
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            <span class="font-label-sm text-label-sm">Add</span>
+          `;
+        } else {
+          btn.setAttribute('data-added', 'true');
+          btn.className = 'watchlist-toggle-btn min-w-[72px] h-[34px] flex items-center justify-end gap-1 px-2.5 rounded-lg bg-surface-container-low text-primary transition-colors';
+          btn.innerHTML = `
+            <span class="material-symbols-outlined text-[16px] text-primary">check</span>
+            <span class="font-label-sm text-label-sm text-primary">Added</span>
+          `;
+        }
+        updateCount();
+      });
+    });
+
+    // Close actions
+    function closeBottomSheet() {
+      if (sheet && backdrop) {
+        sheet.classList.add('translate-y-full');
+        backdrop.classList.add('opacity-0');
+        setTimeout(() => {
+          sheet.style.display = 'none';
+          backdrop.style.display = 'none';
+        }, 250);
+      }
+    }
+
+    if (closeBtn) closeBtn.addEventListener('click', closeBottomSheet);
+    if (backdrop) backdrop.addEventListener('click', closeBottomSheet);
+  })();
+</script></main>
+<nav class="fixed bottom-0 inset-x-0 z-50 bg-surface/95 backdrop-blur-xl shadow-[0_-1px_6px_rgba(0,0,0,0.04)] pb-safe" data-active-classes="text-[#2563EB]">
+<div class="h-16 px-space-md flex justify-around items-center">
+<a aria-current="page" class="flex flex-col items-center justify-center space-y-1 min-w-[64px] min-h-[44px] transition-colors text-[#2563EB]" data-path="watchlist" href="#watchlist">
+<span class="material-symbols-outlined text-[22px]">visibility</span>
+<span class="font-label-sm text-label-sm leading-none">Watchlist</span>
+</a>
+<a class="flex flex-col items-center justify-center space-y-1 text-[#64748B] hover:text-on-surface min-w-[64px] min-h-[44px] transition-colors" data-path="portfolio-error-state" href="#portfolio">
+<span class="material-symbols-outlined text-[22px]">work_outline</span>
+<span class="font-label-sm text-label-sm leading-none">Portfolio</span>
+</a>
+</div>
+</nav>
+</body></html>

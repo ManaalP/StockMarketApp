@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Live Portfolio - Clean Light (Loading)</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        },
+        colors: {
+          bg: '#FFFFFF',
+          'surface-alt': '#F5F7FA',
+          'text-strong': '#0F172A',
+          text: '#334155',
+          'text-muted': '#64748B',
+          divider: '#E5E9F0',
+          accent: '#2563EB',
+          skeleton: '#E2E8F0',
+          'skeleton-subtle': '#EDF2F7',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  * {
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-color: #F1F5F9;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  @keyframes skeleton-shimmer {
+    0% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 0.95;
+    }
+    100% {
+      opacity: 0.55;
+    }
+  }
+  .animate-skeleton {
+    animation: skeleton-shimmer 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+</style>
+</head>
+<body class="flex justify-center p-0 sm:py-6 text-text">
+<!-- Mobile Container (390 x 844) -->
+<div class="w-[390px] h-[844px] bg-[#FFFFFF] flex flex-col relative overflow-hidden shadow-2xl sm:rounded-[32px] border border-divider">
+<!-- Status Bar (iOS style minimal) -->
+<div class="h-11 px-6 flex justify-between items-center shrink-0 text-text-strong text-[14px] font-semibold tracking-tight select-none">
+<span>9:41</span>
+<div class="flex items-center space-x-2">
+<!-- Signal -->
+<svg class="w-4 h-3" fill="currentColor" viewbox="0 0 16 12">
+<rect height="4" rx="0.5" width="2.5" x="0" y="8"></rect>
+<rect height="6.5" rx="0.5" width="2.5" x="4.5" y="5.5"></rect>
+<rect height="9" rx="0.5" width="2.5" x="9" y="3"></rect>
+<rect height="12" rx="0.5" width="2.5" x="13.5" y="0"></rect>
+</svg>
+<!-- Wifi -->
+<svg class="w-4 h-3.5" fill="currentColor" viewbox="0 0 16 14">
+<path d="M8 12.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm-3.5-3.5a5 5 0 017 0 .75.75 0 001.06-1.06 6.5 6.5 0 00-9.12 0 .75.75 0 001.06 1.06zm-3-3a9.5 9.5 0 0113 0 .75.75 0 001.06-1.06 11 11 0 00-15.12 0 .75.75 0 001.06 1.06z"></path>
+</svg>
+<!-- Battery -->
+<div class="w-5 h-2.5 border border-text-strong rounded-[2.5px] p-0.5 flex items-center">
+<div class="h-full w-full bg-text-strong rounded-[1px]"></div>
+</div>
+</div>
+</div>
+<!-- Screen Header -->
+<header class="px-4 pb-2.5 flex items-center justify-between shrink-0">
+<h1 class="text-[20px] leading-[26px] font-semibold text-text-strong tracking-tight">Portfolio</h1>
+<div class="flex items-center space-x-1.5">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent/40 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-text-muted/60"></span>
+</span>
+<span class="text-[12px] text-text-muted font-medium ml-0.5">Connecting...</span>
+</div>
+</header>
+<!-- Scrollable Main Content -->
+<main class="flex-1 overflow-y-auto px-4 pb-20 hide-scrollbar">
+<!-- Summary Panel Skeleton -->
+<section class="bg-surface-alt rounded-[8px] p-3.5 mt-1 border border-divider">
+<div class="flex flex-col">
+<!-- Label placeholder -->
+<div class="h-3 w-24 bg-skeleton rounded animate-skeleton"></div>
+<!-- Current value figure placeholder -->
+<div class="h-8 w-56 bg-skeleton rounded mt-2 animate-skeleton"></div>
+</div>
+<!-- 2x2 Grid Skeleton -->
+<div class="mt-3.5 pt-3 border-t border-divider grid grid-cols-2 gap-y-3.5 gap-x-4">
+<!-- Total invested -->
+<div>
+<div class="h-2.5 w-20 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-4 w-28 bg-skeleton rounded mt-1.5 animate-skeleton"></div>
+</div>
+<!-- Total P&L -->
+<div>
+<div class="h-2.5 w-16 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-4 w-32 bg-skeleton rounded mt-1.5 animate-skeleton"></div>
+</div>
+<!-- Today's P&L -->
+<div>
+<div class="h-2.5 w-18 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-4 w-28 bg-skeleton rounded mt-1.5 animate-skeleton"></div>
+</div>
+<!-- Holdings -->
+<div>
+<div class="h-2.5 w-14 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-4 w-20 bg-skeleton rounded mt-1.5 animate-skeleton"></div>
+</div>
+</div>
+<!-- Bottom Warning Notice Skeleton -->
+<div class="mt-3 pt-2.5 border-t border-divider flex items-center space-x-2">
+<div class="w-3.5 h-3.5 rounded-full bg-skeleton shrink-0 animate-skeleton"></div>
+<div class="h-2.5 w-64 bg-skeleton rounded animate-skeleton"></div>
+</div>
+</section>
+<!-- Controls: Filter & Sort -->
+<section class="mt-4 space-y-3">
+<!-- Search Field (Preserved) -->
+<div class="relative flex items-center">
+<svg class="w-4 h-4 text-text-muted absolute left-3 pointer-events-none stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24">
+<circle cx="11" cy="11" r="8"></circle>
+<line x1="21" x2="16.65" y1="21" y2="16.65"></line>
+</svg>
+<input class="w-full bg-surface-alt text-text text-[14px] placeholder-text-muted pl-9 pr-8 py-2 rounded-[8px] border border-transparent focus:border-accent focus:bg-white focus:outline-none transition-colors cursor-not-allowed opacity-90" disabled="" placeholder="Filter by symbol" type="text"/>
+</div>
+<!-- Sort Tabs -->
+<div class="flex items-center justify-between pt-0.5 px-0.5">
+<span class="text-[12px] text-text-muted font-medium">SORT BY</span>
+<div class="flex items-center space-x-5 text-[13px] font-medium">
+<button class="text-text-muted hover:text-text cursor-default" disabled="">Name</button>
+<button class="text-accent flex items-center space-x-0.5 cursor-default">
+<span>Value</span>
+<svg class="w-3 h-3 stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<polyline points="6 9 12 15 18 9"></polyline>
+</svg>
+</button>
+<button class="text-text-muted hover:text-text cursor-default" disabled="">P&amp;L</button>
+</div>
+</div>
+</section>
+<!-- Holdings List Skeleton (6 rows, ~72px each) -->
+<section class="mt-2 border-t border-divider">
+<!-- Skeleton Row 1 -->
+<div class="h-[72px] flex items-center justify-between border-b border-divider px-0.5">
+<div class="flex flex-col space-y-2">
+<div class="h-4 w-24 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-36 bg-skeleton rounded animate-skeleton"></div>
+</div>
+<div class="flex flex-col items-end space-y-2">
+<div class="h-4 w-20 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-28 bg-skeleton rounded animate-skeleton"></div>
+</div>
+</div>
+<!-- Skeleton Row 2 -->
+<div class="h-[72px] flex items-center justify-between border-b border-divider px-0.5">
+<div class="flex flex-col space-y-2">
+<div class="flex items-center space-x-1.5">
+<div class="h-4 w-16 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-8 bg-skeleton-subtle rounded animate-skeleton"></div>
+</div>
+<div class="h-3 w-40 bg-skeleton rounded animate-skeleton"></div>
+</div>
+<div class="flex flex-col items-end space-y-2">
+<div class="h-4 w-22 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-32 bg-skeleton rounded animate-skeleton"></div>
+</div>
+</div>
+<!-- Skeleton Row 3 -->
+<div class="h-[72px] flex items-center justify-between border-b border-divider px-0.5">
+<div class="flex flex-col space-y-2">
+<div class="h-4 w-28 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-32 bg-skeleton rounded animate-skeleton"></div>
+</div>
+<div class="flex flex-col items-end space-y-2">
+<div class="h-4 w-18 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-26 bg-skeleton rounded animate-skeleton"></div>
+</div>
+</div>
+<!-- Skeleton Row 4 -->
+<div class="h-[72px] flex items-center justify-between border-b border-divider px-0.5">
+<div class="flex flex-col space-y-2">
+<div class="h-4 w-20 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-36 bg-skeleton rounded animate-skeleton"></div>
+</div>
+<div class="flex flex-col items-end space-y-2">
+<div class="h-4 w-20 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-30 bg-skeleton rounded animate-skeleton"></div>
+</div>
+</div>
+<!-- Skeleton Row 5 -->
+<div class="h-[72px] flex items-center justify-between border-b border-divider px-0.5">
+<div class="flex flex-col space-y-2">
+<div class="h-4 w-22 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-34 bg-skeleton rounded animate-skeleton"></div>
+</div>
+<div class="flex flex-col items-end space-y-2">
+<div class="h-4 w-16 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-24 bg-skeleton rounded animate-skeleton"></div>
+</div>
+</div>
+<!-- Skeleton Row 6 -->
+<div class="h-[72px] flex items-center justify-between border-b border-divider px-0.5">
+<div class="flex flex-col space-y-2">
+<div class="flex items-center space-x-1.5">
+<div class="h-4 w-20 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-12 bg-skeleton-subtle rounded animate-skeleton"></div>
+</div>
+<div class="h-3 w-36 bg-skeleton rounded animate-skeleton"></div>
+</div>
+<div class="flex flex-col items-end space-y-2">
+<div class="h-4 w-12 bg-skeleton rounded animate-skeleton"></div>
+<div class="h-3 w-16 bg-skeleton rounded animate-skeleton"></div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Tab Bar -->
+<nav class="absolute bottom-0 inset-x-0 h-16 bg-white border-t border-divider px-6 flex justify-around items-center shrink-0 z-20">
+<!-- Portfolio Tab (Active) -->
+<a class="flex flex-col items-center justify-center space-y-1 text-accent min-w-[64px] min-h-[44px]" href="#portfolio">
+<svg class="w-5 h-5 stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24">
+<rect height="14" rx="2" ry="2" width="20" x="2" y="7"></rect>
+<path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+</svg>
+<span class="text-[11px] font-medium leading-none">Portfolio</span>
+</a>
+<!-- Watchlist Tab (Inactive) -->
+<a class="flex flex-col items-center justify-center space-y-1 text-text-muted hover:text-text min-w-[64px] min-h-[44px]" href="#watchlist">
+<svg class="w-5 h-5 stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24">
+<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+<circle cx="12" cy="12" r="3"></circle>
+</svg>
+<span class="text-[11px] font-medium leading-none">Watchlist</span>
+</a>
+</nav>
+</div>
+</body></html>

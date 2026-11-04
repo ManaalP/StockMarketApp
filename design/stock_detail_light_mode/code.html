@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100%;margin:0;padding:0;}body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-error": "#ffffff", "on-secondary": "#ffffff", "on-tertiary-fixed": "#410002", "surface": "#faf8ff", "on-secondary-fixed-variant": "#005320", "background": "#faf8ff", "primary-container": "#2563eb", "on-error-container": "#93000a", "surface-variant": "#dae2fd", "on-primary-fixed": "#00174b", "inverse-surface": "#283044", "tertiary-fixed": "#ffdad6", "surface-bright": "#faf8ff", "surface-container-lowest": "#ffffff", "tertiary": "#ae0010", "on-secondary-fixed": "#002109", "surface-tint": "#0053db", "primary-fixed": "#dbe1ff", "error": "#ba1a1a", "primary": "#004ac6", "on-primary-fixed-variant": "#003ea8", "error-container": "#ffdad6", "inverse-primary": "#b4c5ff", "surface-container": "#eaedff", "on-surface": "#131b2e", "secondary-container": "#7cf994", "secondary-fixed": "#7ffc97", "on-background": "#131b2e", "inverse-on-surface": "#eef0ff", "on-primary": "#ffffff", "primary-fixed-dim": "#b4c5ff", "on-primary-container": "#eeefff", "surface-container-low": "#f2f3ff", "secondary": "#006e2d", "on-surface-variant": "#434655", "outline": "#737686", "outline-variant": "#c3c6d7", "on-tertiary-container": "#ffecea", "on-secondary-container": "#007230", "tertiary-fixed-dim": "#ffb4ab", "on-tertiary-fixed-variant": "#93000b", "surface-container-highest": "#dae2fd", "on-tertiary": "#ffffff", "surface-container-high": "#e2e7ff", "surface-dim": "#d2d9f4", "secondary-fixed-dim": "#62df7d", "tertiary-container": "#d52022" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xs": "0.25rem", "margin": "1rem", "space-md": "1rem", "margin-sm": "0.75rem", "gutter": "0.5rem", "space-xl": "2rem", "space-sm": "0.5rem", "space-lg": "1.5rem", "gutter-md": "1rem" }, fontFamily: { "headline-lg-mobile": ["Inter"], "label-sm": ["Inter"], "data-metric-sm": ["Inter"], "body-sm": ["Inter"], "headline-sm": ["Inter"], "headline-lg": ["Inter"], "data-metric-md": ["Inter"], "body-md": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Inter"], "label-md": ["Inter"], "data-metric-lg": ["Inter"] }, fontSize: { "headline-lg-mobile": ["26px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "700" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }], "data-metric-sm": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "500" }], "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" }], "headline-sm": ["17px", { lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-lg": ["30px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "700" }], "data-metric-md": ["15px", { lineHeight: "20px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }], "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "400" }], "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-md": ["13px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "500" }], "data-metric-lg": ["24px", { lineHeight: "28px", letterSpacing: "-0.02em", fontWeight: "700" }] } } } }</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] pt-safe"><div class="h-14 px-margin flex items-center justify-between"><div class="flex items-center gap-space-xs"><button aria-label="Go back" class="min-w-[44px] min-h-[44px] -ml-2 flex items-center justify-center text-on-surface hover:text-primary transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[22px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Stock Detail</h1></div><div class="flex items-center gap-space-xs"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-14 pb-safe bg-surface"><div class="flex flex-col w-full pb-24">
+<!-- Top Stock Metric & Identity Block -->
+<section class="px-margin pt-4 pb-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight">RELIANCE</h2>
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+          NSE Live
+        </span>
+</div>
+<button aria-label="Set price alert" class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" id="alertBtn">
+<span class="material-symbols-outlined text-[18px]">notifications</span>
+</button>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant mt-0.5">Reliance Industries Ltd • Large Cap</p>
+<div class="mt-4 flex items-baseline justify-between">
+<div>
+<div class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tabular-nums tracking-tight">
+          ₹1,164.90
+        </div>
+<div class="flex items-center gap-1.5 mt-0.5 font-data-metric-md text-data-metric-md text-tertiary">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+<span>-₹18.40 (-1.55%)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant ml-1">Today</span>
+</div>
+</div>
+<div class="text-right">
+<span class="font-label-sm text-label-sm text-on-surface-variant block uppercase tracking-wider">Prev Close</span>
+<span class="font-data-metric-sm text-data-metric-sm text-on-surface tabular-nums">₹1,183.30</span>
+</div>
+</div>
+</section>
+<!-- Interactive Chart Area -->
+<section class="mt-2">
+<!-- Chart Canvas -->
+<div class="w-full h-48 px-margin relative flex items-center justify-center">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 358 160">
+<!-- Horizontal Reference Gridlines (Hairline visual cues) -->
+<line stroke="#E2E7FF" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="358" y1="20" y2="20"></line>
+<line stroke="#E2E7FF" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="358" y1="80" y2="80"></line>
+<line stroke="#E2E7FF" stroke-dasharray="3 3" stroke-width="1" x1="0" x2="358" y1="140" y2="140"></line>
+<!-- Intraday Flat Red Line (Loss Mode: #DC2626 -> tertiary token) -->
+<path d="M0,32 L24,36 L52,48 L80,44 L110,68 L142,62 L176,95 L204,88 L232,112 L266,106 L298,138 L330,126 L358,134" fill="none" stroke="#ae0010" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"></path>
+<!-- Pulsing Live Dot at current quote -->
+<circle cx="358" cy="134" fill="#ae0010" r="3.5"></circle>
+</svg>
+<!-- Interactive Scrub Float Badge (Tap demo) -->
+<div class="absolute top-2 right-6 bg-inverse-surface text-inverse-on-surface px-2 py-0.5 rounded text-label-sm font-label-sm shadow-sm pointer-events-none" id="scrubBadge">
+        Low: ₹1,158.20 at 14:18
+      </div>
+</div>
+<!-- Timeframe Tabs with Active Line Indicator -->
+<div class="px-margin mt-3 flex items-center justify-between bg-surface-container-low rounded-lg p-1">
+<button class="timeframe-tab flex-1 py-1.5 rounded font-label-md text-label-md text-center text-primary font-semibold relative bg-surface-container-lowest" data-range="1D">
+        1D
+      </button>
+<button class="timeframe-tab flex-1 py-1.5 rounded font-label-md text-label-md text-center text-on-surface-variant hover:text-on-surface transition-colors" data-range="1W">
+        1W
+      </button>
+<button class="timeframe-tab flex-1 py-1.5 rounded font-label-md text-label-md text-center text-on-surface-variant hover:text-on-surface transition-colors" data-range="1M">
+        1M
+      </button>
+<button class="timeframe-tab flex-1 py-1.5 rounded font-label-md text-label-md text-center text-on-surface-variant hover:text-on-surface transition-colors" data-range="1Y">
+        1Y
+      </button>
+<button class="timeframe-tab flex-1 py-1.5 rounded font-label-md text-label-md text-center text-on-surface-variant hover:text-on-surface transition-colors" data-range="ALL">
+        ALL
+      </button>
+</div>
+</section>
+<!-- SEBI / Trading Advisory Notice -->
+<section class="px-margin mt-4">
+<div class="rounded-lg p-3 bg-surface-container flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant shrink-0 mt-0.5">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        F&amp;O trading lot size is 250. Circuit band active at 10% (Upper: ₹1,301.60 • Lower: ₹1,065.00).
+      </p>
+</div>
+</section>
+<!-- Holdings in this Stock Panel -->
+<section class="px-margin mt-5">
+<div class="rounded-lg bg-surface-container-low p-4">
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">pie_chart</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Your position</h3>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant uppercase font-medium">Delivered</span>
+</div>
+<div class="grid grid-cols-2 gap-y-3.5 gap-x-4 pt-1">
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Quantity</span>
+<span class="font-data-metric-md text-data-metric-md text-on-surface tabular-nums">25 shares</span>
+</div>
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Avg purchase price</span>
+<span class="font-data-metric-md text-data-metric-md text-on-surface tabular-nums">₹1,319.59</span>
+</div>
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Current value</span>
+<span class="font-data-metric-md text-data-metric-md text-on-surface tabular-nums">₹29,122.50</span>
+</div>
+<div>
+<span class="block font-label-sm text-label-sm text-on-surface-variant">Total Unrealized P&amp;L</span>
+<span class="font-data-metric-md text-data-metric-md text-tertiary tabular-nums font-semibold">-₹3,867.25 (-11.72%)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Market Statistics Section -->
+<section class="px-margin mt-6">
+<div class="flex items-center justify-between mb-3">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Market overview</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Consolidated NSE</span>
+</div>
+<!-- 2-Column Metric Grid -->
+<div class="rounded-lg bg-surface-container-lowest p-3">
+<div class="flex justify-between items-center py-2.5">
+<span class="font-body-md text-body-md text-on-surface-variant">Day's High / Low</span>
+<span class="font-data-metric-md text-data-metric-md text-on-surface tabular-nums">₹1,185.00 / ₹1,158.20</span>
+</div>
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden my-1">
+<div class="bg-primary h-full rounded-full" style="width: 25%"></div>
+</div>
+<div class="flex justify-between text-label-sm font-label-sm text-on-surface-variant pb-2">
+<span>L: ₹1,158.20</span>
+<span>H: ₹1,185.00</span>
+</div>
+<div class="h-px w-full bg-surface-container my-1"></div>
+<div class="flex justify-between items-center py-2.5">
+<span class="font-body-md text-body-md text-on-surface-variant">52W High / Low</span>
+<span class="font-data-metric-md text-data-metric-md text-on-surface tabular-nums">₹1,608.80 / ₹1,120.10</span>
+</div>
+<div class="w-full h-1 bg-surface-container rounded-full overflow-hidden my-1">
+<div class="bg-primary h-full rounded-full" style="width: 14%"></div>
+</div>
+<div class="flex justify-between text-label-sm font-label-sm text-on-surface-variant pb-2">
+<span>52W L: ₹1,120.10</span>
+<span>52W H: ₹1,608.80</span>
+</div>
+<div class="h-px w-full bg-surface-container my-1"></div>
+<div class="flex justify-between items-center py-2">
+<span class="font-body-md text-body-md text-on-surface-variant">Volume</span>
+<span class="font-data-metric-md text-data-metric-md text-on-surface tabular-nums">1.24 Cr shares</span>
+</div>
+<div class="h-px w-full bg-surface-container my-1"></div>
+<div class="flex justify-between items-center py-2">
+<span class="font-body-md text-body-md text-on-surface-variant">P/E Ratio</span>
+<span class="font-data-metric-md text-data-metric-md text-on-surface tabular-nums">24.60</span>
+</div>
+<div class="h-px w-full bg-surface-container my-1"></div>
+<div class="flex justify-between items-center py-2">
+<span class="font-body-md text-body-md text-on-surface-variant">Market Cap</span>
+<span class="font-data-metric-md text-data-metric-md text-on-surface tabular-nums">₹15,76,280 Cr</span>
+</div>
+</div>
+</section>
+<!-- Order Book Depth Snapshot (Delight micro-data) -->
+<section class="px-margin mt-5 mb-2">
+<div class="rounded-lg bg-surface-container-low p-3.5">
+<div class="flex items-center justify-between mb-2">
+<span class="font-label-md text-label-md text-on-surface font-semibold">Market Depth (Top 3)</span>
+<div class="flex items-center gap-3 text-label-sm font-label-sm">
+<span class="text-secondary font-medium">Buy: 62%</span>
+<span class="text-tertiary font-medium">Sell: 38%</span>
+</div>
+</div>
+<div class="w-full h-1.5 flex rounded-full overflow-hidden bg-surface-container">
+<div class="bg-secondary h-full" style="width: 62%"></div>
+<div class="bg-tertiary h-full" style="width: 38%"></div>
+</div>
+</div>
+</section>
+<!-- Sticky Bottom Order Execution Bar -->
+<aside class="fixed bottom-0 inset-x-0 bg-surface-container-lowest px-margin py-3 pb-safe z-40">
+<div class="flex items-center gap-3 max-w-md mx-auto">
+<!-- Sell Action -->
+<button class="flex-1 h-12 rounded-lg bg-tertiary text-on-tertiary font-headline-sm text-headline-sm flex items-center justify-center gap-1 active:opacity-90 transition-opacity" id="sellBtn">
+<span class="material-symbols-outlined text-[18px]">sell</span>
+        Sell
+      </button>
+<!-- Buy Action -->
+<button class="flex-1 h-12 rounded-lg bg-primary text-on-primary font-headline-sm text-headline-sm flex items-center justify-center gap-1 active:opacity-90 transition-opacity" id="buyBtn">
+<span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+        Buy
+      </button>
+</div>
+</aside>
+<!-- Interactive Feedback Drawer / Toast -->
+<div class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-inverse-surface text-inverse-on-surface px-4 py-2 rounded-full font-label-md text-label-md shadow-lg opacity-0 transition-opacity duration-200 pointer-events-none flex items-center gap-2" id="toastMessage">
+<span class="material-symbols-outlined text-[16px] text-secondary-fixed">check_circle</span>
+<span id="toastText">Order sheet activated</span>
+</div>
+</div>
+<script>
+  // Simple interaction for timeframe tabs
+  const tabs = document.querySelectorAll('.timeframe-tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => {
+        t.classList.remove('bg-surface-container-lowest', 'text-primary', 'font-semibold');
+        t.classList.add('text-on-surface-variant');
+      });
+      tab.classList.add('bg-surface-container-lowest', 'text-primary', 'font-semibold');
+      tab.classList.remove('text-on-surface-variant');
+    });
+  });
+
+  // Action Button Micro-interactions
+  const toast = document.getElementById('toastMessage');
+  const toastText = document.getElementById('toastText');
+  let toastTimer = null;
+
+  function showToast(msg) {
+    if (toastTimer) clearTimeout(toastTimer);
+    toastText.textContent = msg;
+    toast.classList.remove('opacity-0');
+    toastTimer = setTimeout(() => {
+      toast.classList.add('opacity-0');
+    }, 2200);
+  }
+
+  const buyBtn = document.getElementById('buyBtn');
+  if (buyBtn) {
+    buyBtn.addEventListener('click', () => {
+      showToast('Opening Delivery Buy Order for RELIANCE');
+    });
+  }
+
+  const sellBtn = document.getElementById('sellBtn');
+  if (sellBtn) {
+    sellBtn.addEventListener('click', () => {
+      showToast('Available: 25 Shares to Sell');
+    });
+  }
+
+  const alertBtn = document.getElementById('alertBtn');
+  if (alertBtn) {
+    alertBtn.addEventListener('click', () => {
+      showToast('Price Alert set at ₹1,164.90');
+    });
+  }
+</script></main></body></html>

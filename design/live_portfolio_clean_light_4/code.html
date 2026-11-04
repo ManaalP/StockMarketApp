@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Live Portfolio - Empty Filter State</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        },
+        colors: {
+          bg: '#FFFFFF',
+          'surface-alt': '#F5F7FA',
+          'text-strong': '#0F172A',
+          text: '#334155',
+          'text-muted': '#64748B',
+          divider: '#E5E9F0',
+          accent: '#2563EB',
+          gain: '#16A34A',
+          loss: '#DC2626',
+          sell: '#EA580C',
+          warning: '#B45309',
+          'warning-bg': '#FEF6E7',
+        }
+      }
+    }
+  }
+</script>
+<style>
+  * {
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-color: #F1F5F9;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+</head>
+<body class="flex justify-center p-0 sm:py-6 text-text">
+<!-- Mobile Container (390 x 844) -->
+<div class="w-[390px] h-[844px] bg-[#FFFFFF] flex flex-col relative overflow-hidden shadow-2xl sm:rounded-[32px] border border-divider">
+<!-- Status Bar (iOS style minimal) -->
+<div class="h-11 px-6 flex justify-between items-center shrink-0 text-text-strong text-[14px] font-semibold tracking-tight select-none">
+<span>9:41</span>
+<div class="flex items-center space-x-2">
+<!-- Signal -->
+<svg class="w-4 h-3" fill="currentColor" viewbox="0 0 16 12">
+<rect height="4" rx="0.5" width="2.5" x="0" y="8"></rect>
+<rect height="6.5" rx="0.5" width="2.5" x="4.5" y="5.5"></rect>
+<rect height="9" rx="0.5" width="2.5" x="9" y="3"></rect>
+<rect height="12" rx="0.5" width="2.5" x="13.5" y="0"></rect>
+</svg>
+<!-- Wifi -->
+<svg class="w-4 h-3.5" fill="currentColor" viewbox="0 0 16 14">
+<path d="M8 12.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm-3.5-3.5a5 5 0 017 0 .75.75 0 001.06-1.06 6.5 6.5 0 00-9.12 0 .75.75 0 001.06 1.06zm-3-3a9.5 9.5 0 0113 0 .75.75 0 001.06-1.06 11 11 0 00-15.12 0 .75.75 0 001.06 1.06z"></path>
+</svg>
+<!-- Battery -->
+<div class="w-5 h-2.5 border border-text-strong rounded-[2.5px] p-0.5 flex items-center">
+<div class="h-full w-full bg-text-strong rounded-[1px]"></div>
+</div>
+</div>
+</div>
+<!-- Screen Header -->
+<header class="px-4 pb-2.5 flex items-center justify-between shrink-0">
+<h1 class="text-[20px] leading-[26px] font-semibold text-text-strong tracking-tight">Portfolio</h1>
+<div class="flex items-center space-x-1">
+<span class="inline-block w-2 h-2 rounded-full bg-gain"></span>
+<span class="text-[12px] text-text-muted font-medium ml-1">Live NSE</span>
+</div>
+</header>
+<!-- Scrollable Main Content -->
+<main class="flex-1 flex flex-col overflow-y-auto px-4 pb-20 hide-scrollbar">
+<!-- Controls: Filter & Sort -->
+<section class="mt-1 space-y-3 shrink-0">
+<!-- Search Field with active filter query 'xyz' and clear button -->
+<div class="relative flex items-center">
+<svg class="w-4 h-4 text-text-muted absolute left-3 pointer-events-none stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24">
+<circle cx="11" cy="11" r="8"></circle>
+<line x1="21" x2="16.65" y1="21" y2="16.65"></line>
+</svg>
+<input class="w-full bg-surface-alt text-text-strong text-[14px] placeholder-text-muted pl-9 pr-9 py-2 rounded-[8px] border border-accent/40 focus:border-accent focus:bg-white focus:outline-none transition-colors" placeholder="Filter by symbol" type="text" value="xyz"/>
+<button aria-label="Clear search" class="absolute right-2.5 text-text-muted hover:text-text-strong flex items-center justify-center p-1 rounded-full transition-colors">
+<svg class="w-4 h-4 stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<line x1="18" x2="6" y1="6" y2="18"></line>
+<line x1="6" x2="18" y1="6" y2="18"></line>
+</svg>
+</button>
+</div>
+<!-- Sort Plain Text Tabs -->
+<div class="flex items-center justify-between pt-0.5 px-0.5">
+<span class="text-[12px] text-text-muted font-medium">SORT BY</span>
+<div class="flex items-center space-x-5 text-[13px] font-medium">
+<button class="text-text-muted hover:text-text">Name</button>
+<button class="text-accent flex items-center space-x-0.5">
+<span>Value</span>
+<svg class="w-3 h-3 stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24">
+<polyline points="6 9 12 15 18 9"></polyline>
+</svg>
+</button>
+<button class="text-text-muted hover:text-text">P&amp;L</button>
+</div>
+</div>
+</section>
+<!-- Divider line below sort header -->
+<div class="mt-2 border-t border-divider shrink-0"></div>
+<!-- Empty State Area centered in available space -->
+<section class="flex-1 flex flex-col items-center justify-center text-center px-4 py-12">
+<!-- Slate Thin-line Icon (1.5px stroke search slash outline) -->
+<div class="w-14 h-14 rounded-full bg-surface-alt flex items-center justify-center mb-4 text-text-muted">
+<svg class="w-7 h-7 stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24">
+<circle cx="11" cy="11" r="7"></circle>
+<line x1="21" x2="16" y1="21" y2="16"></line>
+<line x1="8" x2="14" y1="14" y2="8"></line>
+</svg>
+</div>
+<!-- Title -->
+<h2 class="text-[16px] leading-[22px] font-medium text-text-strong">
+          No holdings match 'xyz'
+        </h2>
+<!-- Body -->
+<p class="text-[13px] leading-[18px] text-text-muted mt-1.5 max-w-[260px]">
+          Try a different symbol or clear the filter.
+        </p>
+<!-- Action Button -->
+<button class="mt-5 inline-flex items-center justify-center px-4 min-h-[44px] text-[14px] font-medium text-accent hover:text-accent/80 active:opacity-70 transition-colors">
+          Clear filter
+        </button>
+</section>
+</main>
+<!-- Bottom Tab Bar -->
+<nav class="absolute bottom-0 inset-x-0 h-16 bg-white border-t border-divider px-6 flex justify-around items-center shrink-0 z-20">
+<!-- Portfolio Tab (Active) -->
+<a class="flex flex-col items-center justify-center space-y-1 text-accent min-w-[64px] min-h-[44px]" href="#portfolio">
+<svg class="w-5 h-5 stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24">
+<rect height="14" rx="2" ry="2" width="20" x="2" y="7"></rect>
+<path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+</svg>
+<span class="text-[11px] font-medium leading-none">Portfolio</span>
+</a>
+<!-- Watchlist Tab (Inactive) -->
+<a class="flex flex-col items-center justify-center space-y-1 text-text-muted hover:text-text min-w-[64px] min-h-[44px]" href="#watchlist">
+<svg class="w-5 h-5 stroke-current" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24">
+<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+<circle cx="12" cy="12" r="3"></circle>
+</svg>
+<span class="text-[11px] font-medium leading-none">Watchlist</span>
+</a>
+</nav>
+</div>
+</body></html>

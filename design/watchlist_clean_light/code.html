@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<meta content="mobile_tab" name="shell-type"/>
+<title>Watchlist</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+  @layer base {
+    html, body {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      overscroll-behavior-y: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .pt-safe {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    main > :first-child {
+      margin-top: 0 !important;
+    }
+    main > :last-child {
+      margin-bottom: 0 !important;
+    }
+  }
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "tertiary-container": "#d52022",
+          "on-background": "#131b2e",
+          "surface-variant": "#dae2fd",
+          "on-tertiary-container": "#ffecea",
+          "on-secondary-container": "#007230",
+          "surface-container-low": "#f2f3ff",
+          "surface-tint": "#0053db",
+          "inverse-on-surface": "#eef0ff",
+          "on-secondary-fixed-variant": "#005320",
+          "on-error-container": "#93000a",
+          "tertiary-fixed": "#ffdad6",
+          "secondary-container": "#7cf994",
+          "secondary": "#006e2d",
+          "background": "#faf8ff",
+          "surface-container": "#eaedff",
+          "on-primary": "#ffffff",
+          "on-primary-container": "#eeefff",
+          "surface-container-highest": "#dae2fd",
+          "on-primary-fixed": "#00174b",
+          "surface": "#faf8ff",
+          "on-secondary": "#ffffff",
+          "inverse-primary": "#b4c5ff",
+          "outline": "#737686",
+          "inverse-surface": "#283044",
+          "surface-container-lowest": "#ffffff",
+          "tertiary": "#ae0010",
+          "on-error": "#ffffff",
+          "primary-container": "#2563eb",
+          "tertiary-fixed-dim": "#ffb4ab",
+          "primary-fixed-dim": "#b4c5ff",
+          "error": "#ba1a1a",
+          "surface-bright": "#faf8ff",
+          "on-tertiary": "#ffffff",
+          "primary": "#004ac6",
+          "on-tertiary-fixed-variant": "#93000b",
+          "error-container": "#ffdad6",
+          "on-primary-fixed-variant": "#003ea8",
+          "on-surface-variant": "#434655",
+          "on-surface": "#131b2e",
+          "secondary-fixed-dim": "#62df7d",
+          "secondary-fixed": "#7ffc97",
+          "surface-dim": "#d2d9f4",
+          "surface-container-high": "#e2e7ff",
+          "primary-fixed": "#dbe1ff",
+          "on-tertiary-fixed": "#410002",
+          "outline-variant": "#c3c6d7",
+          "on-secondary-fixed": "#002109",
+          "accent": "#2563eb",
+          "text-muted": "#64748B"
+        },
+        borderRadius: {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        spacing: {
+          "space-xl": "2rem",
+          "space-xs": "0.25rem",
+          "space-md": "1rem",
+          "space-sm": "0.5rem",
+          "margin-sm": "0.75rem",
+          "gutter-md": "1rem",
+          "margin": "1rem",
+          "gutter": "0.5rem",
+          "space-lg": "1.5rem"
+        },
+        fontFamily: {
+          "headline-md": ["Inter", "sans-serif"],
+          "headline-sm": ["Inter", "sans-serif"],
+          "body-md": ["Inter", "sans-serif"],
+          "body-sm": ["Inter", "sans-serif"],
+          "label-sm": ["Inter", "sans-serif"],
+          "data-metric-md": ["Inter", "sans-serif"],
+          "data-metric-lg": ["Inter", "sans-serif"]
+        },
+        fontSize: {
+          "headline-md": ["20px", { lineHeight: "26px", letterSpacing: "-0.015em", fontWeight: "600" }],
+          "headline-sm": ["17px", { lineHeight: "22px", letterSpacing: "-0.01em", fontWeight: "600" }],
+          "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }],
+          "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "400" }],
+          "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }],
+          "data-metric-md": ["15px", { lineHeight: "20px", letterSpacing: "-0.01em", fontWeight: "600" }],
+          "data-metric-lg": ["24px", { lineHeight: "28px", letterSpacing: "-0.02em", fontWeight: "700" }]
+        }
+      }
+    }
+  }
+</script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen">
+<header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_6px_rgba(0,0,0,0.03)] pt-safe">
+<div class="h-14 px-margin flex items-center justify-between">
+<h1 class="font-headline-md text-headline-md text-on-surface tracking-tight truncate">Watchlist</h1>
+<div class="flex items-center gap-space-xs">
+<button aria-label="Search or add asset" class="min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[22px]">search</span>
+</button>
+<button aria-label="More actions" class="min-w-[44px] min-h-[44px] flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[22px]">more_vert</span>
+</button>
+</div>
+</div>
+</header>
+<main class="flex-1 flex flex-col relative w-full pt-14 pb-20 bg-surface"><div class="flex flex-col w-full">
+<!-- Sub-header bar / Screen controls -->
+<div class="flex items-center justify-between px-margin py-space-sm bg-surface-container-lowest">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Default List</span>
+<span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">7</span>
+</div>
+<button aria-label="Add symbol to watchlist" class="min-h-[44px] min-w-[44px] inline-flex items-center justify-end font-data-metric-md text-data-metric-md text-primary active:opacity-70 transition-opacity" type="button">
+      + Add
+    </button>
+</div>
+<!-- Market Status Micro-Bar -->
+<div class="flex items-center justify-between px-margin py-space-xs bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-medium text-on-surface">NSE Live</span>
+</div>
+<span class="font-normal text-outline">Market closes 15:30 IST</span>
+</div>
+<!-- Watchlist List Items (Flat, Hairline Dividers via Surface Contrast, ~64px Target Height) -->
+<div class="w-full flex flex-col bg-surface-container-lowest">
+<!-- 1. RELIANCE -->
+<div class="w-full flex items-center justify-between px-margin min-h-[64px] py-space-sm active:bg-surface-container-low transition-colors">
+<div class="flex flex-col justify-center min-w-0">
+<span class="font-body-lg text-body-lg text-on-surface font-medium tracking-tight truncate">RELIANCE</span>
+<span class="font-label-md text-label-md text-outline">NSE</span>
+</div>
+<div class="flex flex-col items-end justify-center">
+<span class="font-data-metric-md text-data-metric-md text-on-surface">₹1,164.90</span>
+<span class="font-label-md text-label-md text-tertiary">-₹18.40 (-1.55%)</span>
+</div>
+</div>
+<div class="w-full h-[1px] bg-surface-container"></div>
+<!-- 2. TCS -->
+<div class="w-full flex items-center justify-between px-margin min-h-[64px] py-space-sm active:bg-surface-container-low transition-colors">
+<div class="flex flex-col justify-center min-w-0">
+<span class="font-body-lg text-body-lg text-on-surface font-medium tracking-tight truncate">TCS</span>
+<span class="font-label-md text-label-md text-outline">NSE</span>
+</div>
+<div class="flex flex-col items-end justify-center">
+<span class="font-data-metric-md text-data-metric-md text-on-surface">₹3,012.40</span>
+<span class="font-label-md text-label-md text-secondary">+₹42.30 (+1.42%)</span>
+</div>
+</div>
+<div class="w-full h-[1px] bg-surface-container"></div>
+<!-- 3. HDFCBANK -->
+<div class="w-full flex items-center justify-between px-margin min-h-[64px] py-space-sm active:bg-surface-container-low transition-colors">
+<div class="flex flex-col justify-center min-w-0">
+<span class="font-body-lg text-body-lg text-on-surface font-medium tracking-tight truncate">HDFCBANK</span>
+<span class="font-label-md text-label-md text-outline">NSE</span>
+</div>
+<div class="flex flex-col items-end justify-center">
+<span class="font-data-metric-md text-data-metric-md text-on-surface">₹1,001.25</span>
+<span class="font-label-md text-label-md text-secondary">+₹12.40 (+1.07%)</span>
+</div>
+</div>
+<div class="w-full h-[1px] bg-surface-container"></div>
+<!-- 4. INFY (SWIPE STATE - Mid-swipe row revealing 72px Remove button) -->
+<div class="relative w-full overflow-hidden bg-tertiary">
+<!-- Underneath revealed Action Button -->
+<div class="absolute inset-y-0 right-0 w-[72px] bg-tertiary flex flex-col items-center justify-center text-on-tertiary select-none">
+<button aria-label="Remove INFY from watchlist" class="w-full h-full flex flex-col items-center justify-center gap-0.5 text-on-tertiary active:bg-tertiary-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+<span class="font-label-sm text-label-sm leading-none font-medium">Remove</span>
+</button>
+</div>
+<!-- Swiped Foreground Surface Content (translated left by 72px) -->
+<div class="relative w-full flex items-center justify-between px-margin min-h-[64px] py-space-sm bg-surface-container-lowest -translate-x-[72px] transition-transform">
+<div class="flex flex-col justify-center min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-body-lg text-body-lg text-on-surface font-medium tracking-tight truncate">INFY</span>
+<span class="px-1 py-0.2 bg-surface-container text-on-surface-variant font-label-sm text-label-sm rounded">Active</span>
+</div>
+<span class="font-label-md text-label-md text-outline">NSE</span>
+</div>
+<div class="flex flex-col items-end justify-center">
+<span class="font-data-metric-md text-data-metric-md text-on-surface">₹1,478.60</span>
+<span class="font-label-md text-label-md text-tertiary">-₹14.20 (-0.95%)</span>
+</div>
+</div>
+</div>
+<div class="w-full h-[1px] bg-surface-container"></div>
+<!-- 5. WIPRO -->
+<div class="w-full flex items-center justify-between px-margin min-h-[64px] py-space-sm active:bg-surface-container-low transition-colors">
+<div class="flex flex-col justify-center min-w-0">
+<span class="font-body-lg text-body-lg text-on-surface font-medium tracking-tight truncate">WIPRO</span>
+<span class="font-label-md text-label-md text-outline">NSE</span>
+</div>
+<div class="flex flex-col items-end justify-center">
+<span class="font-data-metric-md text-data-metric-md text-on-surface">₹482.15</span>
+<span class="font-label-md text-label-md text-tertiary">-₹3.20 (-0.66%)</span>
+</div>
+</div>
+<div class="w-full h-[1px] bg-surface-container"></div>
+<!-- 6. OLDCO (Inactive / Unlisted) -->
+<div class="w-full flex items-center justify-between px-margin min-h-[64px] py-space-sm active:bg-surface-container-low transition-colors">
+<div class="flex flex-col justify-center min-w-0">
+<span class="font-body-lg text-body-lg text-on-surface font-medium tracking-tight truncate">OLDCO</span>
+<span class="font-label-md text-label-md text-outline">NSE</span>
+</div>
+<div class="flex flex-col items-end justify-center">
+<span class="font-data-metric-md text-data-metric-md text-outline">--</span>
+<span class="font-label-md text-label-md text-outline">--</span>
+</div>
+</div>
+<div class="w-full h-[1px] bg-surface-container"></div>
+<!-- 7. TATAMOTORS -->
+<div class="w-full flex items-center justify-between px-margin min-h-[64px] py-space-sm active:bg-surface-container-low transition-colors">
+<div class="flex flex-col justify-center min-w-0">
+<span class="font-body-lg text-body-lg text-on-surface font-medium tracking-tight truncate">TATAMOTORS</span>
+<span class="font-label-md text-label-md text-outline">NSE</span>
+</div>
+<div class="flex flex-col items-end justify-center">
+<span class="font-data-metric-md text-data-metric-md text-on-surface">₹924.50</span>
+<span class="font-label-md text-label-md text-secondary">+₹8.10 (+0.88%)</span>
+</div>
+</div>
+<div class="w-full h-[1px] bg-surface-container"></div>
+</div>
+<!-- Subtle Regulatory Footnote / Statutory Context -->
+<div class="px-margin py-space-lg flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-outline">
+<span class="material-symbols-outlined text-[15px]">verified_user</span>
+<span class="font-label-sm text-label-sm">SEBI Registered Market Data Feed</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Real-time</span>
+</div>
+</div></main>
+<nav class="fixed bottom-0 inset-x-0 z-50 bg-surface/95 backdrop-blur-xl shadow-[0_-1px_6px_rgba(0,0,0,0.04)] pb-safe" data-active-classes="text-[#2563EB]">
+<div class="h-16 px-space-md flex justify-around items-center">
+<a aria-current="page" class="flex flex-col items-center justify-center space-y-1 min-w-[64px] min-h-[44px] transition-colors text-[#2563EB]" data-path="watchlist" href="#watchlist">
+<span class="material-symbols-outlined text-[22px]">visibility</span>
+<span class="font-label-sm text-label-sm leading-none">Watchlist</span>
+</a>
+<a class="flex flex-col items-center justify-center space-y-1 text-[#64748B] hover:text-on-surface min-w-[64px] min-h-[44px] transition-colors" data-path="portfolio-error-state" href="#portfolio">
+<span class="material-symbols-outlined text-[22px]">work_outline</span>
+<span class="font-label-sm text-label-sm leading-none">Portfolio</span>
+</a>
+</div>
+</nav>
+</body></html>
