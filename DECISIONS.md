@@ -132,5 +132,19 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - If a refresh reset sequence numbers to 0 while the simulator or socket feed continued generating higher sequence numbers (`seq >= 100`), incoming ticks would be erroneously dropped or stale market data could overwrite newer quotes.
   - Preserving sequence counters guarantees monotonic progress and continuous feed stability across network refreshes.
 
+---
+
+### ADR 013: Semantic Design Tokens and Accessible Multi-Cue State Primitives
+- **Context**: The app must support seamless runtime switching between light mode ("Precision Fiscal") and dark mode ("Terminal Precision"). Live ticker updates (~20 Hz) cause horizontal layout jitter if proportional fonts are used. Furthermore, accessibility guidelines dictate that color alone cannot be the sole visual cue for profit or loss.
+- **Decision**:
+  - Centralize semantic tokens in `src/theme/tokens.ts` (`lightTokens`, `darkTokens`) and expose via functional `useTheme()` hook. Prohibit raw hex codes inside components.
+  - Enforce `fontVariant: ['tabular-nums']` across all numeric and currency typography (`PriceText`, `PnLText`) to preserve fixed character width and prevent row shifting.
+  - In `PnLText`, always render explicit algebraic signs (`+` or `-`) alongside semantic green/red coloring.
+  - Build `StateView` and `PausedBanner` as functional memoized components with direct binding to external store indicators.
+- **Rationale**:
+  - Guarantees WCAG 2.1 compliance for color-blind users (deuteranopia / protanopia).
+  - Maintains rock-solid layout alignment at 60 FPS under continuous market ticking.
+
+
 
 
