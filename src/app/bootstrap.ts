@@ -1,10 +1,12 @@
 import { priceStore } from '../stores/priceStore';
+import { portfolioStore } from '../stores/portfolioStore';
 import { createSimulatedFeed } from '../feed/SimulatedFeed';
 import type { PriceFeed } from '../feed/types';
 import type { Quote } from '../domain/types';
 
 export interface BootstrapResult {
   readonly priceStore: typeof priceStore;
+  readonly portfolioStore: typeof portfolioStore;
   readonly feed: PriceFeed;
   readonly disconnect: () => void;
 }
@@ -28,6 +30,7 @@ export function bootstrapApp(
 
   return {
     priceStore,
+    portfolioStore,
     feed,
     disconnect,
   };
