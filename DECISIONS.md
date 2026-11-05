@@ -347,6 +347,32 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Eliminates UI clipping on modern and legacy Android form factors.
   - Gives users a natural gesture-driven navigation experience between the two primary dashboard sections.
 
+---
+
+### ADR 031: Root Stack Header Theme Sync, Route Title Normalization, and Duplicate Header Elimination
+- **Context**:
+  1. Screen titles and navigation headers were rendering in lowercase (`"orders"`, `"dev"`, `"[symbol]"`) and failed to match the active theme (defaulting to a white background even in dark mode).
+  2. Root cause: In `src/app/_layout.tsx`, `<Stack>` only declared `<Stack.Screen name="(tabs)" options={{ headerShown: false }} />`. As a consequence, non-tab routes (`orders.tsx`, `dev.tsx`, `stock/[symbol].tsx`) fell back to Expo Router's default stack header configuration:
+     - `headerShown: true` with default route file name titles in all-lowercase (`"orders"`, `"dev"`, `"[symbol]"`).
+     - Default un-themed styling (white background on Android/iOS, breaking dark mode).
+     - Furthermore, each screen (`OrderHistoryScreen`, `DevMenuScreen`, `StockDetailScreen`) already rendered its own accessible, theme-styled in-screen header with custom Back buttons and action controls, creating an unseemly duplicate header stack.
+- **Decision**:
+  - Extract `RootNavigation` inside `src/app/_layout.tsx` consuming `useTheme()`.
+  - Configure root `<Stack screenOptions>` with semantic theme tokens:
+    - `headerStyle: { backgroundColor: tokens.surface }`
+    - `headerTitleStyle: { color: tokens.textPrimary, fontWeight: '700' }`
+    - `headerTintColor: tokens.primary`
+    - `contentStyle: { backgroundColor: tokens.background }`
+  - Explicitly declare all routes in `<Stack>` with `headerShown: false` and proper Title Cased screen titles:
+    - `orders`: `title: 'Order History'`, `headerShown: false`
+    - `dev`: `title: 'Developer Menu'`, `presentation: 'modal'`, `headerShown: false`
+    - `stock/[symbol]`: `title: 'Stock Detail'`, `headerShown: false`
+  - Mount `<StatusBar style={isDark ? 'light' : 'dark'} />` at the root navigation level to automatically synchronize OS system status bar icons with the app's dynamic theme toggles.
+  - Standardize `OrderHistoryScreen` in-screen header title to `"Order History"` (previously `"Order Ledger"`), matching tab button accessibility labels and user specifications.
+- **Rationale**:
+  - Eliminates jarring duplicate headers and unstyled native white header strips across all secondary screens.
+  - Guarantees seamless dark/light theme consistency across both navigation bars and system status bars.
+
 
 
 

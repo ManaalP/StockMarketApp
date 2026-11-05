@@ -115,7 +115,7 @@ export const OrderHistoryScreen = memo(function OrderHistoryScreen({
         )}
 
         <Text style={[styles.headerTitle, { color: tokens.textPrimary }]}>
-          Order Ledger
+          Order History
         </Text>
 
         {orders.length > 0 ? (

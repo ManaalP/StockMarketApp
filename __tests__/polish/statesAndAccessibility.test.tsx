@@ -7,7 +7,8 @@ import { PortfolioTabIcon, WatchlistTabIcon, ThemeToggleIcon } from '../../src/c
 import { ThemeProvider } from '../../src/theme/useTheme';
 import { lightTokens, darkTokens } from '../../src/theme/tokens';
 import { formatINR, formatSigned, formatPercent, formatVolume } from '../../src/domain/format';
-import RootLayout from '../../src/app/_layout';
+import { Stack } from 'expo-router';
+import RootLayout, { RootNavigation } from '../../src/app/_layout';
 
 describe('States, Accessibility and Theme Polish', () => {
   describe('Accessibility & Non-color-only cues', () => {
@@ -118,6 +119,43 @@ describe('States, Accessibility and Theme Polish', () => {
         renderer = ReactTestRenderer.create(<RootLayout />);
       });
       expect(renderer.root).toBeDefined();
+    });
+
+    test('RootNavigation configures Stack with theme tokens and suppresses default lowercase headers', () => {
+      let renderer!: ReactTestRenderer.ReactTestRenderer;
+      act(() => {
+        renderer = ReactTestRenderer.create(
+          <ThemeProvider>
+            <RootNavigation />
+          </ThemeProvider>
+        );
+      });
+
+      const stack = renderer.root.findByType(Stack);
+      expect(stack).toBeDefined();
+      expect(stack.props.screenOptions.headerStyle.backgroundColor).toBeDefined();
+      expect(stack.props.screenOptions.contentStyle.backgroundColor).toBeDefined();
+      expect(stack.props.screenOptions.headerTitleStyle.color).toBeDefined();
+
+      const screens = renderer.root.findAllByType(Stack.Screen);
+      const screenNames = screens.map((s) => s.props.name);
+      expect(screenNames).toContain('(tabs)');
+      expect(screenNames).toContain('orders');
+      expect(screenNames).toContain('dev');
+      expect(screenNames).toContain('stock/[symbol]');
+
+      // Verify all non-tab screens hide default headers and have Title Cased titles
+      const ordersScreen = screens.find((s) => s.props.name === 'orders');
+      expect(ordersScreen?.props.options.headerShown).toBe(false);
+      expect(ordersScreen?.props.options.title).toBe('Order History');
+
+      const devScreen = screens.find((s) => s.props.name === 'dev');
+      expect(devScreen?.props.options.headerShown).toBe(false);
+      expect(devScreen?.props.options.title).toBe('Developer Menu');
+
+      const detailScreen = screens.find((s) => s.props.name === 'stock/[symbol]');
+      expect(detailScreen?.props.options.headerShown).toBe(false);
+      expect(detailScreen?.props.options.title).toBe('Stock Detail');
     });
   });
 });

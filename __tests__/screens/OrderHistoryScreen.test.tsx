@@ -35,6 +35,7 @@ describe('OrderHistoryScreen', () => {
 
     const texts = tree!.root.findAllByType(Text).map((t) => t.props.children);
     expect(texts.some((txt) => typeof txt === 'string' && txt.includes('No Orders Yet'))).toBe(true);
+    expect(texts.some((txt) => typeof txt === 'string' && txt.includes('Order History'))).toBe(true);
   });
 
   it('renders executed orders when present in store', async () => {
