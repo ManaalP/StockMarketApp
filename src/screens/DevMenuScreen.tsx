@@ -66,6 +66,16 @@ export const DevMenuScreen = memo(function DevMenuScreen({
     feed?.simulateDisconnect?.();
   }, [feed]);
 
+  const handleToggleFeedConnection = useCallback(() => {
+    if (feedStatus === 'connected') {
+      feed?.disconnect?.();
+      setFeedStatus('disconnected');
+    } else {
+      feed?.connect?.();
+      setFeedStatus('connected');
+    }
+  }, [feed, feedStatus]);
+
   return (
     <SafeAreaView
       testID={testID ?? 'dev.menu.screen'}
@@ -142,19 +152,36 @@ export const DevMenuScreen = memo(function DevMenuScreen({
             </View>
           </View>
 
-          <Pressable
-            testID="dev.force.disconnect"
-            accessibilityRole="button"
-            accessibilityLabel="Simulate feed disconnect"
-            onPress={handleSimulateDisconnect}
-            style={[styles.actionButton, { backgroundColor: tokens.loss }]}
-          >
-            <Text style={styles.actionButtonText}>
-              Force Disconnect Feed
-            </Text>
-          </Pressable>
+          <View style={{ gap: 8, marginTop: 4 }}>
+            <Pressable
+              testID="dev.toggle.feed"
+              accessibilityRole="button"
+              accessibilityLabel={feedStatus === 'connected' ? 'Disconnect and pause feed' : 'Reconnect and resume feed'}
+              onPress={handleToggleFeedConnection}
+              style={[
+                styles.actionButton,
+                { backgroundColor: feedStatus === 'connected' ? tokens.loss : tokens.gain },
+              ]}
+            >
+              <Text style={styles.actionButtonText}>
+                {feedStatus === 'connected' ? 'Pause & Hold Feed Disconnected' : 'Resume & Connect Feed'}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              testID="dev.force.disconnect"
+              accessibilityRole="button"
+              accessibilityLabel="Simulate feed transport drop"
+              onPress={handleSimulateDisconnect}
+              style={[styles.actionButton, { backgroundColor: tokens.surfaceContainer }]}
+            >
+              <Text style={[styles.actionButtonText, { color: tokens.textPrimary }]}>
+                Simulate Transport Drop (Auto-Reconnect)
+              </Text>
+            </Pressable>
+          </View>
           <Text style={[styles.footnote, { color: tokens.textMuted }]}>
-            Simulates transport drop. The resilient feed will enter exponential backoff with jitter and trigger a single catch-up REST snapshot on reconnect.
+            Use "Pause & Hold" to keep feed quiet and observe the &gt;2s paused warning. Use "Transport Drop" to test exponential backoff.
           </Text>
         </View>
 

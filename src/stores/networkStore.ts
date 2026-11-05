@@ -32,13 +32,13 @@ export function createNetworkStore(initialOnline = true): NetworkStore {
     if (!online) {
       toastStore.show({
         type: 'error',
-        message: 'No internet connection. Price updates paused.',
+        message: 'Network disconnected. Price feed disconnected and pending orders failed.',
         durationMs: 4000,
       });
     } else {
       toastStore.show({
         type: 'success',
-        message: 'Internet connection restored. Live prices active.',
+        message: 'Network restored. Price feed connected.',
         durationMs: 3500,
       });
     }

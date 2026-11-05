@@ -123,9 +123,15 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
     }
   };
 
+  let connectedFeed: PriceFeed | null = null;
+
   const unsubNetwork = networkStore.onNetworkChange((online) => {
     if (!online) {
       setPausedState(true);
+      connectedFeed?.disconnect();
+    } else {
+      connectedFeed?.connect();
+      setPausedState(false);
     }
   });
 
@@ -216,6 +222,7 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
   };
 
   const connectFeed = (feed: PriceFeed): (() => void) => {
+    connectedFeed = feed;
     feed.connect();
     const unsubFeed = feed.onTick((tick) => {
       queueTick(tick);
@@ -224,6 +231,9 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
     return () => {
       unsubFeed();
       feed.disconnect();
+      if (connectedFeed === feed) {
+        connectedFeed = null;
+      }
     };
   };
 

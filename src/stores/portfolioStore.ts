@@ -50,6 +50,7 @@ export interface PortfolioStore {
   subscribeHydration(callback: () => void): () => void;
   executeOrder(order: Order): Promise<void>;
   evaluatePendingOrders(customQuotes?: Record<string, { ltp: number | null } | null | undefined>): Promise<number>;
+  failPendingOrders(reason: string): Promise<number>;
   hydrate(): Promise<void>;
   resetPortfolio(): Promise<void>;
   bootstrap(): Promise<void>;
@@ -245,6 +246,7 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
 
   const executeOrder = async (order: Order): Promise<void> => {
     const isPending = order.status === 'PENDING';
+    const isFailed = order.status === 'FAILED';
     const normalizedOrder: Order = {
       ...order,
       id: order.id ?? `ord-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -253,7 +255,8 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
       type: order.type ?? 'MARKET',
     };
 
-    if (!isPending) {
+    // If order failed (e.g. simulated failure or timeout), do NOT deduct stock / update holdings
+    if (!isPending && !isFailed) {
       holdings = applyOrder(holdings, normalizedOrder);
       notifyHoldings();
     }
@@ -275,10 +278,23 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
     let nextHoldings = [...holdings];
     const nextOrders = [...orders];
     let hasChanges = false;
+    const now = Date.now();
 
     for (let i = 0; i < nextOrders.length; i++) {
       const ord = nextOrders[i];
       if (!ord || ord.status !== 'PENDING') continue;
+
+      // Check 10-minute timeout for pending orders: fails if not reached
+      if (now - (ord.createdAt ?? now) >= 10 * 60 * 1000) {
+        nextOrders[i] = {
+          ...ord,
+          status: 'FAILED',
+          failureReason: 'Order expired: 10-minute waiting window passed without target price execution',
+        };
+        void orderStore.recordOrder(nextOrders[i]!);
+        hasChanges = true;
+        continue;
+      }
 
       const q = quotes[ord.symbol];
       const currentLtp = q?.ltp ?? null;
@@ -305,6 +321,37 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
     }
 
     return executedCount;
+  };
+
+  const failPendingOrders = async (reason: string): Promise<number> => {
+    let failedCount = 0;
+    const nextOrders = [...orders];
+    let hasChanges = false;
+
+    for (let i = 0; i < nextOrders.length; i++) {
+      const ord = nextOrders[i];
+      if (ord && ord.status === 'PENDING') {
+        nextOrders[i] = {
+          ...ord,
+          status: 'FAILED',
+          failureReason: reason,
+        };
+        void orderStore.recordOrder(nextOrders[i]!);
+        hasChanges = true;
+        failedCount++;
+      }
+    }
+
+    if (hasChanges) {
+      orders = nextOrders;
+      await enqueuePersist({
+        version: 1,
+        holdings,
+        orders,
+      });
+    }
+
+    return failedCount;
   };
 
   const resetPortfolio = async (): Promise<void> => {
@@ -394,6 +441,13 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
     void evaluatePendingOrders();
   });
 
+  // When device goes offline, fail all pending orders
+  networkStore.onNetworkChange((online) => {
+    if (!online) {
+      void failPendingOrders('Network disconnected: cannot execute orders while offline');
+    }
+  });
+
   const retry = async (): Promise<void> => {
     await bootstrap();
   };
@@ -414,6 +468,7 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
     subscribeHydration,
     executeOrder,
     evaluatePendingOrders,
+    failPendingOrders,
     hydrate,
     resetPortfolio,
     bootstrap,

@@ -175,6 +175,59 @@ describe('OrderSheet component', () => {
     executeSpy.mockRestore();
   });
 
+  test('triggers instantly when target price on SELL is same or lower than current price', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    const executeSpy = jest.spyOn(portfolioStore, 'executeOrder');
+    const onClose = jest.fn();
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <ThemeProvider initialMode="light">
+          <OrderSheet visible symbol="RELIANCE" initialSide="SELL" onClose={onClose} />
+        </ThemeProvider>
+      );
+    });
+
+    // Switch to Target Price (Limit) order
+    const limitTab = renderer.root.findByProps({ testID: 'order.sheet.mode.limit' });
+    act(() => {
+      limitTab.props.onPress();
+    });
+
+    // Target price lower than current LTP (2400 < 2500)
+    const targetPriceInput = renderer.root.findByProps({ testID: 'order.sheet.targetPrice.input' });
+    act(() => {
+      targetPriceInput.props.onChangeText('2400');
+    });
+
+    const qtyInput = renderer.root.findByProps({ testID: 'order.sheet.qty.input' });
+    act(() => {
+      qtyInput.props.onChangeText('5');
+    });
+
+    const confirmBtn = renderer.root.findByProps({ testID: 'order.sheet.confirm.button' });
+    act(() => {
+      confirmBtn.props.onPress();
+    });
+
+    expect(executeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        symbol: 'RELIANCE',
+        side: 'SELL',
+        qty: 5,
+        type: 'LIMIT',
+        status: 'EXECUTED',
+      })
+    );
+
+    // Displays instant success screen
+    expect(renderer.root.findByProps({ testID: 'order.sheet.screen.success' })).toBeDefined();
+
+    (Math.random as unknown as jest.Mock).mockRestore();
+    executeSpy.mockRestore();
+  });
+
   test('blocks order submission and displays market closed message when market is closed', () => {
     const onClose = jest.fn();
     let renderer!: ReactTestRenderer.ReactTestRenderer;

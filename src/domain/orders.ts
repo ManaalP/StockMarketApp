@@ -160,6 +160,32 @@ export function validateTargetPrice(
   };
 }
 
+export const ORDER_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * Checks whether an order has expired (pending for >= 10 minutes).
+ */
+export function isOrderExpired(order: Order, now: number = Date.now()): boolean {
+  if (order.status !== 'PENDING') return false;
+  return now - (order.createdAt ?? now) >= ORDER_TIMEOUT_MS;
+}
+
+/**
+ * Determines whether a target price order should execute immediately or remain pending.
+ * - SELL: If target price is <= current market LTP, trigger instantly! Otherwise wait for LTP to rise to target.
+ * - BUY: If target price is >= current market LTP, trigger instantly! Otherwise wait for LTP to dip to target.
+ */
+export function shouldExecuteImmediately(
+  side: 'BUY' | 'SELL',
+  targetPaise: Paise,
+  currentLtp: Paise
+): boolean {
+  if (side === 'SELL') {
+    return targetPaise <= currentLtp;
+  }
+  return targetPaise >= currentLtp;
+}
+
 /**
  * Pure evaluation whether a pending limit order has met its market execution criteria.
  * - SELL LIMIT: Executes when live LTP reaches or exceeds the target price (ltp >= targetPaise).
