@@ -221,6 +221,9 @@ export function createWatchlistHooks(store: WatchlistStore) {
 // Global default watchlist store instance
 export const watchlistStore = createWatchlistStore();
 
+// Eagerly hydrate watchlist from storage on startup
+void watchlistStore.hydrate();
+
 // Default global React hooks
 export const {
   useWatchlist,

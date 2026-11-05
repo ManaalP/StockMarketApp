@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, useTheme } from '../theme/useTheme';
 import { portfolioStore } from '../stores/portfolioStore';
+import { watchlistStore } from '../stores/watchlistStore';
 
 export function RootNavigation() {
   const { tokens, isDark } = useTheme();
@@ -57,9 +58,12 @@ export function RootNavigation() {
 
 export default function RootLayout() {
   useEffect(() => {
-    // Eagerly bootstrap portfolio and market price feed on application startup
+    // Eagerly bootstrap portfolio, watchlist, and market price feed on application startup
     if (portfolioStore.getStatus() === 'idle') {
       void portfolioStore.bootstrap();
+    }
+    if (!watchlistStore.isLoaded()) {
+      void watchlistStore.hydrate();
     }
   }, []);
 
