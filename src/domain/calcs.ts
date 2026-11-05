@@ -315,3 +315,25 @@ export function dayRangePosition(
   if (ratio > 1) return 1;
   return Math.round(ratio * 10000) / 10000;
 }
+
+export type PriceFlashDirection = 'up' | 'down' | 'none';
+
+/**
+ * Determines whether a price change should trigger an upward, downward, or no flash.
+ * Pure function: ignores initial load (prevLtp === null) and unpriced ticks.
+ */
+export function priceFlashDirection(
+  prevLtp: Paise | null,
+  nextLtp: Paise | null
+): PriceFlashDirection {
+  if (prevLtp === null || nextLtp === null) {
+    return 'none';
+  }
+  if (nextLtp > prevLtp) {
+    return 'up';
+  }
+  if (nextLtp < prevLtp) {
+    return 'down';
+  }
+  return 'none';
+}

@@ -8,6 +8,7 @@ import {
   getSortedHoldingSymbols,
   quoteDayMetrics,
   dayRangePosition,
+  priceFlashDirection,
   OrderValidationError,
   toPaise,
 } from '@/domain';
@@ -454,6 +455,28 @@ describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
       // high <= low
       expect(dayRangePosition(260000, 240000, 250000)).toBeNull();
       expect(dayRangePosition(240000, 240000, 240000)).toBeNull();
+    });
+  });
+
+  describe('priceFlashDirection', () => {
+    it('returns none when either previous or next LTP is null', () => {
+      expect(priceFlashDirection(null, 250000)).toBe('none');
+      expect(priceFlashDirection(250000, null)).toBe('none');
+      expect(priceFlashDirection(null, null)).toBe('none');
+    });
+
+    it('returns none when prices are identical', () => {
+      expect(priceFlashDirection(250000, 250000)).toBe('none');
+    });
+
+    it('returns up when next LTP is greater than previous LTP', () => {
+      expect(priceFlashDirection(250000, 250050)).toBe('up');
+      expect(priceFlashDirection(100, 200)).toBe('up');
+    });
+
+    it('returns down when next LTP is less than previous LTP', () => {
+      expect(priceFlashDirection(250050, 250000)).toBe('down');
+      expect(priceFlashDirection(200, 100)).toBe('down');
     });
   });
 });
