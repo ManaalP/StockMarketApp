@@ -12,6 +12,9 @@ export interface ExecutedOrder {
   readonly symbol: string;
   readonly qty: number;
   readonly pricePaise: Paise;
+  readonly targetPaise?: Paise;
+  readonly type?: 'MARKET' | 'LIMIT';
+  readonly status?: 'EXECUTED' | 'PENDING' | 'CANCELLED';
   readonly totalPaise: Paise;
   readonly timestamp: number;
 }
@@ -82,7 +85,19 @@ export function createOrderStore(options: OrderStoreOptions = {}): OrderStore {
               'totalPaise' in item &&
               'timestamp' in item
             ) {
-              validated.push(item as ExecutedOrder);
+              const obj = item as Record<string, unknown>;
+              validated.push({
+                id: String(obj.id),
+                symbol: String(obj.symbol),
+                side: obj.side === 'SELL' ? 'SELL' : 'BUY',
+                qty: Number(obj.qty),
+                pricePaise: Number(obj.pricePaise),
+                targetPaise: typeof obj.targetPaise === 'number' ? obj.targetPaise : undefined,
+                type: obj.type === 'LIMIT' ? 'LIMIT' : 'MARKET',
+                status: obj.status === 'PENDING' ? 'PENDING' : 'EXECUTED',
+                totalPaise: Number(obj.totalPaise),
+                timestamp: Number(obj.timestamp),
+              });
             }
           }
           orders = validated;
@@ -106,17 +121,27 @@ export function createOrderStore(options: OrderStoreOptions = {}): OrderStore {
     id?: string,
     timestamp?: number
   ): Promise<ExecutedOrder> => {
+    const existingIndex = order.id ? orders.findIndex((o) => o.id === order.id) : -1;
     const executed: ExecutedOrder = {
-      id: id ?? `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: order.id ?? id ?? `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       symbol: order.symbol,
       side: order.side,
       qty: order.qty,
       pricePaise: order.fillPaise,
-      totalPaise: mulQty(order.fillPaise, order.qty),
-      timestamp: timestamp ?? Date.now(),
+      targetPaise: order.targetPaise,
+      type: order.type ?? 'MARKET',
+      status: order.status ?? 'EXECUTED',
+      totalPaise: mulQty(order.targetPaise ?? order.fillPaise, order.qty),
+      timestamp: timestamp ?? order.createdAt ?? Date.now(),
     };
 
-    const nextOrders = [executed, ...orders];
+    let nextOrders: ExecutedOrder[];
+    if (existingIndex >= 0) {
+      nextOrders = [...orders];
+      nextOrders[existingIndex] = executed;
+    } else {
+      nextOrders = [executed, ...orders];
+    }
     updateSnapshot(nextOrders);
     await persist(nextOrders);
     return executed;
