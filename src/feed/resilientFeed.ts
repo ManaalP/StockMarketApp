@@ -199,6 +199,14 @@ export function createResilientFeed(
   const getStatus = (): FeedStatus => status;
   const getAttemptCount = (): number => attemptCount;
 
+  const setTickRate = (rateHz: number): void => {
+    underlyingFeed.setTickRate?.(rateHz);
+  };
+
+  const getTickRate = (): number => {
+    return underlyingFeed.getTickRate?.() ?? 20;
+  };
+
   return {
     connect,
     disconnect,
@@ -207,5 +215,7 @@ export function createResilientFeed(
     getStatus,
     simulateDisconnect,
     getAttemptCount,
+    setTickRate,
+    getTickRate,
   };
 }

@@ -45,8 +45,8 @@ export function createSimulatedFeed(
   options: SimulatedFeedOptions = {}
 ): PriceFeed {
   const rng = options.rng ?? Math.random;
-  const rateHz = options.tickRateHz ?? 20;
-  const tickIntervalMs = Math.max(1, Math.round(1000 / rateHz));
+  let rateHz = options.tickRateHz ?? 20;
+  let tickIntervalMs = Math.max(1, Math.round(1000 / rateHz));
   const silenceIntervalMs = options.silenceIntervalMs ?? 60_000;
   const silenceDurationMs = options.silenceDurationMs ?? 5_000;
   const lateTickRate = options.lateTickRate ?? 0.02;
@@ -198,6 +198,17 @@ export function createSimulatedFeed(
 
   const getStatus = (): FeedStatus => status;
 
+  const setTickRate = (nextHz: number): void => {
+    rateHz = Math.max(1, Math.min(100, Math.round(nextHz)));
+    tickIntervalMs = Math.max(1, Math.round(1000 / rateHz));
+    if (tickTimer !== null) {
+      clearInterval(tickTimer);
+      tickTimer = setInterval(emitNextTick, tickIntervalMs);
+    }
+  };
+
+  const getTickRate = (): number => rateHz;
+
   return {
     connect,
     disconnect,
@@ -205,6 +216,8 @@ export function createSimulatedFeed(
     onStatusChange,
     getStatus,
     simulateDisconnect,
+    setTickRate,
+    getTickRate,
   };
 }
 
@@ -241,5 +254,13 @@ export class SimulatedFeed implements PriceFeed {
 
   public simulateDisconnect = (): void => {
     this.feed.simulateDisconnect?.();
+  };
+
+  public setTickRate = (rateHz: number): void => {
+    this.feed.setTickRate?.(rateHz);
+  };
+
+  public getTickRate = (): number => {
+    return this.feed.getTickRate?.() ?? 20;
   };
 }
