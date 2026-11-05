@@ -745,6 +745,23 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Eliminates potential IEEE-754 precision loss during monetary arithmetic while enforcing standard retail trading bounds.
 
+---
+
+### ADR 048: Pure Chart Domain, Column Decimation & Authentic Time Candles
+- **Context**:
+  - The live chart component mixed rendering, path derivation, time bucketing, and price domain calculations. Equal-count tick bucketing did not correspond to elapsed time.
+- **Decision**:
+  - Implement pure chart domain calculations in `src/domain/chart.ts`:
+    - `pushTick`: Immutably manages a ring buffer of `TickPoint = { t: number, price: Paise }` capped at 120 points.
+    - `computeYDomain`: Computes min and max over points plus reference lines (open, prevClose) if within +-1.5% with 6% padding, ensuring flat series never produce a zero-height domain.
+    - `decimatePoints`: Decimates points to at most one pair of min/max per 2-pixel column so extrema peaks/troughs are preserved without drawing hundreds of redundant overlapping SVG points.
+    - `buildLinePath` & `buildAreaPath`: SVG path generators with normalized coordinates.
+    - `buildTimeCandles`: Genuine time-based bucketing (`bucketMs`, default 5s or derived via `chooseBucketMs`) producing OHLC candles with no fake data.
+    - `niceTicks` (3 Y-axis ticks), `timeLabels` (up to 4 local 24h labels), `nearestPointIndex` (scrubbing), and `direction` ('up' | 'down' | 'flat').
+- **Rationale**:
+  - Full testability with pure functions, zero UI/React coupling, guaranteed preservation of price extremes during decimation, and integer paise monetary precision.
+
+
 
 
 
