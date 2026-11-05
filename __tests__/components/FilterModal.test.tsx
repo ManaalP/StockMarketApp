@@ -52,17 +52,17 @@ describe('FilterModal', () => {
     });
     expect(filterStore.getState().filter).toBe('gainers');
 
-    // Select sort by Value
-    const sortValueOption = renderer.root.findByProps({ testID: 'filter.sort.value' });
+    // Select sort by LTP (Last Traded Price)
+    const sortLtpOption = renderer.root.findByProps({ testID: 'filter.sort.ltp' });
     act(() => {
-      sortValueOption.props.onPress();
+      sortLtpOption.props.onPress();
     });
-    expect(filterStore.getState().sortBy).toBe('value');
+    expect(filterStore.getState().sortBy).toBe('ltp');
 
-    // Click Apply
-    const applyBtn = renderer.root.findByProps({ testID: 'filter.apply' });
+    // Click Apply / Done
+    const doneBtn = renderer.root.findByProps({ testID: 'filter.close' });
     act(() => {
-      applyBtn.props.onPress();
+      doneBtn.props.onPress();
     });
     expect(filterStore.getState().isModalOpen).toBe(false);
 

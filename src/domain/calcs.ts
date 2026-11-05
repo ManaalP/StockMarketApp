@@ -181,7 +181,14 @@ export function applyOrder(holdings: Holding[], order: Order): Holding[] {
   return updated;
 }
 
-export type SortField = 'name' | 'value' | 'pnl';
+export type SortField =
+  | 'name'
+  | 'change'
+  | 'ltp'
+  | 'pnl'
+  | 'pnlPct'
+  | 'invested'
+  | 'value';
 export type SortDirection = 'asc' | 'desc';
 export type HoldingCategoryFilter = 'all' | 'gainers' | 'losers' | 'unpriced';
 
@@ -195,11 +202,14 @@ export interface SortFilterOptions {
 /**
  * Pure function to filter and sort holdings, returning an array of symbol strings.
  *
- * Rules:
- *   - Search query: case-insensitive substring match on symbol name.
- *   - Sort by 'name': alphabetical order.
- *   - Sort by 'value': current total holding value (qty * ltp). Unpriced holdings placed last in descending order.
- *   - Sort by 'pnl': total rupee P&L. Unpriced holdings placed last in descending order.
+ * Supports Kite-style sorting:
+ *   - 'name': Alphabetically (A-Z)
+ *   - 'change': % Day Change ((ltp - prevClose) / prevClose)
+ *   - 'ltp': Last Traded Price
+ *   - 'pnl': Profit & Loss Absolute ₹
+ *   - 'pnlPct': Profit & Loss Percent %
+ *   - 'invested': Invested capital ₹
+ *   - 'value': Holding current value (qty * ltp)
  */
 export function getSortedHoldingSymbols(
   holdings: readonly Holding[],
@@ -240,32 +250,56 @@ export function getSortedHoldingSymbols(
       return direction === 'asc' ? comp : -comp;
     }
 
+    if (sortBy === 'invested') {
+      const invA = a.qty * a.avgPaise;
+      const invB = b.qty * b.avgPaise;
+      const diff = invA - invB;
+      return direction === 'asc' ? diff : -diff;
+    }
+
     const quoteA = quotes[a.symbol];
     const quoteB = quotes[b.symbol];
+    const ltpA = quoteA?.ltp ?? null;
+    const ltpB = quoteB?.ltp ?? null;
+
+    // Unpriced rows are placed last in descending order
+    if (ltpA === null && ltpB === null) return 0;
+    if (ltpA === null) return direction === 'asc' ? -1 : 1;
+    if (ltpB === null) return direction === 'asc' ? 1 : -1;
+
+    if (sortBy === 'ltp') {
+      const diff = ltpA - ltpB;
+      return direction === 'asc' ? diff : -diff;
+    }
+
+    if (sortBy === 'change') {
+      const prevA = quoteA?.prevClose ?? ltpA;
+      const prevB = quoteB?.prevClose ?? ltpB;
+      const chgPctA = prevA > 0 ? ((ltpA - prevA) / prevA) * 100 : 0;
+      const chgPctB = prevB > 0 ? ((ltpB - prevB) / prevB) * 100 : 0;
+      const diff = chgPctA - chgPctB;
+      return direction === 'asc' ? diff : -diff;
+    }
 
     if (sortBy === 'value') {
-      const ltpA = quoteA?.ltp ?? null;
-      const ltpB = quoteB?.ltp ?? null;
-
-      // Handle unpriced rows: unpriced rows are placed last in descending order
-      if (ltpA === null && ltpB === null) return 0;
-      if (ltpA === null) return direction === 'asc' ? -1 : 1;
-      if (ltpB === null) return direction === 'asc' ? 1 : -1;
-
       const valA = a.qty * ltpA;
       const valB = b.qty * ltpB;
       const diff = valA - valB;
       return direction === 'asc' ? diff : -diff;
     }
 
-    // sortBy === 'pnl'
-    const ltpA = quoteA?.ltp ?? null;
-    const ltpB = quoteB?.ltp ?? null;
+    if (sortBy === 'pnlPct') {
+      const invA = a.qty * a.avgPaise;
+      const invB = b.qty * b.avgPaise;
+      const pnlA = a.qty * ltpA - invA;
+      const pnlB = b.qty * ltpB - invB;
+      const pctA = invA > 0 ? (pnlA / invA) * 100 : 0;
+      const pctB = invB > 0 ? (pnlB / invB) * 100 : 0;
+      const diff = pctA - pctB;
+      return direction === 'asc' ? diff : -diff;
+    }
 
-    if (ltpA === null && ltpB === null) return 0;
-    if (ltpA === null) return direction === 'asc' ? -1 : 1;
-    if (ltpB === null) return direction === 'asc' ? 1 : -1;
-
+    // Default: 'pnl' (Profit & Loss Absolute)
     const pnlA = a.qty * ltpA - a.qty * a.avgPaise;
     const pnlB = b.qty * ltpB - b.qty * b.avgPaise;
     const diff = pnlA - pnlB;
