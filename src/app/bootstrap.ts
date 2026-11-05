@@ -35,3 +35,24 @@ export function bootstrapApp(
     disconnect,
   };
 }
+
+/**
+ * Starts the application with live simulated feed initialized from real REST market quotes.
+ */
+export async function startLiveApp(customFeed?: PriceFeed): Promise<BootstrapResult> {
+  await portfolioStore.bootstrap();
+  const quotes = priceStore.getQuotes();
+  const feed = customFeed ?? createSimulatedFeed(quotes);
+  const disconnect = priceStore.connectFeed(feed);
+  return {
+    priceStore,
+    portfolioStore,
+    feed,
+    disconnect,
+  };
+}
+
+export default function BootstrapRoute() {
+  return null;
+}
+
