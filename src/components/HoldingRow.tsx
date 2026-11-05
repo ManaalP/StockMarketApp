@@ -14,6 +14,8 @@ import { rowMetrics } from '../domain/calcs';
 import { formatINR } from '../domain/format';
 import { PriceText } from './PriceText';
 import { PnLText } from './PnLText';
+import { useRenderCount } from '../utils/useRenderCount';
+import { usePerfOverlay } from '../utils/perfOverlay';
 
 export const HOLDING_ROW_HEIGHT = 72;
 
@@ -43,6 +45,9 @@ export const HoldingRow = memo(function HoldingRow({
   const { tokens } = useTheme();
   const quote = usePrice(symbol);
   const holding = useHolding(symbol);
+
+  const renderCount = useRenderCount();
+  const showPerf = usePerfOverlay();
 
   const metrics = holding ? rowMetrics(holding, quote) : null;
 
@@ -76,6 +81,13 @@ export const HoldingRow = memo(function HoldingRow({
               EQ
             </Text>
           </View>
+          {showPerf ? (
+            <View style={[styles.perfBadge, { backgroundColor: tokens.warningBg }]}>
+              <Text testID={`perf.badge.${symbol}`} style={[styles.perfText, { color: tokens.warning }]}>
+                {`R: ${renderCount}`}
+              </Text>
+            </View>
+          ) : null}
         </View>
         <Text style={[styles.sharesText, { color: tokens.textMuted }]}>
           {holding
@@ -135,6 +147,16 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.2,
+  },
+  perfBadge: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  perfText: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   sharesText: {
     fontSize: 13,

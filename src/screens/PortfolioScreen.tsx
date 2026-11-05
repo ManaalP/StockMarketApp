@@ -25,6 +25,7 @@ import { HoldingRow, HOLDING_ROW_HEIGHT } from '../components/HoldingRow';
 import { SummaryCard } from '../components/SummaryCard';
 import { PausedBanner } from '../components/PausedBanner';
 import { StateView } from '../components/StateView';
+import { usePerfOverlay, togglePerfOverlay } from '../utils/perfOverlay';
 
 export interface PortfolioScreenProps {
   readonly onSelectStock?: (symbol: string) => void;
@@ -50,6 +51,7 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
 
   const holdings = usePortfolioHoldings();
   const { status, error, refresh, retry } = useAppStatus();
+  const showPerf = usePerfOverlay();
 
   // Filter & Sort State
   const [searchQuery, setSearchQuery] = useState('');
@@ -225,6 +227,29 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
               {renderSortButton('name', 'Name')}
               {renderSortButton('value', 'Value')}
               {renderSortButton('pnl', 'P&L')}
+              {__DEV__ ? (
+                <Pressable
+                  testID="perf.toggle.btn"
+                  onPress={togglePerfOverlay}
+                  style={[
+                    styles.perfTogglePill,
+                    {
+                      backgroundColor: showPerf
+                        ? tokens.warningBg
+                        : tokens.surfaceContainer,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.perfTogglePillText,
+                      { color: showPerf ? tokens.warning : tokens.textMuted },
+                    ]}
+                  >
+                    {showPerf ? '⚡ ON' : '⚡ Perf'}
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           </View>
         </View>
@@ -255,6 +280,7 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
     searchQuery,
     orderedSymbols.length,
     handleSortPress,
+    showPerf,
   ]);
 
   // Empty List component
@@ -398,6 +424,15 @@ const styles = StyleSheet.create({
   sortPillText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  perfTogglePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  perfTogglePillText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   sectionHeader: {
     marginTop: 14,
