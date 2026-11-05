@@ -1,5 +1,6 @@
 import { createSimulatedFeed, SimulatedFeed } from '../../src/feed/SimulatedFeed';
 import { toPaise } from '../../src/domain/money';
+import { mergeTick, type QuotesState } from '../../src/domain/tickMerge';
 import type { Quote } from '../../src/domain/types';
 import type { Tick } from '../../src/feed/types';
 
@@ -254,6 +255,101 @@ describe('Feed Layer: Functional createSimulatedFeed & SimulatedFeed wrapper', (
         feedB.disconnect();
       } finally {
         process.env.QA_SEED = prevEnv;
+      }
+    });
+
+    test('emits partial ticks (ltp always, high/low only on breakout, volume ~30%) and stale payloads on late ticks', () => {
+      const feed = createSimulatedFeed(initialQuotes, { seed: 12345, tickRateHz: 20 });
+      const ticks: Tick[] = [];
+      feed.onTick((t) => ticks.push(t));
+
+      feed.connect();
+      jest.advanceTimersByTime(10000); // 200 ticks across 10s
+      feed.disconnect();
+
+      expect(ticks.length).toBe(200);
+
+      // Verify all ticks have ltp
+      const hasLtp = ticks.every((t) => typeof t.ltp === 'number');
+      expect(hasLtp).toBe(true);
+
+      // Verify some ticks are partial (i.e. omit high or low or volume)
+      const partialTicks = ticks.filter(
+        (t) => t.high === undefined || t.low === undefined || t.volume === undefined
+      );
+      expect(partialTicks.length).toBeGreaterThan(0);
+
+      // Late ticks rate over 10s: ~2% (+-1%, i.e. 1% to 3% roughly)
+      const lateTicks: Tick[] = [];
+      const highestSeqBySymbol: Record<string, number> = {};
+
+      for (const t of ticks) {
+        const lastSeq = highestSeqBySymbol[t.symbol] ?? 0;
+        if (t.seq <= lastSeq) {
+          lateTicks.push(t);
+        } else {
+          highestSeqBySymbol[t.symbol] = t.seq;
+        }
+      }
+
+      const latePct = lateTicks.length / ticks.length;
+      expect(latePct).toBeGreaterThanOrEqual(0.01);
+      expect(latePct).toBeLessThanOrEqual(0.035);
+
+      // Applying all ticks through mergeTick ends at the same state as applying only the in-order ones
+      const inOrderTicks = ticks.filter((t, i) => {
+        const prev = ticks.slice(0, i).filter((x) => x.symbol === t.symbol);
+        const maxPrevSeq = prev.length > 0 ? Math.max(...prev.map((x) => x.seq)) : 0;
+        return t.seq > maxPrevSeq;
+      });
+
+      const startState: QuotesState = {
+        RELIANCE: {
+          ltp: initialQuotes.RELIANCE!.ltp,
+          open: initialQuotes.RELIANCE!.open,
+          high: initialQuotes.RELIANCE!.high,
+          low: initialQuotes.RELIANCE!.low,
+          prevClose: initialQuotes.RELIANCE!.prevClose,
+          volume: initialQuotes.RELIANCE!.volume,
+          seq: 0,
+        },
+        TCS: {
+          ltp: initialQuotes.TCS!.ltp,
+          open: initialQuotes.TCS!.open,
+          high: initialQuotes.TCS!.high,
+          low: initialQuotes.TCS!.low,
+          prevClose: initialQuotes.TCS!.prevClose,
+          volume: initialQuotes.TCS!.volume,
+          seq: 0,
+        },
+      };
+
+      let stateAll = { ...startState };
+      for (const t of ticks) {
+        stateAll = mergeTick(stateAll, t);
+      }
+
+      let stateInOrder = { ...startState };
+      for (const t of inOrderTicks) {
+        stateInOrder = mergeTick(stateInOrder, t);
+      }
+
+      expect(stateAll).toEqual(stateInOrder);
+
+      // Verify a late tick never lowers high, raises low, or lowers volume
+      for (const late of lateTicks) {
+        const currentQuote = stateInOrder[late.symbol];
+        expect(currentQuote).toBeDefined();
+        if (!currentQuote) continue;
+        if (late.high !== undefined) {
+          expect(late.high).toBeLessThanOrEqual(currentQuote.high);
+        }
+        if (late.low !== undefined) {
+          expect(late.low).toBeGreaterThanOrEqual(currentQuote.low);
+        }
+        if (late.volume !== undefined) {
+          expect(late.volume).toBeLessThanOrEqual(currentQuote.volume);
+        }
       }
     });
   });

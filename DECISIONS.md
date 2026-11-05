@@ -714,6 +714,26 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Standard native slide transitions (`slide_from_right`) completely overlap the incoming and outgoing viewports, eliminating transparent fade-through gaps.
   - Synchronizing `SystemUI.setBackgroundColorAsync` with active theme tokens ensures that any native window margins or initialization frames render in matching dark/light background rather than an unstyled `#FFFFFF` canvas.
 
+---
+
+### ADR 046: Partial Ticks, Stale Replay on Out-of-Order Ticks, and Non-Invention of Unseeded Quotes
+- **Context**:
+  - The take-home specification requires ticks to be partial updates carrying only changed fields (`ltp`, and optionally `high`, `low`, `volume`), while previous implementation emitted all 4 fields on every tick.
+  - Late ticks previously emitted the current price with an older sequence, which did not prove that ignoring late ticks actually prevented regressions.
+  - `mergeTick` previously invented `open` and `prevClose` when receiving a tick for a symbol with no prior quote, whereas symbols only exist after a REST seed.
+- **Decision**:
+  - In `SimulatedFeed.ts`:
+    - `ltp` is emitted always.
+    - `high` is emitted only when `newLtp > prevHigh`.
+    - `low` is emitted only when `newLtp < prevLow`.
+    - `volume` is emitted on ~30% of ticks (`rng() < 0.3`).
+    - Stale replay: maintain a 5-tick rolling history per symbol. When an out-of-order tick is generated (~2%), replay an older sequence and an older price from history with changed volume.
+  - In `tickMerge.ts`:
+    - If `state[tick.symbol]` is undefined, do not invent quote fields—return `state` unmodified.
+- **Rationale**:
+  - Strictly conforms to feed contract specifications. If a store mistakenly accepted a late tick, prices would visibly regress to the stale quote, proving the validity of sequence checks.
+
+
 
 
 

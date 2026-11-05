@@ -159,7 +159,7 @@ describe('mergeTick pure function', () => {
     expect(nextState2.RELIANCE?.volume).toBe(60000); // kept at 60000
   });
 
-  test('creates new quote entry for a symbol not yet in state', () => {
+  test('ignores tick for a symbol not yet in state (symbol must exist after REST seed)', () => {
     const newSymbolTick: Tick = {
       symbol: 'INFY',
       seq: 1,
@@ -168,14 +168,8 @@ describe('mergeTick pure function', () => {
     };
 
     const nextState = mergeTick(initialState, newSymbolTick);
-    expect(nextState.INFY).toBeDefined();
-    expect(nextState.INFY?.ltp).toBe(toPaise(1800));
-    expect(nextState.INFY?.open).toBe(toPaise(1800));
-    expect(nextState.INFY?.high).toBe(toPaise(1800));
-    expect(nextState.INFY?.low).toBe(toPaise(1800));
-    expect(nextState.INFY?.prevClose).toBe(toPaise(1800));
-    expect(nextState.INFY?.volume).toBe(5000);
-    expect(nextState.INFY?.seq).toBe(1);
+    expect(nextState).toBe(initialState);
+    expect(nextState.INFY).toBeUndefined();
   });
 
   test('returns same state reference if tick payload contains no changes', () => {

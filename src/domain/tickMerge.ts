@@ -1,6 +1,5 @@
 import type { Quote } from './types';
 import type { Tick } from '../feed/types';
-import type { Paise } from './money';
 
 export interface QuoteWithSeq extends Quote {
   readonly seq: number;
@@ -21,30 +20,9 @@ export type QuotesState = Record<string, QuoteWithSeq>;
 export function mergeTick(state: QuotesState, tick: Tick): QuotesState {
   const current = state[tick.symbol];
 
-  // If no prior quote exists, initialize new quote if valid price is provided
+  // If no prior quote exists, do not invent quote; symbols only exist after a REST seed
   if (!current) {
-    if (tick.ltp === undefined) {
-      return state;
-    }
-    const ltp = tick.ltp;
-    const high = tick.high !== undefined ? (Math.max(tick.high, ltp) as Paise) : ltp;
-    const low = tick.low !== undefined ? (Math.min(tick.low, ltp) as Paise) : ltp;
-    const volume = tick.volume ?? 0;
-
-    const newQuote: QuoteWithSeq = {
-      seq: tick.seq,
-      ltp,
-      open: ltp,
-      high,
-      low,
-      prevClose: ltp,
-      volume,
-    };
-
-    return {
-      ...state,
-      [tick.symbol]: newQuote,
-    };
+    return state;
   }
 
   // 1. Drop late or duplicate sequence ticks

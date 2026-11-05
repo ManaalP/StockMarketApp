@@ -104,6 +104,8 @@ export function createSimulatedFeed(
   }
 
   const seqMap = new Map<string, number>();
+  // History of recent in-order ticks per symbol (up to 5) to replay stale payloads on late ticks
+  const tickHistory = new Map<string, { seq: number; ltp: Paise; volume: number }[]>();
   const listeners = new Set<TickHandler>();
   const statusListeners = new Set<FeedStatusHandler>();
 
@@ -142,17 +144,26 @@ export function createSimulatedFeed(
     if (!current || current.ltp === null) return;
 
     const currentSeq = seqMap.get(symbol) ?? 0;
-    const isLateTick = rng() < lateTickRate && currentSeq > 1;
+    const history = tickHistory.get(symbol) ?? [];
+    const isLateTick = rng() < lateTickRate && currentSeq > 1 && history.length > 0;
 
-    let tickSeq: number;
-    let newLtp: Paise;
+    let tick: Tick;
 
     if (isLateTick) {
-      tickSeq = Math.max(1, currentSeq - 1);
-      newLtp = current.ltp;
+      // Replay one of the previous ticks with a stale payload and older seq
+      const staleIdx = Math.floor(rng() * history.length);
+      const staleEntry = history[staleIdx]!;
+      // Changed volume on stale tick
+      const staleVolDelta = Math.floor(rng() * 40) + 5;
+      tick = {
+        symbol,
+        seq: staleEntry.seq,
+        ltp: staleEntry.ltp,
+        volume: staleEntry.volume + staleVolDelta,
+      };
     } else {
-      tickSeq = currentSeq + 1;
-      seqMap.set(symbol, tickSeq);
+      const nextSeq = currentSeq + 1;
+      seqMap.set(symbol, nextSeq);
 
       // Symmetric random price walk within ±0.2% per tick with subtle mean reversion toward anchor
       const anchor = anchorLtp[symbol] ?? current.ltp;
@@ -164,11 +175,22 @@ export function createSimulatedFeed(
         deltaPaise = rng() >= 0.5 ? 1 : -1;
       }
 
-      newLtp = Math.max(1, current.ltp + deltaPaise) as Paise;
-      const newHigh = Math.max(current.high, newLtp) as Paise;
-      const newLow = Math.min(current.low, newLtp) as Paise;
-      const volDelta = Math.floor(rng() * 90) + 10;
-      const newVolume = current.volume + volDelta;
+      const newLtp = Math.max(1, current.ltp + deltaPaise) as Paise;
+      const prevHigh = current.high;
+      const prevLow = current.low;
+      const newHigh = Math.max(prevHigh, newLtp) as Paise;
+      const newLow = Math.min(prevLow, newLtp) as Paise;
+
+      const highChanged = newHigh > prevHigh;
+      const lowChanged = newLow < prevLow;
+
+      // Volume changes only on about 30% of ticks
+      const includeVolume = rng() < 0.3;
+      let newVolume = current.volume;
+      if (includeVolume) {
+        const volDelta = Math.floor(rng() * 90) + 10;
+        newVolume += volDelta;
+      }
 
       quotes[symbol] = {
         ...current,
@@ -177,19 +199,24 @@ export function createSimulatedFeed(
         low: newLow,
         volume: newVolume,
       };
+
+      // Maintain short history of last 5 ticks
+      const updatedHistory = [...history, { seq: nextSeq, ltp: newLtp, volume: newVolume }];
+      if (updatedHistory.length > 5) {
+        updatedHistory.shift();
+      }
+      tickHistory.set(symbol, updatedHistory);
+
+      // Build partial tick update
+      tick = {
+        symbol,
+        seq: nextSeq,
+        ltp: newLtp,
+        ...(highChanged ? { high: newHigh } : {}),
+        ...(lowChanged ? { low: newLow } : {}),
+        ...(includeVolume ? { volume: newVolume } : {}),
+      };
     }
-
-    const updated = quotes[symbol];
-    if (!updated) return;
-
-    const tick: Tick = {
-      symbol,
-      seq: tickSeq,
-      ltp: newLtp,
-      high: updated.high,
-      low: updated.low,
-      volume: updated.volume,
-    };
 
     for (const listener of listeners) {
       listener(tick);
