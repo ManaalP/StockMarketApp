@@ -1,21 +1,19 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { useRouter } from 'expo-router';
+import { WatchlistScreen } from '../../screens/WatchlistScreen';
 
-export default function WatchlistScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Watchlist Placeholder</Text>
-    </View>
+export default function WatchlistTabRoute() {
+  const router = useRouter();
+
+  const handleSelectStock = useCallback(
+    (symbol: string) => {
+      router.push({
+        pathname: '/stock/[symbol]',
+        params: { symbol },
+      } as never);
+    },
+    [router]
   );
-}
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    fontSize: 16,
-  },
-});
+  return <WatchlistScreen onSelectStock={handleSelectStock} />;
+}
