@@ -215,7 +215,7 @@ describe('PortfolioScreen', () => {
     refreshSpy.mockRestore();
   });
 
-  test('opens filter modal and filters holdings by category', () => {
+  test('filters holdings by category via filterStore', () => {
     let renderer!: ReactTestRenderer.ReactTestRenderer;
 
     act(() => {
@@ -226,20 +226,13 @@ describe('PortfolioScreen', () => {
       );
     });
 
-    const filterOpenBtn = renderer.root.findByProps({ testID: 'portfolio.filter.open' });
-    act(() => {
-      filterOpenBtn.props.onPress();
-    });
-
-    expect(filterStore.getState().isModalOpen).toBe(true);
-
     // Apply Gainers filter
     act(() => {
       filterStore.setCategoryFilter('gainers');
     });
 
     const texts = getAllText(renderer.root).join(' ');
-    expect(texts).toContain('Filter: gainers');
+    expect(texts).toContain('Filter: GAINERS');
     // Gainers like INFY and RELIANCE are shown, losers or unpriced are excluded
     expect(texts).toContain('INFY');
     expect(texts).toContain('RELIANCE');

@@ -5,6 +5,7 @@ import { OrderHistoryScreen } from '../../src/screens/OrderHistoryScreen';
 import { ThemeProvider } from '../../src/theme/useTheme';
 import { orderStore } from '../../src/stores/orderStore';
 import { portfolioStore } from '../../src/stores/portfolioStore';
+import { priceStore } from '../../src/stores/priceStore';
 import { toPaise } from '../../src/domain/money';
 
 describe('OrderHistoryScreen', () => {
@@ -69,6 +70,48 @@ describe('OrderHistoryScreen', () => {
     expect(texts).toContain('RELIANCE');
     expect(texts).toContain('BUY');
     expect(texts.some((txt) => typeof txt === 'string' && txt.includes('25 shares @ ₹2,500.00'))).toBe(true);
+  });
+
+  it('renders buying price, live tick value, and profit/loss pill based on ticks', async () => {
+    // Seed priceStore with a live tick higher than the buy price of ₹2,500.00
+    act(() => {
+      priceStore.seed({
+        RELIANCE: {
+          ltp: toPaise(2600), // ₹2,600.00 (up by ₹100/share -> profit)
+          open: toPaise(2500),
+          prevClose: toPaise(2500),
+          high: toPaise(2650),
+          low: toPaise(2480),
+          volume: 50000,
+        },
+      });
+    });
+
+    await act(async () => {
+      await orderStore.recordOrder(
+        {
+          symbol: 'RELIANCE',
+          side: 'BUY',
+          qty: 10,
+          fillPaise: toPaise(2500),
+        },
+        'ord-pnl-test'
+      );
+    });
+
+    let tree: renderer.ReactTestRenderer | undefined;
+    act(() => {
+      tree = renderer.create(
+        <ThemeProvider>
+          <OrderHistoryScreen />
+        </ThemeProvider>
+      );
+    });
+
+    const pnlNode = tree!.root.findByProps({ testID: 'order.pnl.ord-pnl-test' });
+    expect(pnlNode).toBeDefined();
+    // 10 shares * (2600 - 2500) = +₹1,000.00 (+4.00%)
+    expect(pnlNode.props.children).toBe('+₹1,000.00 (+4.00%)');
   });
 
   it('calls onBack callback when back button is pressed', () => {

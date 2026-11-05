@@ -9,19 +9,16 @@ import {
   ThemeToggleIcon,
   OrdersIcon,
   DevMenuIcon,
-  FilterIcon,
   MoreVerticalIcon,
 } from '../../components/icons';
-import { filterStore, useFilterStore } from '../../stores/filterStore';
+
 import { FilterModal } from '../../components/FilterModal';
 
 export default function TabLayout() {
   const router = useRouter();
   const { tokens, toggleTheme, isDark } = useTheme();
   const { tabHeight, tabPaddingBottom } = useAppSafeArea();
-  const filterState = useFilterStore();
   const [menuOpen, setMenuOpen] = useState(false);
-  const hasActiveFilter = filterState.filter !== 'all' || filterState.sortBy !== 'name' || filterState.direction !== 'asc';
 
   return (
     <>
@@ -46,20 +43,6 @@ export default function TabLayout() {
           },
           headerRight: () => (
             <View style={styles.headerRightContainer}>
-              <Pressable
-                testID="header.filter.button"
-                accessibilityRole="button"
-                accessibilityLabel="Filter and sort holdings"
-                onPress={filterStore.openModal}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.headerBtn}
-              >
-                <FilterIcon color={hasActiveFilter ? tokens.primary : tokens.textSecondary} size={20} />
-                {hasActiveFilter ? (
-                  <View style={[styles.activeDot, { backgroundColor: tokens.primary }]} />
-                ) : null}
-              </Pressable>
-
               <Pressable
                 testID="orders.header.button"
                 accessibilityRole="button"

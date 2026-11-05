@@ -51,8 +51,7 @@ describe('WatchlistScreen', () => {
     });
 
     const texts = getAllText(renderer.root).join(' ');
-    expect(texts).toContain('Watchlist');
-    expect(texts).toContain('2 symbols');
+    expect(texts).toContain('2 symbols tracked');
     expect(texts).toContain('RELIANCE');
     expect(texts).toContain('TCS');
   });

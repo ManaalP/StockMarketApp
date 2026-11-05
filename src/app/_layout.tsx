@@ -16,6 +16,7 @@ export function RootNavigation() {
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
+          animation: 'fade',
           headerStyle: {
             backgroundColor: tokens.surface,
           },

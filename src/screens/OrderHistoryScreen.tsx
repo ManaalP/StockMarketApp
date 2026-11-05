@@ -12,7 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/useTheme';
 import { useOrderHistory, orderStore, type ExecutedOrder } from '../stores/orderStore';
 import { portfolioStore } from '../stores/portfolioStore';
-import { formatINR, formatOrderTimestamp } from '../domain/format';
+import { usePrice } from '../stores/priceStore';
+import { formatINR, formatSigned, formatPercent, formatOrderTimestamp } from '../domain/format';
 
 export interface OrderHistoryScreenProps {
   readonly onBack?: () => void;
@@ -25,9 +26,39 @@ const OrderRow = memo(function OrderRow({
   readonly order: ExecutedOrder;
 }) {
   const { tokens } = useTheme();
+  const quote = usePrice(order.symbol);
   const isBuy = order.side === 'BUY';
   const isPending = order.status === 'PENDING';
   const isFailed = order.status === 'FAILED';
+  const isExecuted = !isPending && !isFailed;
+
+  // Live tick valuation and P&L
+  const currentLtp = quote?.ltp ?? null;
+  const executionPrice = order.pricePaise;
+  const qty = order.qty;
+
+  // For a BUY order:
+  // - Buying price = executionPrice
+  // - Current P&L = qty * (currentLtp - executionPrice)
+  // For a SELL order:
+  // - Selling price = executionPrice
+  // - Realized/comparison vs current price = qty * (executionPrice - currentLtp)
+  // (i.e. if price went down after selling, user protected money / gained in green; if price went up, user sold cheaper / lost in red)
+  const pnlPaise =
+    currentLtp !== null && isExecuted
+      ? isBuy
+        ? qty * (currentLtp - executionPrice)
+        : qty * (executionPrice - currentLtp)
+      : null;
+
+  const costBasis = qty * executionPrice;
+  const pnlPct =
+    pnlPaise !== null && costBasis > 0
+      ? Math.round((pnlPaise * 10000) / costBasis) / 100
+      : null;
+
+  const isProfit = pnlPaise !== null && pnlPaise > 0;
+  const isLoss = pnlPaise !== null && pnlPaise < 0;
 
   return (
     <View
@@ -89,9 +120,50 @@ const OrderRow = memo(function OrderRow({
             </Text>
           </View>
         </View>
+
         <Text style={[styles.metaText, { color: tokens.textMuted }]}>
           {formatOrderTimestamp(order.timestamp)}
         </Text>
+
+        {/* Live tick tracking & P&L badge */}
+        {isExecuted ? (
+          <View style={styles.liveTickRow}>
+            <Text style={[styles.liveLtpText, { color: tokens.textSecondary }]}>
+              {currentLtp !== null ? `LTP: ${formatINR(currentLtp)}` : 'LTP: --'}
+            </Text>
+            {pnlPaise !== null ? (
+              <View
+                style={[
+                  styles.pnlPill,
+                  {
+                    backgroundColor: isProfit
+                      ? tokens.gainBg
+                      : isLoss
+                      ? tokens.lossBg
+                      : tokens.surfaceAlt,
+                  },
+                ]}
+              >
+                <Text
+                  testID={`order.pnl.${order.id}`}
+                  style={[
+                    styles.pnlPillText,
+                    {
+                      color: isProfit
+                        ? tokens.gain
+                        : isLoss
+                        ? tokens.loss
+                        : tokens.textMuted,
+                    },
+                  ]}
+                >
+                  {`${formatSigned(pnlPaise)} (${formatPercent(pnlPct)})`}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
         {isFailed && order.failureReason ? (
           <Text style={[styles.failureText, { color: tokens.loss }]}>
             {order.failureReason}
@@ -283,12 +355,34 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   row: {
-    height: 72,
+    minHeight: 76,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  liveTickRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  liveLtpText: {
+    fontSize: 11,
+    fontWeight: '500',
+    fontVariant: ['tabular-nums'],
+  },
+  pnlPill: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  pnlPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   leftCol: {
     flex: 1,
