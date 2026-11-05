@@ -220,7 +220,15 @@ export const SwipeTabWrapper = React.memo(function SwipeTabWrapper({
   });
 
   return (
-    <View testID={testID} style={[styles.container, style]} {...panResponder.panHandlers}>
+    <View
+      testID={testID}
+      style={[
+        styles.container,
+        { backgroundColor: tokens.background },
+        style,
+      ]}
+      {...panResponder.panHandlers}
+    >
       <Animated.View
         style={[
           styles.animatedContent,
