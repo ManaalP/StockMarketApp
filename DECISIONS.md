@@ -642,6 +642,21 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Delivers a unified, visually balanced, professional mobile trading experience that scales seamlessly across different screen sizes while maintaining full backward compatibility, O(1) virtualization indexing, and 60 FPS tick performance.
 
+---
+
+### ADR 041: Summary Card Hero Metric Layout & Full-Width Numeric Formatting
+- **Context**:
+  - In `SummaryCard.tsx`, placing large multi-lakh figures (e.g. `₹22,92,393.49`) in a 50/50 horizontal flex split alongside Total P&L caused the primary portfolio amount to wrap awkwardly onto two lines (`₹22,92,39` on line 1, `3.49` on line 2), severely harming readability.
+- **Decision**:
+  - Restructure the top section of `SummaryCard.tsx`:
+    - Move `Current value` label and `Total P&L` (with value & percentage) into a clean, balanced top header row.
+    - Give `PriceText` (the hero Current Value metric) 100% full width directly below the header row with tabular figures and 32px font size.
+  - Retain the compact 3-column metric strip below (`Total invested`, `Today's P&L`, and `Holdings priced`).
+- **Rationale**:
+  - Completely prevents numbers from wrapping or splitting across lines on mobile viewports.
+  - Improves primary vs secondary visual hierarchy so the portfolio value is instantly readable at a glance without awkward wrapping.
+
+
 
 
 
