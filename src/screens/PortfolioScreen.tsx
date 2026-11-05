@@ -16,10 +16,10 @@ import {
   portfolioStore,
 } from '../stores/portfolioStore';
 import { priceStore } from '../stores/priceStore';
+import { useFilterStore, filterStore } from '../stores/filterStore';
 import {
   getSortedHoldingSymbols,
   type SortField,
-  type SortDirection,
 } from '../domain/calcs';
 import { HoldingRow, HOLDING_ROW_HEIGHT } from '../components/HoldingRow';
 import { SummaryCard } from '../components/SummaryCard';
@@ -53,10 +53,9 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
   const { status, error, hydrationStatus, refresh, retry } = useAppStatus();
   const showPerf = usePerfOverlay();
 
-  // Filter & Sort State
+  // Filter & Sort State from filterStore
+  const { filter, sortBy, direction } = useFilterStore();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<SortField>('name');
-  const [direction, setDirection] = useState<SortDirection>('asc');
   const [refreshing, setRefreshing] = useState(false);
   const [sortTick, setSortTick] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -83,8 +82,9 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
       searchQuery,
       sortBy,
       direction,
+      filter,
     });
-  }, [holdings, searchQuery, sortBy, direction, sortTick]);
+  }, [holdings, searchQuery, sortBy, direction, filter, sortTick]);
 
   // Initial bootstrap on mount if not already ready
   useEffect(() => {
@@ -115,16 +115,10 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
   // Sort pill press handler
   const handleSortPress = useCallback(
     (field: SortField) => {
-      if (sortBy === field) {
-        // Toggle direction
-        setDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-      } else {
-        setSortBy(field);
-        // Default descending for financial metrics (Value, P&L); ascending for Name
-        setDirection(field === 'name' ? 'asc' : 'desc');
-      }
+      filterStore.toggleSort(field);
+      setSortTick((prev) => prev + 1);
     },
-    [sortBy]
+    []
   );
 
   // Stable FlatList callbacks
@@ -200,7 +194,7 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Filter by symbol"
+              placeholder="Filter by symbol or company"
               placeholderTextColor={tokens.textMuted}
               autoCapitalize="characters"
               autoCorrect={false}
@@ -229,6 +223,27 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
               {renderSortButton('name', 'Name')}
               {renderSortButton('value', 'Value')}
               {renderSortButton('pnl', 'P&L')}
+              <Pressable
+                testID="portfolio.filter.open"
+                accessibilityRole="button"
+                accessibilityLabel="Open filter and sort menu"
+                onPress={filterStore.openModal}
+                style={[
+                  styles.sortPill,
+                  {
+                    backgroundColor: filter !== 'all' ? tokens.primary : tokens.surfaceContainer,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sortPillText,
+                    { color: filter !== 'all' ? '#FFFFFF' : tokens.textSecondary },
+                  ]}
+                >
+                  {filter !== 'all' ? `Filter: ${filter}` : 'Filter'}
+                </Text>
+              </Pressable>
               {__DEV__ ? (
                 <Pressable
                   testID="perf.toggle.btn"
@@ -277,6 +292,7 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
     );
   }, [
     tokens,
+    filter,
     sortBy,
     direction,
     searchQuery,

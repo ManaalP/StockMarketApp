@@ -1,7 +1,6 @@
 import {
-  generateCandlesForTimeframe,
+  generateAuthenticCandles,
   applyZoomToCandles,
-  type ChartTimeframe,
 } from '../../src/domain/candles';
 import type { Quote } from '../../src/domain/types';
 
@@ -15,52 +14,39 @@ describe('candles domain logic', () => {
     volume: 120000,
   };
 
-  test('generates valid 1D candles with session tick chunking', () => {
-    const fewTicks = [249000, 249521];
-    const candlesFew = generateCandlesForTimeframe('1D', mockQuote, fewTicks);
-    expect(candlesFew).toHaveLength(5);
-    expect(candlesFew[0]?.open).toBe(245000); // Anchored to day open
-    expect(candlesFew[candlesFew.length - 1]?.close).toBe(249521); // Anchored to latest tick
-    expect(candlesFew[0]?.label).toBe('09:15');
+  test('creates authentic Daily Candlestick using genuine exchange OHLC metrics', () => {
+    const candles = generateAuthenticCandles(mockQuote, [249521]);
+    expect(candles.length).toBeGreaterThanOrEqual(1);
 
-    const manyTicks = [245000, 246000, 247000, 248000, 249000, 250000, 250500, 249521];
-    const candlesMany = generateCandlesForTimeframe('1D', mockQuote, manyTicks);
-    expect(candlesMany.length).toBeGreaterThanOrEqual(4);
-    expect(candlesMany[candlesMany.length - 1]?.close).toBe(249521);
+    const todayCandle = candles[candles.length - 1]!;
+    expect(todayCandle.open).toBe(245000);
+    expect(todayCandle.high).toBe(251000);
+    expect(todayCandle.low).toBe(244000);
+    expect(todayCandle.close).toBe(249521);
+    expect(todayCandle.label).toBe('Today');
   });
 
-  test('generates 1W, 1M, and 1Y candles anchored to authentic price levels without floats', () => {
-    const timeframes: ChartTimeframe[] = ['1W', '1M', '1Y'];
-    for (const tf of timeframes) {
-      const candles = generateCandlesForTimeframe(tf, mockQuote, [249521]);
-      expect(candles.length).toBeGreaterThan(0);
-      for (const c of candles) {
-        expect(Number.isInteger(c.open)).toBe(true);
-        expect(Number.isInteger(c.high)).toBe(true);
-        expect(Number.isInteger(c.low)).toBe(true);
-        expect(Number.isInteger(c.close)).toBe(true);
-        expect(c.label.length).toBeGreaterThan(0);
-        expect(c.high).toBeGreaterThanOrEqual(Math.min(c.open, c.close));
-        expect(c.low).toBeLessThanOrEqual(Math.max(c.open, c.close));
-      }
-      // Last candle always ends on the current live price
-      expect(candles[candles.length - 1]?.close).toBe(249521);
-    }
+  test('returns empty array when quote is null or unpriced', () => {
+    expect(generateAuthenticCandles(null, [])).toEqual([]);
+    expect(generateAuthenticCandles({ ...mockQuote, ltp: null }, [])).toEqual([]);
   });
 
-  test('applyZoomToCandles adjusts visible candle count', () => {
-    const baseCandles = generateCandlesForTimeframe('1Y', mockQuote, [249521]);
-    expect(baseCandles.length).toBe(6);
+  test('chunks real accumulated session ticks into authentic interval candles without random data', () => {
+    const realTicks = [245000, 246000, 248000, 250000, 249000, 249521];
+    const candles = generateAuthenticCandles(mockQuote, realTicks);
 
-    // Zoomed out (<= 1) retains all candles
-    const zoomedOut = applyZoomToCandles(baseCandles, 0.8);
-    expect(zoomedOut.length).toBe(6);
+    expect(candles.length).toBeGreaterThanOrEqual(2);
+    expect(candles[0]?.open).toBe(245000);
+    expect(candles[candles.length - 1]?.close).toBe(249521);
+  });
 
-    // Zoomed in (1.5x) slices subset of candles (at least 3)
-    const zoomedIn = applyZoomToCandles(baseCandles, 2.0);
-    expect(zoomedIn.length).toBeLessThanOrEqual(baseCandles.length);
-    expect(zoomedIn.length).toBeGreaterThanOrEqual(3);
-    // Last candle is preserved
-    expect(zoomedIn[zoomedIn.length - 1]?.close).toBe(baseCandles[baseCandles.length - 1]?.close);
+  test('applyZoomToCandles slices candles when zoomed in', () => {
+    const realTicks = [245000, 246000, 247000, 248000, 249000, 250000, 250500, 249521];
+    const candles = generateAuthenticCandles(mockQuote, realTicks);
+    const zoomedIn = applyZoomToCandles(candles, 2.0);
+
+    expect(zoomedIn.length).toBeLessThanOrEqual(candles.length);
+    expect(zoomedIn.length).toBeGreaterThanOrEqual(2);
+    expect(zoomedIn[zoomedIn.length - 1]?.close).toBe(249521);
   });
 });

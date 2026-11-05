@@ -9,58 +9,77 @@ import {
   ThemeToggleIcon,
   OrdersIcon,
   DevMenuIcon,
+  FilterIcon,
 } from '../../components/icons';
+import { filterStore, useFilterStore } from '../../stores/filterStore';
+import { FilterModal } from '../../components/FilterModal';
 
 export default function TabLayout() {
   const router = useRouter();
   const { tokens, toggleTheme, isDark } = useTheme();
   const { tabHeight, tabPaddingBottom } = useAppSafeArea();
+  const filterState = useFilterStore();
+  const hasActiveFilter = filterState.filter !== 'all' || filterState.sortBy !== 'name' || filterState.direction !== 'asc';
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: true,
-        headerStyle: {
-          backgroundColor: tokens.surface,
-        },
-        headerTitleStyle: {
-          color: tokens.textPrimary,
-          fontWeight: '700',
-        },
-        headerRight: () => (
-          <View style={styles.headerRightContainer}>
-            <Pressable
-              testID="dev.header.button"
-              accessibilityRole="button"
-              accessibilityLabel="Developer controls"
-              onPress={() => router.push('/dev')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.headerBtn}
-            >
-              <DevMenuIcon color={tokens.textSecondary} size={20} />
-            </Pressable>
-            <Pressable
-              testID="orders.header.button"
-              accessibilityRole="button"
-              accessibilityLabel="View order history"
-              onPress={() => router.push('/orders')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.headerBtn}
-            >
-              <OrdersIcon color={tokens.textSecondary} size={22} />
-            </Pressable>
-            <Pressable
-              testID="theme.toggle.button"
-              accessibilityRole="button"
-              accessibilityLabel={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-              onPress={toggleTheme}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.headerBtn}
-            >
-              <ThemeToggleIcon color={tokens.textSecondary} size={22} />
-            </Pressable>
-          </View>
-        ),
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: tokens.surface,
+          },
+          headerTitleStyle: {
+            color: tokens.textPrimary,
+            fontWeight: '700',
+          },
+          headerRight: () => (
+            <View style={styles.headerRightContainer}>
+              <Pressable
+                testID="header.filter.button"
+                accessibilityRole="button"
+                accessibilityLabel="Filter and sort holdings"
+                onPress={filterStore.openModal}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.headerBtn}
+              >
+                <FilterIcon color={hasActiveFilter ? tokens.primary : tokens.textSecondary} size={20} />
+                {hasActiveFilter ? (
+                  <View style={[styles.activeDot, { backgroundColor: tokens.primary }]} />
+                ) : null}
+              </Pressable>
+              <Pressable
+                testID="dev.header.button"
+                accessibilityRole="button"
+                accessibilityLabel="Developer controls"
+                onPress={() => router.push('/dev')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.headerBtn}
+              >
+                <DevMenuIcon color={tokens.textSecondary} size={20} />
+              </Pressable>
+              <Pressable
+                testID="orders.header.button"
+                accessibilityRole="button"
+                accessibilityLabel="View order history"
+                onPress={() => router.push('/orders')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.headerBtn}
+              >
+                <OrdersIcon color={tokens.textSecondary} size={22} />
+              </Pressable>
+              <Pressable
+                testID="theme.toggle.button"
+                accessibilityRole="button"
+                accessibilityLabel={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+                onPress={toggleTheme}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.headerBtn}
+              >
+                <ThemeToggleIcon color={tokens.textSecondary} size={22} />
+              </Pressable>
+            </View>
+          ),
         tabBarStyle: {
           backgroundColor: tokens.surface,
           borderTopColor: tokens.border,
@@ -93,6 +112,8 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    <FilterModal />
+    </>
   );
 }
 
@@ -108,5 +129,14 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+  },
+  activeDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
 });

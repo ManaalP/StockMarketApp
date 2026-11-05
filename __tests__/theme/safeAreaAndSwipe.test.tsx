@@ -45,7 +45,8 @@ describe('Safe Area & Android Buttons Inset Compensation', () => {
     expect(metrics.hasBottomButtons).toBe(false);
     expect(metrics.bottomPadding).toBe(8);
     expect(metrics.tabHeight).toBe(68);
-    expect(metrics.tabPaddingBottom).toBe(12);
+    expect(metrics.tabPaddingBottom).toBe(14);
+    expect(metrics.toastTopPadding).toBe(84);
   });
 });
 

@@ -13,6 +13,8 @@ import { createSimulatedFeed } from '../feed/SimulatedFeed';
 import { createResilientFeed } from '../feed/resilientFeed';
 import { orderStore as defaultOrderStore, type OrderStore } from './orderStore';
 import type { StorageBackend } from './watchlistStore';
+import { toastStore } from './toastStore';
+import { networkStore } from './networkStore';
 
 export const PORTFOLIO_STORAGE_KEY = 'portfolio:v1';
 
@@ -324,6 +326,20 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
       await hydrate();
     }
 
+    if (!networkStore.isOnline()) {
+      const err: OhlcError = {
+        kind: 'network',
+        message: 'No internet connection. Please check your data or Wi-Fi.',
+      };
+      toastStore.show({
+        type: 'error',
+        message: err.message,
+        durationMs: 4000,
+      });
+      setStatus('error', err);
+      return;
+    }
+
     const result = await apiClient.fetchOhlc([...INITIAL_FETCH_SYMBOLS]);
     if (!result.ok) {
       setStatus('error', result.error);
@@ -350,11 +366,26 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
   };
 
   const refresh = async (): Promise<void> => {
+    if (!networkStore.isOnline()) {
+      toastStore.show({
+        type: 'error',
+        message: 'Cannot refresh: No internet connection. Please check your data or Wi-Fi.',
+        durationMs: 4000,
+      });
+      return;
+    }
+
     const result = await apiClient.fetchOhlc([...INITIAL_FETCH_SYMBOLS]);
     if (result.ok) {
       // Re-seeding priceStore retains existing per-symbol seq numbers so ticks remain monotonic
       priceStore.seed(result.quotes);
       await evaluatePendingOrders();
+    } else {
+      toastStore.show({
+        type: 'error',
+        message: result.error.message || 'Failed to refresh quotes',
+        durationMs: 3500,
+      });
     }
   };
 

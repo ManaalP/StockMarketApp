@@ -18,9 +18,8 @@ import { priceStore, usePrice } from '../stores/priceStore';
 import { chartPath } from '../domain/chart';
 import { formatINR } from '../domain/format';
 import {
-  generateCandlesForTimeframe,
+  generateAuthenticCandles,
   applyZoomToCandles,
-  type ChartTimeframe,
   type CandleData,
 } from '../domain/candles';
 import type { Quote } from '../domain/types';
@@ -30,7 +29,7 @@ export const MAX_RING_BUFFER_POINTS = 120;
 export const CHART_FLUSH_INTERVAL_MS = 250;
 
 export type ChartMode = 'candle' | 'line';
-export { type CandleData, type ChartTimeframe };
+export { type CandleData };
 
 export interface LiveLineChartProps {
   readonly symbol: string;
@@ -40,24 +39,26 @@ export interface LiveLineChartProps {
 }
 
 /**
- * Backward-compatible helper for 1D candle generation.
+ * Backward-compatible helper for candle generation using authentic data only.
  */
 export function generateCandles(
   quote: Quote | null,
   renderedPoints: number[]
 ): CandleData[] {
-  return generateCandlesForTimeframe('1D', quote, renderedPoints);
+  return generateAuthenticCandles(quote, renderedPoints);
 }
 
-const TIMEFRAMES: readonly ChartTimeframe[] = ['1D', '1W', '1M', '1Y'];
-
 /**
- * High-performance, professional live market chart supporting OHLC Candlestick,
- * timeframe filters (1D, 1W, 1M, 1Y), pinch-to-zoom, Y-axis price labels, and candle inspection.
+ * High-performance, professional live market chart supporting authentic OHLC Candlesticks,
+ * zoom controls, Y-axis price labels, High/Low callouts, and candle inspection.
+ *
+ * Rules:
+ * - NEVER synthesizes or hallucinates random historical data.
+ * - Anchored strictly to authentic exchange OHLC (Open, High, Low, LTP, PrevClose) and live session ticks.
  */
 export const LiveLineChart = memo(function LiveLineChart({
   symbol,
-  height = 240,
+  height = 230,
   initialMode = 'candle',
   testID,
 }: LiveLineChartProps) {
@@ -65,7 +66,6 @@ export const LiveLineChart = memo(function LiveLineChart({
   const quote = usePrice(symbol);
   const [containerWidth, setContainerWidth] = useState(340);
   const [chartMode, setChartMode] = useState<ChartMode>(initialMode);
-  const [timeframe, setTimeframe] = useState<ChartTimeframe>('1D');
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
   const [selectedCandleIndex, setSelectedCandleIndex] = useState<number | null>(null);
 
@@ -82,7 +82,6 @@ export const LiveLineChart = memo(function LiveLineChart({
   }, []);
 
   useEffect(() => {
-    // Reset points on symbol change
     pointsRef.current = [];
     const initialQuote = priceStore.getQuote(symbol);
     if (initialQuote && initialQuote.ltp !== null) {
@@ -170,17 +169,17 @@ export const LiveLineChart = memo(function LiveLineChart({
     );
   }
 
-  const plotHeight = height - 76; // reserve space for top bar, timeframe filter, and X-axis
+  const plotHeight = height - 68; // reserve space for top bar, OHLC strip, and X-axis
   const firstPrice: Paise = renderedPoints[0]!;
   const latestPrice: Paise = renderedPoints[renderedPoints.length - 1]!;
   const isUp = latestPrice >= firstPrice;
   const strokeColor = isUp ? tokens.gain : tokens.loss;
 
-  // Generate candles for chosen timeframe and zoom
-  const allCandles = generateCandlesForTimeframe(timeframe, quote, renderedPoints);
+  // Generate authentic candles
+  const allCandles = generateAuthenticCandles(quote, renderedPoints);
   const visibleCandles = applyZoomToCandles(allCandles, zoomLevel);
 
-  // Selected candle (or fallback to latest)
+  // Selected candle (or fallback to active)
   const activeCandle =
     selectedCandleIndex !== null && visibleCandles[selectedCandleIndex]
       ? visibleCandles[selectedCandleIndex]
@@ -197,21 +196,21 @@ export const LiveLineChart = memo(function LiveLineChart({
   const minVal = Math.min(...candleLows, quote?.low ?? latestPrice, ...renderedPoints);
   const maxVal = Math.max(...candleHighs, quote?.high ?? latestPrice, ...renderedPoints);
   const spread = Math.max(maxVal - minVal, 100);
-  const paddingVal = Math.round(spread * 0.08);
+  const paddingVal = Math.round(spread * 0.1);
   const domainMin = minVal - paddingVal;
   const domainMax = maxVal + paddingVal;
   const domainRange = domainMax - domainMin || 1;
 
-  const yRailWidth = 58;
+  const yRailWidth = 62;
   const usableWidth = containerWidth - yRailWidth;
 
   const getY = (val: number) => {
     const clampedVal = Math.max(domainMin, Math.min(domainMax, val));
-    return plotHeight - 18 - ((clampedVal - domainMin) / domainRange) * (plotHeight - 34);
+    return plotHeight - 16 - ((clampedVal - domainMin) / domainRange) * (plotHeight - 32);
   };
 
   // Line chart path calculation
-  const { path } = chartPath(renderedPoints, usableWidth, plotHeight, 14);
+  const { path } = chartPath(renderedPoints, usableWidth, plotHeight, 12);
   const displayPath =
     renderedPoints.length === 1
       ? `M 0,${(plotHeight / 2).toFixed(1)} L ${usableWidth},${(plotHeight / 2).toFixed(1)}`
@@ -230,38 +229,12 @@ export const LiveLineChart = memo(function LiveLineChart({
         },
       ]}
     >
-      {/* Top Header Row: Mode Switcher, Timeframe Filters, and Zoom Controls */}
+      {/* Top Header Row: Session Info, Zoom Controls, and Mode Switcher */}
       <View style={[styles.topBar, { borderBottomColor: tokens.border }]}>
-        {/* Timeframe Filters (1D, 1W, 1M, 1Y) */}
-        <View style={styles.timeframeRow}>
-          {TIMEFRAMES.map((tf) => {
-            const isActive = timeframe === tf;
-            return (
-              <Pressable
-                key={tf}
-                testID={`chart.filter.${tf}`}
-                accessibilityRole="button"
-                accessibilityLabel={`Select ${tf} timeframe`}
-                onPress={() => {
-                  setTimeframe(tf);
-                  setSelectedCandleIndex(null);
-                }}
-                style={[
-                  styles.filterPill,
-                  isActive && { backgroundColor: tokens.primary + '20', borderColor: tokens.primary },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filterPillText,
-                    { color: isActive ? tokens.primary : tokens.textMuted },
-                  ]}
-                >
-                  {tf}
-                </Text>
-              </Pressable>
-            );
-          })}
+        <View style={styles.topBarLeft}>
+          <Text style={[styles.chartBadge, { color: strokeColor }]}>
+            {`DAILY OHLC • ${renderedPoints.length} ${renderedPoints.length === 1 ? 'TICK' : 'TICKS'}`}
+          </Text>
         </View>
 
         {/* Zoom In/Out Controls */}
@@ -359,7 +332,7 @@ export const LiveLineChart = memo(function LiveLineChart({
         ) : null}
       </View>
 
-      {/* Interactive Pinch Gesture Canvas */}
+      {/* Interactive Chart Canvas with PinchGestureHandler */}
       <PinchGestureHandler onGestureEvent={handlePinchGesture}>
         <View style={styles.chartArea}>
           <Svg width={containerWidth} height={plotHeight}>
@@ -451,7 +424,7 @@ export const LiveLineChart = memo(function LiveLineChart({
               // Candlesticks with labels and interactive touch columns
               visibleCandles.map((c, idx) => {
                 const slotWidth = usableWidth / visibleCandles.length;
-                const candleWidth = Math.max(10, Math.min(26, Math.floor(slotWidth * 0.65)));
+                const candleWidth = Math.max(16, Math.min(36, Math.floor(slotWidth * 0.55)));
                 const xCenter = idx * slotWidth + slotWidth / 2;
                 const isGreen = c.close >= c.open;
                 const candleColor = isGreen ? tokens.gain : tokens.loss;
@@ -459,7 +432,7 @@ export const LiveLineChart = memo(function LiveLineChart({
                 const yLow = getY(c.low);
                 const yTop = getY(Math.max(c.open, c.close));
                 const yBottom = getY(Math.min(c.open, c.close));
-                const bodyHeight = Math.max(2.5, yBottom - yTop);
+                const bodyHeight = Math.max(3, yBottom - yTop);
                 const isSelected = selectedCandleIndex === idx;
 
                 return (
@@ -486,7 +459,7 @@ export const LiveLineChart = memo(function LiveLineChart({
                       x2={xCenter}
                       y2={yLow}
                       stroke={candleColor}
-                      strokeWidth={1.5}
+                      strokeWidth={1.8}
                     />
 
                     {/* Body */}
@@ -497,8 +470,20 @@ export const LiveLineChart = memo(function LiveLineChart({
                       width={candleWidth}
                       height={bodyHeight}
                       fill={candleColor}
-                      rx={1.5}
+                      rx={2}
                     />
+
+                    {/* High/Low candle value markers */}
+                    <SvgText
+                      x={xCenter}
+                      y={Math.max(10, yHigh - 4)}
+                      textAnchor="middle"
+                      fill={tokens.textMuted}
+                      fontSize="8"
+                      fontWeight="600"
+                    >
+                      {formatINR(c.high)}
+                    </SvgText>
 
                     {/* Candle X-Axis Date/Time Label */}
                     <SvgText
@@ -588,20 +573,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 6,
   },
-  timeframeRow: {
+  topBarLeft: {
     flexDirection: 'row',
-    gap: 3,
+    alignItems: 'center',
   },
-  filterPill: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  filterPillText: {
+  chartBadge: {
     fontSize: 10,
     fontWeight: '700',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
   zoomRow: {
     flexDirection: 'row',

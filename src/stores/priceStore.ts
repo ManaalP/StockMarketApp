@@ -2,6 +2,7 @@ import { useSyncExternalStore, useCallback } from 'react';
 import type { Quote } from '../domain/types';
 import type { Tick, PriceFeed } from '../feed/types';
 import { mergeTick, type QuoteWithSeq, type QuotesState } from '../domain/tickMerge';
+import { networkStore } from './networkStore';
 
 export interface PriceStoreOptions {
   /**
@@ -122,7 +123,16 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
     }
   };
 
+  const unsubNetwork = networkStore.onNetworkChange((online) => {
+    if (!online) {
+      setPausedState(true);
+    }
+  });
+
   const queueTick = (tick: Tick): void => {
+    if (!networkStore.isOnline()) {
+      return;
+    }
     lastTickAt = Date.now();
     if (paused) {
       setPausedState(false);
@@ -218,6 +228,7 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
   };
 
   const destroy = (): void => {
+    unsubNetwork();
     if (flushTimer !== null) {
       clearInterval(flushTimer);
       flushTimer = null;

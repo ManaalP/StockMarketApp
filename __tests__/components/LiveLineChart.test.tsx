@@ -57,7 +57,7 @@ describe('LiveLineChart', () => {
     });
   });
 
-  test('renders Candlestick chart by default with OHLC metrics and candle elements', () => {
+  test('renders Candlestick chart by default with authentic OHLC metrics and candle elements', () => {
     act(() => {
       priceStore.seed({
         TCS: {
@@ -145,7 +145,6 @@ describe('LiveLineChart', () => {
       jest.advanceTimersByTime(CHART_FLUSH_INTERVAL_MS);
     });
 
-    // Path updated with new points
     expect(renderer.root.findByProps({ testID: 'live.chart.path' })).toBeDefined();
 
     // Toggle back to Candlestick mode
@@ -154,7 +153,6 @@ describe('LiveLineChart', () => {
       candleBtn.props.onPress();
     });
 
-    // In candle mode, candles are rendered instead of line path
     expect(renderer.root.findAllByProps({ testID: 'live.chart.path' })).toHaveLength(0);
     expect(renderer.root.findAllByProps({ testID: 'chart.candle.body.0' }).length).toBeGreaterThan(0);
 
@@ -163,7 +161,7 @@ describe('LiveLineChart', () => {
     });
   });
 
-  test('supports timeframe filters (1D, 1W, 1M, 1Y) and zoom controls', () => {
+  test('supports zoom in/out and candle touch inspection', () => {
     act(() => {
       priceStore.seed({
         TCS: {
@@ -186,15 +184,6 @@ describe('LiveLineChart', () => {
         </ThemeProvider>
       );
     });
-
-    // Filter switching
-    const filter1W = renderer.root.findByProps({ testID: 'chart.filter.1W' });
-    act(() => {
-      filter1W.props.onPress();
-    });
-
-    // Verify 1W candles rendered with labels
-    expect(renderer.root.findAllByProps({ testID: 'chart.candle.label.0' }).length).toBeGreaterThan(0);
 
     // Zoom In
     const zoomInBtn = renderer.root.findByProps({ testID: 'chart.zoom.in' });
@@ -220,7 +209,6 @@ describe('LiveLineChart', () => {
       candleTouch0.props.onPress();
     });
 
-    // Active price badge exists
     expect(renderer.root.findByProps({ testID: 'chart.active.price.badge' })).toBeDefined();
 
     act(() => {
@@ -228,7 +216,7 @@ describe('LiveLineChart', () => {
     });
   });
 
-  test('generateCandles accurately creates OHLC data series', () => {
+  test('generateCandles accurately creates OHLC from authentic quote', () => {
     const quote = {
       ltp: 320000,
       open: 315000,
@@ -238,16 +226,12 @@ describe('LiveLineChart', () => {
       volume: 50000,
     };
 
-    // Baseline synthesized candles for session < 8 ticks
-    const baseline = generateCandles(quote, [320000, 321000]);
-    expect(baseline.length).toBeGreaterThanOrEqual(5);
-    expect(baseline[0]?.open).toBe(315000);
-    expect(baseline[baseline.length - 1]?.close).toBe(321000);
-
-    // Accumulated session ticks >= 8
-    const points = [315000, 316000, 317000, 318000, 319000, 320000, 321000, 322000];
-    const chunked = generateCandles(quote, points);
-    expect(chunked.length).toBeGreaterThanOrEqual(1);
-    expect(chunked[chunked.length - 1]?.close).toBe(322000);
+    const candles = generateCandles(quote, [320000]);
+    expect(candles.length).toBeGreaterThanOrEqual(1);
+    const today = candles[candles.length - 1]!;
+    expect(today.open).toBe(315000);
+    expect(today.high).toBe(325000);
+    expect(today.low).toBe(310000);
+    expect(today.close).toBe(320000);
   });
 });
