@@ -286,7 +286,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backButton: {
-    paddingVertical: 6,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 4,
   },
   backText: {
@@ -306,7 +309,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   starButton: {
-    paddingVertical: 6,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 8,
   },
   starText: {

@@ -53,9 +53,16 @@ export const PnLText = memo(function PnLText({
   }
 
   const content = parts.length > 0 ? parts.join(' ') : formatSigned(pnlPaise);
+  const a11yCue = isPositive ? 'Gain' : isNegative ? 'Loss' : 'Neutral';
+  const a11yLabel = `${a11yCue}: ${content}`;
 
   return (
-    <Text testID={testID} style={[styles.text, { color }, style]}>
+    <Text
+      testID={testID}
+      accessibilityRole="text"
+      accessibilityLabel={a11yLabel}
+      style={[styles.text, { color }, style]}
+    >
       {content}
     </Text>
   );
