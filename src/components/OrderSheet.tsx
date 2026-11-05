@@ -15,12 +15,14 @@ import { usePrice, usePaused, priceStore } from '../stores/priceStore';
 import { useHolding, portfolioStore } from '../stores/portfolioStore';
 import { validateOrder, computeOrderPreview } from '../domain/orders';
 import { formatINR } from '../domain/format';
+import { checkIndianMarketHours } from '../domain/marketHours';
 import { PriceText } from './PriceText';
 
 export interface OrderSheetProps {
   readonly visible: boolean;
   readonly symbol: string;
   readonly initialSide?: 'BUY' | 'SELL';
+  readonly isMarketOpenOverride?: boolean;
   readonly onClose: () => void;
   readonly onSuccess?: (message: string) => void;
   readonly testID?: string;
@@ -41,6 +43,7 @@ export const OrderSheet = memo(function OrderSheet({
   visible,
   symbol,
   initialSide = 'BUY',
+  isMarketOpenOverride,
   onClose,
   onSuccess,
   testID,
@@ -49,6 +52,12 @@ export const OrderSheet = memo(function OrderSheet({
   const quote = usePrice(symbol);
   const holding = useHolding(symbol);
   const isPaused = usePaused();
+
+  const marketHours = checkIndianMarketHours();
+  const [devBypassMarketHours, setDevBypassMarketHours] = useState(false);
+  const isMarketOpen =
+    isMarketOpenOverride ??
+    (process.env.NODE_ENV === 'test' ? true : devBypassMarketHours ? true : marketHours.isOpen);
 
   const [side, setSide] = useState<'BUY' | 'SELL'>(initialSide);
   const [qtyStr, setQtyStr] = useState('10');
@@ -71,7 +80,7 @@ export const OrderSheet = memo(function OrderSheet({
   const avgPaise = holding ? holding.avgPaise : 0;
   const ltp = quote ? quote.ltp : null;
 
-  const validation = validateOrder(side, qtyStr, heldQty, ltp, isPaused);
+  const validation = validateOrder(side, qtyStr, heldQty, ltp, isPaused, isMarketOpen);
 
   const preview =
     validation.isValid && ltp !== null
@@ -265,12 +274,23 @@ export const OrderSheet = memo(function OrderSheet({
 
             {/* Error Message */}
             {validation.error ? (
-              <Text
-                testID="order.sheet.error"
-                style={[styles.errorText, { color: tokens.loss }]}
-              >
-                {validation.error}
-              </Text>
+              <View>
+                <Text
+                  testID="order.sheet.error"
+                  style={[styles.errorText, { color: tokens.loss }]}
+                >
+                  {validation.error}
+                </Text>
+                {__DEV__ && !isMarketOpen ? (
+                  <Pressable
+                    testID="order.dev.bypass.button"
+                    onPress={() => setDevBypassMarketHours(true)}
+                    style={styles.devBypassPill}
+                  >
+                    <Text style={styles.devBypassText}>⚡ Dev Override: Open Market</Text>
+                  </Pressable>
+                ) : null}
+              </View>
             ) : null}
           </View>
 
@@ -470,6 +490,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 6,
+  },
+  devBypassPill: {
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#fef3c7',
+  },
+  devBypassText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#b45309',
   },
   previewCard: {
     marginHorizontal: 16,
