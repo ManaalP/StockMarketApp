@@ -7,6 +7,7 @@ import {
   type SummaryTotals,
 } from './types';
 import { mulQty, safePercent, type Paise } from './money';
+import { COMPANY_NAMES } from '../data/constants';
 
 /**
  * Typed domain error for invalid order requests.
@@ -209,7 +210,11 @@ export function getSortedHoldingSymbols(
 
   let filtered = holdings;
   if (searchQuery && searchQuery.length > 0) {
-    filtered = holdings.filter((h) => h.symbol.toUpperCase().includes(searchQuery));
+    filtered = holdings.filter((h) => {
+      const symMatch = h.symbol.toUpperCase().includes(searchQuery);
+      const companyName = COMPANY_NAMES[h.symbol]?.toUpperCase() ?? '';
+      return symMatch || companyName.includes(searchQuery);
+    });
   }
 
   const sorted = [...filtered].sort((a, b) => {

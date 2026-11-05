@@ -1,5 +1,7 @@
-import { mulQty, type Paise } from './money';
+import { mulQty, toPaise, type Paise } from './money';
 import { formatINR } from './format';
+import type { Holding, Order } from './types';
+import { applyOrder } from './calcs';
 
 export interface OrderValidationResult {
   readonly isValid: boolean;
@@ -130,5 +132,71 @@ export function computeOrderPreview(
   return {
     estimatedTotalPaise,
     previewText: `${heldQty} shares → ${remaining} shares left`,
+  };
+}
+
+/**
+ * Validates a target limit price entered by user in Rupees.
+ */
+export function validateTargetPrice(
+  priceStr: string
+): { isValid: boolean; error: string | null; targetPaise: Paise } {
+  const trimmed = priceStr.trim().replace(/,/g, '');
+  const num = parseFloat(trimmed);
+
+  if (isNaN(num) || num <= 0 || !Number.isFinite(num)) {
+    return {
+      isValid: false,
+      error: 'Enter a valid target price above ₹0.00',
+      targetPaise: 0,
+    };
+  }
+
+  const targetPaise = toPaise(num);
+  return {
+    isValid: true,
+    error: null,
+    targetPaise,
+  };
+}
+
+/**
+ * Pure evaluation whether a pending limit order has met its market execution criteria.
+ * - SELL LIMIT: Executes when live LTP reaches or exceeds the target price (ltp >= targetPaise).
+ * - BUY LIMIT: Executes when live LTP reaches or drops to target price (ltp <= targetPaise).
+ */
+export function checkOrderTrigger(order: Order, currentLtp: Paise | null): boolean {
+  if (order.status !== 'PENDING' || currentLtp === null) {
+    return false;
+  }
+
+  const target = order.targetPaise ?? order.fillPaise;
+  if (order.side === 'SELL') {
+    return currentLtp >= target;
+  }
+
+  return currentLtp <= target;
+}
+
+/**
+ * Executes a pending order at the triggered market fill price, immutably updating holdings.
+ */
+export function executePendingOrder(
+  holdings: readonly Holding[],
+  order: Order,
+  fillPaise: Paise,
+  nowTimestamp: number = Date.now()
+): { holdings: Holding[]; order: Order } {
+  const executedOrder: Order = {
+    ...order,
+    fillPaise,
+    status: 'EXECUTED',
+    executedAt: nowTimestamp,
+  };
+
+  const updatedHoldings = applyOrder([...holdings], executedOrder);
+  return {
+    holdings: updatedHoldings,
+    order: executedOrder,
   };
 }
