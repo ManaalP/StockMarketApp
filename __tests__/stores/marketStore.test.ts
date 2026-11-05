@@ -1,6 +1,10 @@
 import { createMarketStore } from '../../src/stores/marketStore';
+import { toastStore } from '../../src/stores/toastStore';
 
 describe('MarketStore (src/stores/marketStore.ts)', () => {
+  afterEach(() => {
+    toastStore.clear();
+  });
   it('initializes with simulatedClosed = false', () => {
     const store = createMarketStore(false);
     expect(store.isSimulatedClosed()).toBe(false);

@@ -4,6 +4,8 @@ import {
   validateTargetPrice,
   checkOrderTrigger,
   executePendingOrder,
+  isOrderExpired,
+  shouldExecuteImmediately,
 } from '../../src/domain/orders';
 import type { Holding, Order } from '../../src/domain/types';
 
@@ -244,6 +246,34 @@ describe('Domain: Order Validation & Previews (src/domain/orders.ts)', () => {
       expect(result.order.status).toBe('EXECUTED');
       expect(result.order.fillPaise).toBe(261500);
       expect(result.order.executedAt).toBe(2000);
+    });
+  });
+
+  describe('isOrderExpired & shouldExecuteImmediately', () => {
+    test('isOrderExpired returns true when pending order passes ORDER_TIMEOUT_MS', () => {
+      const order: Order = {
+        id: 'ord-exp',
+        symbol: 'TCS',
+        side: 'BUY',
+        type: 'LIMIT',
+        qty: 10,
+        fillPaise: 300000,
+        status: 'PENDING',
+        createdAt: 1000,
+      };
+      expect(isOrderExpired(order, 1000 + 10 * 60 * 1000 + 1)).toBe(true);
+      expect(isOrderExpired(order, 1000 + 5 * 60 * 1000)).toBe(false);
+      expect(isOrderExpired({ ...order, status: 'EXECUTED' }, 1000 + 20 * 60 * 1000)).toBe(false);
+    });
+
+    test('shouldExecuteImmediately evaluates immediate trigger thresholds correctly', () => {
+      // SELL: target <= currentLtp triggers immediately
+      expect(shouldExecuteImmediately('SELL', 250000, 260000)).toBe(true);
+      expect(shouldExecuteImmediately('SELL', 270000, 260000)).toBe(false);
+
+      // BUY: target >= currentLtp triggers immediately
+      expect(shouldExecuteImmediately('BUY', 270000, 260000)).toBe(true);
+      expect(shouldExecuteImmediately('BUY', 250000, 260000)).toBe(false);
     });
   });
 });

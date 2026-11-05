@@ -834,6 +834,20 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Maintains strict separation of concerns, improves readability and test isolation, and keeps all top-level screen files lightweight (< 100 lines).
 
+---
+
+### ADR 054: Test Coverage Threshold Enforcement & Handle Leak Resolution
+- **Context**:
+  - Running Jest with `--detectOpenHandles` flagged a lingering `setTimeout` in `marketStore.test.ts` originating from un-cleared toast auto-dismiss timers.
+  - Furthermore, several sorting and order expiry branches lacked explicit test verification.
+- **Decision**:
+  - Added `toastStore.clear()` in `marketStore.test.ts` `afterEach` teardown to ensure all scheduled timers are cancelled.
+  - Added unit test coverage for `isOrderExpired`, `shouldExecuteImmediately`, dynamic `setTickRate` on `SimulatedFeed`, and extra sorting keys (`ltp`, `change`, `pnlPct`) in `calcs.ts`.
+  - Added `test:cov` script and global Jest coverage thresholds (`branches: 70%`, `functions: 75%`, `lines: 80%`, `statements: 80%`) in `package.json`.
+- **Rationale**:
+  - Eliminates test worker hanging warnings, guarantees clean teardown in CI, and establishes automated regression gates for domain and store coverage.
+
+
 
 
 

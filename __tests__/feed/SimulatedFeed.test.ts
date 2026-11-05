@@ -352,5 +352,22 @@ describe('Feed Layer: Functional createSimulatedFeed & SimulatedFeed wrapper', (
         }
       }
     });
+
+    test('getTickRate and setTickRate dynamically updates generation interval', () => {
+      const feed = createSimulatedFeed(initialQuotes, { tickRateHz: 10 });
+      expect(feed.getTickRate?.()).toBe(10);
+
+      feed.setTickRate?.(50);
+      expect(feed.getTickRate?.()).toBe(50);
+
+      const ticks: Tick[] = [];
+      feed.onTick((t) => ticks.push(t));
+      feed.connect();
+
+      // At 50 Hz, interval is 20ms. In 100ms, ~5 ticks arrive
+      jest.advanceTimersByTime(100);
+      expect(ticks.length).toBeGreaterThanOrEqual(4);
+      feed.disconnect();
+    });
   });
 });
