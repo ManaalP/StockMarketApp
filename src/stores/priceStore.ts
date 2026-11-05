@@ -1,7 +1,7 @@
 import { useSyncExternalStore, useCallback, useRef } from 'react';
 import type { Quote } from '../domain/types';
 import type { Tick, PriceFeed } from '../feed/types';
-import { mergeTick, type QuoteWithSeq, type QuotesState } from '../domain/tickMerge';
+import { mergeTicks, type QuoteWithSeq, type QuotesState } from '../domain/tickMerge';
 import { networkStore } from './networkStore';
 import { marketStore } from './marketStore';
 
@@ -58,7 +58,7 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
   let paused = false;
 
   let flushTimer: ReturnType<typeof setInterval> | null = null;
-  let pauseTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+  let pauseCheckInterval: ReturnType<typeof setInterval> | null = null;
 
   const setPausedState = (nextPaused: boolean): void => {
     if (paused === nextPaused) return;
@@ -68,20 +68,18 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
     }
   };
 
-  const resetPauseTimeout = (): void => {
-    if (pauseTimeoutTimer !== null) {
-      clearTimeout(pauseTimeoutTimer);
-    }
-    pauseTimeoutTimer = setTimeout(() => {
-      setPausedState(true);
-    }, pauseThresholdMs);
-  };
-
   const startTimers = (): void => {
     if (flushTimer === null) {
       flushTimer = setInterval(() => {
         flush();
       }, flushIntervalMs);
+    }
+    if (pauseCheckInterval === null) {
+      pauseCheckInterval = setInterval(() => {
+        if (lastTickAt > 0 && Date.now() - lastTickAt >= pauseThresholdMs) {
+          setPausedState(true);
+        }
+      }, 250);
     }
   };
 
@@ -91,16 +89,7 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
     }
 
     const ticks = queue.splice(0, queue.length);
-    const affectedSymbols = new Set<string>();
-
-    let nextState = state;
-    for (const tick of ticks) {
-      const merged = mergeTick(nextState, tick);
-      if (merged !== nextState) {
-        affectedSymbols.add(tick.symbol);
-        nextState = merged;
-      }
-    }
+    const { state: nextState, affectedSymbols } = mergeTicks(state, ticks);
 
     if (affectedSymbols.size === 0) {
       return;
@@ -154,7 +143,6 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
     if (paused) {
       setPausedState(false);
     }
-    resetPauseTimeout();
 
     queue.push(tick);
     startTimers();
@@ -255,9 +243,9 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
       clearInterval(flushTimer);
       flushTimer = null;
     }
-    if (pauseTimeoutTimer !== null) {
-      clearTimeout(pauseTimeoutTimer);
-      pauseTimeoutTimer = null;
+    if (pauseCheckInterval !== null) {
+      clearInterval(pauseCheckInterval);
+      pauseCheckInterval = null;
     }
     queue.length = 0;
     symbolSubscribers.clear();

@@ -1,4 +1,4 @@
-import { mergeTick, type QuoteWithSeq, type QuotesState } from '../../src/domain/tickMerge';
+import { mergeTick, mergeTicks, type QuoteWithSeq, type QuotesState } from '../../src/domain/tickMerge';
 import { toPaise } from '../../src/domain/money';
 import type { Tick } from '../../src/feed/types';
 
@@ -180,5 +180,66 @@ describe('mergeTick pure function', () => {
 
     const nextState = mergeTick(initialState, emptyTick);
     expect(nextState).toBe(initialState);
+  });
+
+  describe('mergeTicks batch processor', () => {
+    test('mergeTicks produces identical result to folding mergeTick over ticks', () => {
+      const ticks: Tick[] = [
+        { symbol: 'RELIANCE', seq: 11, ltp: toPaise(102) },
+        { symbol: 'TCS', seq: 6, ltp: toPaise(3520), volume: 15000 },
+        { symbol: 'RELIANCE', seq: 12, high: toPaise(105), volume: 55000 },
+        { symbol: 'TCS', seq: 7, low: toPaise(3450) },
+        { symbol: 'UNKNOWN', seq: 1, ltp: toPaise(100) }, // ignored
+      ];
+
+      // Fold via mergeTick
+      let foldedState = initialState;
+      for (const t of ticks) {
+        foldedState = mergeTick(foldedState, t);
+      }
+
+      // Batch via mergeTicks
+      const { state: batchState, affectedSymbols } = mergeTicks(initialState, ticks);
+
+      expect(batchState).toEqual(foldedState);
+      expect(affectedSymbols.has('RELIANCE')).toBe(true);
+      expect(affectedSymbols.has('TCS')).toBe(true);
+      expect(affectedSymbols.has('UNKNOWN')).toBe(false);
+    });
+
+    test('returns exact same state reference if no ticks changed state', () => {
+      const ticks: Tick[] = [
+        { symbol: 'RELIANCE', seq: 5, ltp: toPaise(90) }, // late
+        { symbol: 'UNKNOWN', seq: 1, ltp: toPaise(100) },
+      ];
+
+      const { state: batchState, affectedSymbols } = mergeTicks(initialState, ticks);
+      expect(batchState).toBe(initialState);
+      expect(affectedSymbols.size).toBe(0);
+    });
+
+    test('micro-benchmark comparing 10,000 ticks folded vs batched', () => {
+      const manyTicks: Tick[] = [];
+      for (let i = 1; i <= 5000; i++) {
+        manyTicks.push({ symbol: 'RELIANCE', seq: 10 + i, ltp: toPaise(100 + (i % 50)) });
+        manyTicks.push({ symbol: 'TCS', seq: 5 + i, ltp: toPaise(3500 + (i % 100)) });
+      }
+
+      const startFold = Date.now();
+      let sFold = initialState;
+      for (const t of manyTicks) {
+        sFold = mergeTick(sFold, t);
+      }
+      const foldDuration = Date.now() - startFold;
+
+      const startBatch = Date.now();
+      const { state: sBatch } = mergeTicks(initialState, manyTicks);
+      const batchDuration = Date.now() - startBatch;
+
+      expect(sBatch).toEqual(sFold);
+      // Log micro-benchmark observation
+      // eslint-disable-next-line no-console
+      console.log(`[Perf Micro-benchmark] 10,000 ticks -> fold: ${foldDuration}ms, single-copy batch: ${batchDuration}ms`);
+    });
   });
 });

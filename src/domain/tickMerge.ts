@@ -87,3 +87,89 @@ export function mergeTick(state: QuotesState, tick: Tick): QuotesState {
     [tick.symbol]: updatedQuote,
   };
 }
+
+export interface MergeTicksResult {
+  readonly state: QuotesState;
+  readonly affectedSymbols: Set<string>;
+}
+
+/**
+ * Batched tick merger that performs at most ONE shallow copy per flush
+ * and mutates only changed symbols in the single copy, preserving reference
+ * if no tick modified state.
+ */
+export function mergeTicks(
+  state: QuotesState,
+  ticks: readonly Tick[]
+): MergeTicksResult {
+  const affectedSymbols = new Set<string>();
+  if (ticks.length === 0) {
+    return { state, affectedSymbols };
+  }
+
+  let nextState: QuotesState = state;
+  let hasCopied = false;
+
+  for (const tick of ticks) {
+    const current = nextState[tick.symbol];
+    if (!current) continue;
+
+    // Drop out-of-order or duplicate seq
+    if (tick.seq <= current.seq) continue;
+
+    const hasLtp = tick.ltp !== undefined;
+    const hasHigh = tick.high !== undefined;
+    const hasLow = tick.low !== undefined;
+    const hasVolume = tick.volume !== undefined;
+
+    if (!hasLtp && !hasHigh && !hasLow && !hasVolume) continue;
+
+    const nextLtp = hasLtp ? tick.ltp! : current.ltp;
+
+    let nextHigh = current.high;
+    if (hasHigh && tick.high! > nextHigh) {
+      nextHigh = tick.high!;
+    }
+    if (nextLtp !== null && nextLtp > nextHigh) {
+      nextHigh = nextLtp;
+    }
+
+    let nextLow = current.low;
+    if (hasLow && tick.low! < nextLow) {
+      nextLow = tick.low!;
+    }
+    if (nextLtp !== null && nextLtp < nextLow) {
+      nextLow = nextLtp;
+    }
+
+    const nextVolume = hasVolume ? Math.max(current.volume, tick.volume!) : current.volume;
+
+    if (
+      nextLtp === current.ltp &&
+      nextHigh === current.high &&
+      nextLow === current.low &&
+      nextVolume === current.volume
+    ) {
+      continue;
+    }
+
+    if (!hasCopied) {
+      nextState = { ...state };
+      hasCopied = true;
+    }
+
+    const updatedQuote: QuoteWithSeq = {
+      ...current,
+      seq: tick.seq,
+      ltp: nextLtp,
+      high: nextHigh,
+      low: nextLow,
+      volume: nextVolume,
+    };
+
+    nextState[tick.symbol] = updatedQuote;
+    affectedSymbols.add(tick.symbol);
+  }
+
+  return { state: nextState, affectedSymbols };
+}

@@ -14,9 +14,9 @@ import { quoteDayMetrics } from '../domain/calcs';
 import { PriceText } from './PriceText';
 import { PnLText } from './PnLText';
 import { PriceFlash } from './PriceFlash';
-import { COMPANY_NAMES } from '../data/constants';
+import { PerfBadge } from './PerfBadge';
 import { useRenderCount } from '../utils/useRenderCount';
-import { usePerfOverlay } from '../utils/perfOverlay';
+import { COMPANY_NAMES } from '../data/constants';
 
 export const WATCH_ROW_HEIGHT = 72;
 
@@ -54,9 +54,7 @@ export const WatchRow = memo(function WatchRow({
   const dayRefs = useDayRefs(symbol);
   const metrics = quoteDayMetrics({ ltp, prevClose: dayRefs.prevClose });
   const swipeableRef = React.useRef<Swipeable | null>(null);
-
   const renderCount = useRenderCount();
-  const showPerf = usePerfOverlay();
 
   const handlePress = useCallback(() => {
     onPress?.(symbol);
@@ -107,16 +105,7 @@ export const WatchRow = memo(function WatchRow({
               EQ
             </Text>
           </View>
-          {showPerf ? (
-            <View style={[styles.perfBadge, { backgroundColor: tokens.warningBg }]}>
-              <Text
-                testID={`perf.badge.${symbol}`}
-                style={[styles.perfText, { color: tokens.warning }]}
-              >
-                {`R: ${renderCount}`}
-              </Text>
-            </View>
-          ) : null}
+          <PerfBadge symbol={symbol} renderCount={renderCount} />
         </View>
         <Text style={[styles.companyText, { color: tokens.textSecondary }]} numberOfLines={1}>
           {COMPANY_NAMES[symbol] ?? symbol}

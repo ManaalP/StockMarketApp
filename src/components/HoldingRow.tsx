@@ -16,8 +16,8 @@ import { formatINR } from '../domain/format';
 import { PriceText } from './PriceText';
 import { PnLText } from './PnLText';
 import { PriceFlash } from './PriceFlash';
+import { PerfBadge } from './PerfBadge';
 import { useRenderCount } from '../utils/useRenderCount';
-import { usePerfOverlay } from '../utils/perfOverlay';
 
 export const HOLDING_ROW_HEIGHT = 72;
 
@@ -50,13 +50,11 @@ export const HoldingRow = memo(function HoldingRow({
   const dayRefs = useDayRefs(symbol);
   const holding = useHolding(symbol);
 
-  const renderCount = useRenderCount();
-  const showPerf = usePerfOverlay();
-
   const metrics = holding
     ? rowMetrics(holding, { ltp, prevClose: dayRefs.prevClose })
     : null;
   const companyName = COMPANY_NAMES[symbol] ?? symbol;
+  const renderCount = useRenderCount();
 
   const handlePress = useCallback(() => {
     onPress?.(symbol);
@@ -91,13 +89,7 @@ export const HoldingRow = memo(function HoldingRow({
               EQ
             </Text>
           </View>
-          {showPerf ? (
-            <View style={[styles.perfBadge, { backgroundColor: tokens.warningBg }]}>
-              <Text testID={`perf.badge.${symbol}`} style={[styles.perfText, { color: tokens.warning }]}>
-                {`R: ${renderCount}`}
-              </Text>
-            </View>
-          ) : null}
+          <PerfBadge symbol={symbol} renderCount={renderCount} />
         </View>
 
         <Text
