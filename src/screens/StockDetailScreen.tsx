@@ -9,18 +9,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/useTheme';
 import { useAppSafeArea } from '../theme/useSafeArea';
-import { usePrice, usePaused } from '../stores/priceStore';
+import { usePaused, priceStore } from '../stores/priceStore';
 import { useIsInWatchlist, watchlistStore } from '../stores/watchlistStore';
-import { quoteDayMetrics } from '../domain/calcs';
-import { PriceText } from '../components/PriceText';
-import { PnLText } from '../components/PnLText';
 import { PausedBanner } from '../components/PausedBanner';
-import { DayRangeBar } from '../components/DayRangeBar';
-import { StockStatsGrid } from '../components/StockStatsGrid';
 import { LiveLineChart } from '../components/LiveLineChart';
 import { PositionCard } from '../components/PositionCard';
 import { OrderSheet } from '../components/OrderSheet';
-import { PriceFlash } from '../components/PriceFlash';
+import { DetailPriceHeader } from '../components/DetailPriceHeader';
+import { DetailDayRange } from '../components/DetailDayRange';
+import { DetailStatsGrid } from '../components/DetailStatsGrid';
 import { COMPANY_NAMES } from '../data/constants';
 
 export interface StockDetailScreenProps {
@@ -36,11 +33,10 @@ export interface StockDetailScreenProps {
  *
  * Requirements:
  * - 100% functional architecture.
- * - Subscribes to live price via `usePrice(symbol)` and pause state via `usePaused()`.
- * - Isolated Stat components for minimal re-rendering.
+ * - Screen does NOT subscribe to usePrice(symbol), preventing re-renders on every price tick.
+ * - Subcomponents subscribe granularly via useLtp, useDayRefs, useRangeStats.
  * - Price unavailable state cleanly renders "--" everywhere and disables trading.
  * - Watchlist star button for quick toggle.
- * - Does NOT show P/E, market cap, 52-week, depth, or range tabs.
  */
 export const StockDetailScreen = memo(function StockDetailScreen({
   symbol,
@@ -51,12 +47,11 @@ export const StockDetailScreen = memo(function StockDetailScreen({
 }: StockDetailScreenProps) {
   const { tokens } = useTheme();
   const { bottomPadding } = useAppSafeArea();
-  const quote = usePrice(symbol);
   const isPaused = usePaused();
   const inWatchlist = useIsInWatchlist(symbol);
 
-  const metrics = quoteDayMetrics(quote);
-  const isPriced = metrics.isPriced && metrics.ltp !== null;
+  const quote = priceStore.getQuote(symbol);
+  const isPriced = quote !== null && quote.ltp !== null;
   const isTradingDisabled = !isPriced || isPaused;
 
   const [orderSheetVisible, setOrderSheetVisible] = useState(false);
@@ -142,39 +137,8 @@ export const StockDetailScreen = memo(function StockDetailScreen({
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Main Price Block */}
-        <View style={styles.priceBlock}>
-          <View style={styles.priceAndPillRow}>
-            <PriceFlash ltp={metrics.ltp} testID="stock.detail.flash" style={styles.flashCenter}>
-              <PriceText
-                paise={metrics.ltp}
-                testID="stock.detail.ltp"
-                style={styles.priceText}
-              />
-            </PriceFlash>
-
-            <View
-              style={[
-                styles.dayChangePill,
-                {
-                  backgroundColor:
-                    (metrics.dayChangePaise ?? 0) > 0
-                      ? tokens.gainBg
-                      : (metrics.dayChangePaise ?? 0) < 0
-                      ? tokens.lossBg
-                      : tokens.surfaceAlt,
-                },
-              ]}
-            >
-              <PnLText
-                pnlPaise={metrics.dayChangePaise}
-                pnlPct={metrics.dayChangePct}
-                testID="stock.detail.dayChange"
-                style={styles.pnlText}
-              />
-            </View>
-          </View>
-        </View>
+        {/* Main Price Block (Granular isolated subscription) */}
+        <DetailPriceHeader symbol={symbol} />
 
         {/* Live SVG Line Chart */}
         <LiveLineChart symbol={symbol} testID="detail.chart" />
@@ -197,24 +161,14 @@ export const StockDetailScreen = memo(function StockDetailScreen({
         {/* Position Section (Rendered only when held) */}
         <PositionCard symbol={symbol} />
 
-        {/* Day Range Bar */}
-        <DayRangeBar
-          low={quote?.low ?? null}
-          high={quote?.high ?? null}
-          ltp={quote?.ltp ?? null}
-        />
+        {/* Day Range Bar (Granular isolated subscription) */}
+        <DetailDayRange symbol={symbol} />
 
-        {/* Live Market Statistics */}
+        {/* Live Market Statistics (Granular isolated subscription) */}
         <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
           Market Statistics
         </Text>
-        <StockStatsGrid
-          open={quote?.open ?? null}
-          high={quote?.high ?? null}
-          low={quote?.low ?? null}
-          prevClose={quote?.prevClose ?? null}
-          volume={quote?.volume ?? null}
-        />
+        <DetailStatsGrid symbol={symbol} />
       </ScrollView>
 
       {/* Sticky Bottom Action Buttons */}

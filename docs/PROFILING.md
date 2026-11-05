@@ -8,8 +8,9 @@ This document provides the exact methodology, profiler setup, benchmark procedur
 
 | Metric | Target Specification | Achieved Architecture |
 |---|---|---|
-| **Tick Isolation** | 1 price tick must re-render **only** the affected row | Each `HoldingRow` is `React.memo` and consumes `usePrice(symbol)` directly. 24 rows remain un-rendered when 1 row ticks. |
+| **Tick Isolation** | 1 price tick must re-render **only** the affected row | Each `HoldingRow` is `React.memo` and consumes granular field hooks (`useLtp(symbol)`, `useDayRefs(symbol)`). A tick changing only volume, high, or low causes 0 row re-renders. |
 | **Summary Throttling** | Summary card throttles derived calculations to **~4 Hz** | `createSummaryStore` applies a 250 ms trailing throttle and reference equality check (`areSummariesEqual`). |
+| **Stock Detail Isolation** | Detail screen does not re-render on ticks | `StockDetailScreen` does not call `usePrice()`. Child components (`DetailPriceHeader`, `DetailDayRange`, `DetailStatsGrid`, `LiveLineChart`) subscribe granularly. |
 | **List Virtualization** | Smooth 60 FPS scrolling without layout jumps | `FlatList` consumes `string[]` symbol keys. Fixed `HOLDING_ROW_HEIGHT = 72` with `getItemLayout` skips dynamic measurement. |
 | **Sort Stability** | Rows do not jump chaotically on every tick | Value and P&L sorting is refreshed on a slow 2-second interval; Name sorting is static. |
 

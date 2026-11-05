@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useCallback } from 'react';
+import { useSyncExternalStore, useCallback, useRef } from 'react';
 import type { Quote } from '../domain/types';
 import type { Tick, PriceFeed } from '../feed/types';
 import { mergeTick, type QuoteWithSeq, type QuotesState } from '../domain/tickMerge';
@@ -301,10 +301,58 @@ export function createPriceHooks(store: PriceStore) {
 
   function useQuoteField<T>(
     symbol: string,
-    selector: (quote: QuoteWithSeq | null) => T
+    selector: (quote: QuoteWithSeq | null) => T,
+    isEqual: (a: T, b: T) => boolean = Object.is
   ): T {
-    const quote = usePrice(symbol);
-    return selector(quote);
+    const lastValueRef = useRef<T | undefined>(undefined);
+    const selectorRef = useRef(selector);
+    selectorRef.current = selector;
+    const isEqualRef = useRef(isEqual);
+    isEqualRef.current = isEqual;
+
+    const subscribe = useCallback(
+      (notify: () => void) => store.subscribe(symbol, notify),
+      [symbol]
+    );
+
+    const getSnapshot = useCallback(() => {
+      const q = store.getQuote(symbol);
+      const nextVal = selectorRef.current(q);
+      if (lastValueRef.current !== undefined && isEqualRef.current(lastValueRef.current, nextVal)) {
+        return lastValueRef.current;
+      }
+      lastValueRef.current = nextVal;
+      return nextVal;
+    }, [symbol]);
+
+    return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  }
+
+  function useLtp(symbol: string): Quote['ltp'] {
+    return useQuoteField(symbol, (q) => q?.ltp ?? null);
+  }
+
+  function useDayRefs(symbol: string): { prevClose: Quote['prevClose'] | null; open: Quote['open'] | null } {
+    return useQuoteField(
+      symbol,
+      (q) => ({
+        prevClose: q?.prevClose ?? null,
+        open: q?.open ?? null,
+      }),
+      (a, b) => a.prevClose === b.prevClose && a.open === b.open
+    );
+  }
+
+  function useRangeStats(symbol: string): { high: Quote['high'] | null; low: Quote['low'] | null; volume: number | null } {
+    return useQuoteField(
+      symbol,
+      (q) => ({
+        high: q?.high ?? null,
+        low: q?.low ?? null,
+        volume: q?.volume ?? null,
+      }),
+      (a, b) => a.high === b.high && a.low === b.low && a.volume === b.volume
+    );
   }
 
   function usePaused(): boolean {
@@ -338,6 +386,9 @@ export function createPriceHooks(store: PriceStore) {
   return {
     usePrice,
     useQuoteField,
+    useLtp,
+    useDayRefs,
+    useRangeStats,
     usePaused,
     useAllQuotes,
   };
@@ -350,6 +401,9 @@ export const priceStore = createPriceStore();
 export const {
   usePrice,
   useQuoteField,
+  useLtp,
+  useDayRefs,
+  useRangeStats,
   usePaused,
   useAllQuotes,
 } = createPriceHooks(priceStore);

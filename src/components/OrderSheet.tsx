@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/useTheme';
-import { usePrice, usePaused, priceStore } from '../stores/priceStore';
+import { useLtp, usePaused, priceStore } from '../stores/priceStore';
 import { useHolding, portfolioStore } from '../stores/portfolioStore';
 import { validateOrder, computeOrderPreview, validateTargetPrice } from '../domain/orders';
 import { formatINR } from '../domain/format';
@@ -67,7 +67,7 @@ export const OrderSheet = memo(function OrderSheet({
   testID,
 }: OrderSheetProps) {
   const { tokens } = useTheme();
-  const quote = usePrice(symbol);
+  const ltp = useLtp(symbol);
   const holding = useHolding(symbol);
   const isPaused = usePaused();
 
@@ -89,7 +89,7 @@ export const OrderSheet = memo(function OrderSheet({
       setSide(initialSide);
       setOrderType('MARKET');
       setConfirmation(null);
-      const initialLtp = quote?.ltp ?? null;
+      const initialLtp = priceStore.getQuote(symbol)?.ltp ?? null;
       if (initialLtp !== null) {
         setTargetPriceStr((initialLtp / 100).toFixed(2));
       }
@@ -100,11 +100,10 @@ export const OrderSheet = memo(function OrderSheet({
       }
     }
     prevVisibleRef.current = visible;
-  }, [visible, initialSide, holding, quote?.ltp]);
+  }, [visible, initialSide, holding, symbol]);
 
   const heldQty = holding ? holding.qty : 0;
   const avgPaise = holding ? holding.avgPaise : 0;
-  const ltp = quote ? quote.ltp : null;
 
   const validation = validateOrder(side, qtyStr, heldQty, ltp, isPaused, isMarketOpen);
   const targetValidation = validateTargetPrice(targetPriceStr);

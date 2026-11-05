@@ -98,4 +98,27 @@ describe('Performance Proof: Isolated Row Re-rendering', () => {
     // TCS row STILL remains at 1
     expect(tcsBadge.props.children).toBe('R: 1');
   });
+
+  test('a tick changing only volume does not re-render HoldingRow or WatchRow', () => {
+    act(() => {
+      renderer = ReactTestRenderer.create(<TestDashboard />);
+    });
+
+    const relianceBadge = renderer.root.findByProps({ testID: 'perf.badge.RELIANCE' });
+    expect(relianceBadge.props.children).toBe('R: 1');
+
+    // Emit tick changing ONLY volume
+    act(() => {
+      priceStore.queueTick({
+        symbol: 'RELIANCE',
+        seq: 2,
+        volume: 999999,
+      });
+      priceStore.flush();
+      jest.advanceTimersByTime(100);
+    });
+
+    // HoldingRow only subscribes to ltp and dayRefs, so render count STAYS at 1
+    expect(relianceBadge.props.children).toBe('R: 1');
+  });
 });

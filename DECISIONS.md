@@ -791,6 +791,22 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Keeps 60/120 fps gesture responsiveness on the UI thread while preventing React re-render churn during live tick ingestion.
 
+---
+
+### ADR 051: Fine-Grained Field Subscriptions & Screen-Level Render Elimination
+- **Context**:
+  - Previously, `usePrice(symbol)` returned the full quote object reference. Any tick updating only `volume`, `high`, or `low` caused a new object reference and triggered unnecessary re-renders in `HoldingRow` and `WatchRow` which only display `ltp` and daily delta.
+  - `StockDetailScreen` called `usePrice(symbol)`, causing the entire screen to re-render on every flush.
+- **Decision**:
+  - Re-implemented `useQuoteField<T>(symbol, selector, isEqual = Object.is)` using `useSyncExternalStore` with cached snapshot references.
+  - Added focused hooks: `useLtp(symbol)`, `useDayRefs(symbol)` (prevClose, open), and `useRangeStats(symbol)` (high, low, volume).
+  - Refactored `HoldingRow`, `WatchRow`, and `PositionCard` to consume only `useLtp` and `useDayRefs`.
+  - Extracted `DetailPriceHeader`, `DetailDayRange`, and `DetailStatsGrid` in `StockDetailScreen`. The screen container no longer subscribes to `usePrice(symbol)`.
+  - `OrderSheet` reads live fill price directly from `priceStore.getQuote(symbol)` at confirmation time.
+- **Rationale**:
+  - Ticks modifying only volume or high/low produce zero re-renders in list rows. `StockDetailScreen` render count remains completely stable across live tick streams.
+
+
 
 
 

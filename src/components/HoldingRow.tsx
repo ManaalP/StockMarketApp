@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useTheme } from '../theme/useTheme';
-import { usePrice } from '../stores/priceStore';
+import { useLtp, useDayRefs } from '../stores/priceStore';
 import { useHolding } from '../stores/portfolioStore';
 import { COMPANY_NAMES } from '../data/constants';
 import { rowMetrics } from '../domain/calcs';
@@ -46,13 +46,16 @@ export const HoldingRow = memo(function HoldingRow({
   testID,
 }: HoldingRowProps) {
   const { tokens } = useTheme();
-  const quote = usePrice(symbol);
+  const ltp = useLtp(symbol);
+  const dayRefs = useDayRefs(symbol);
   const holding = useHolding(symbol);
 
   const renderCount = useRenderCount();
   const showPerf = usePerfOverlay();
 
-  const metrics = holding ? rowMetrics(holding, quote) : null;
+  const metrics = holding
+    ? rowMetrics(holding, { ltp, prevClose: dayRefs.prevClose })
+    : null;
   const companyName = COMPANY_NAMES[symbol] ?? symbol;
 
   const handlePress = useCallback(() => {
@@ -110,7 +113,7 @@ export const HoldingRow = memo(function HoldingRow({
           numberOfLines={1}
         >
           {holding
-            ? `${holding.qty} shares • Avg ${formatINR(holding.avgPaise)} • LTP ${formatINR(quote?.ltp ?? null)}`
+            ? `${holding.qty} shares • Avg ${formatINR(holding.avgPaise)} • LTP ${formatINR(ltp)}`
             : '--'}
         </Text>
       </View>
@@ -131,7 +134,7 @@ export const HoldingRow = memo(function HoldingRow({
           style={styles.pnlText}
         />
         <PriceText
-          paise={quote?.ltp ?? null}
+          paise={ltp}
           testID={`holding.ltp.${symbol}`}
           style={styles.hiddenLtp}
         />

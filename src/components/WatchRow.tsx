@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useTheme } from '../theme/useTheme';
-import { usePrice } from '../stores/priceStore';
+import { useLtp, useDayRefs } from '../stores/priceStore';
 import { quoteDayMetrics } from '../domain/calcs';
 import { PriceText } from './PriceText';
 import { PnLText } from './PnLText';
@@ -50,8 +50,9 @@ export const WatchRow = memo(function WatchRow({
   testID,
 }: WatchRowProps) {
   const { tokens } = useTheme();
-  const quote = usePrice(symbol);
-  const metrics = quoteDayMetrics(quote);
+  const ltp = useLtp(symbol);
+  const dayRefs = useDayRefs(symbol);
+  const metrics = quoteDayMetrics({ ltp, prevClose: dayRefs.prevClose });
   const swipeableRef = React.useRef<Swipeable | null>(null);
 
   const renderCount = useRenderCount();

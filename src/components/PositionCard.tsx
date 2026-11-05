@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/useTheme';
 import { useHolding } from '../stores/portfolioStore';
-import { usePrice } from '../stores/priceStore';
+import { useLtp, useDayRefs } from '../stores/priceStore';
 import { rowMetrics } from '../domain/calcs';
 import { formatINR } from '../domain/format';
 import { PriceText } from './PriceText';
@@ -28,13 +28,14 @@ export const PositionCard = memo(function PositionCard({
 }: PositionCardProps) {
   const { tokens } = useTheme();
   const holding = useHolding(symbol);
-  const quote = usePrice(symbol);
+  const ltp = useLtp(symbol);
+  const dayRefs = useDayRefs(symbol);
 
   if (!holding) {
     return null;
   }
 
-  const metrics = rowMetrics(holding, quote);
+  const metrics = rowMetrics(holding, { ltp, prevClose: dayRefs.prevClose });
 
   return (
     <View

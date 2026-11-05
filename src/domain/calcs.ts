@@ -20,6 +20,11 @@ export class OrderValidationError extends Error {
   }
 }
 
+export interface RowPriceInput {
+  readonly ltp: Paise | null;
+  readonly prevClose?: Paise | null;
+}
+
 /**
  * Computes metrics for an individual holding row.
  * Rounding to paise is performed per row so displayed values are exact.
@@ -27,7 +32,10 @@ export class OrderValidationError extends Error {
  * Missing price rule: If quote or ltp is null, price-dependent metrics are null.
  * OLDCO and unpriced stocks are never assigned 0 as price.
  */
-export function rowMetrics(holding: Holding, quote: Quote | null): RowMetrics {
+export function rowMetrics(
+  holding: Holding,
+  quote: Quote | RowPriceInput | null
+): RowMetrics {
   const investedPaise = mulQty(holding.avgPaise, holding.qty);
 
   if (!quote || quote.ltp === null) {
@@ -48,7 +56,8 @@ export function rowMetrics(holding: Holding, quote: Quote | null): RowMetrics {
   const pnlPaise = valuePaise - investedPaise;
   const pnlPct = safePercent(pnlPaise, investedPaise);
   // Today's P&L = qty * (ltp - prevClose)
-  const dayPnlPaise = mulQty(quote.ltp - quote.prevClose, holding.qty);
+  const prevClose = quote.prevClose ?? quote.ltp;
+  const dayPnlPaise = mulQty(quote.ltp - prevClose, holding.qty);
 
   return {
     symbol: holding.symbol,
@@ -354,7 +363,9 @@ export interface QuoteDayMetrics {
  *   - Day change = ltp - prevClose.
  *   - Day change % = safePercent(dayChangePaise, prevClose).
  */
-export function quoteDayMetrics(quote: Quote | null): QuoteDayMetrics {
+export function quoteDayMetrics(
+  quote: Quote | RowPriceInput | null
+): QuoteDayMetrics {
   if (!quote || quote.ltp === null) {
     return {
       ltp: null,
@@ -364,8 +375,9 @@ export function quoteDayMetrics(quote: Quote | null): QuoteDayMetrics {
     };
   }
 
-  const dayChangePaise = quote.ltp - quote.prevClose;
-  const dayChangePct = safePercent(dayChangePaise, quote.prevClose);
+  const prevClose = quote.prevClose ?? quote.ltp;
+  const dayChangePaise = quote.ltp - prevClose;
+  const dayChangePct = safePercent(dayChangePaise, prevClose);
 
   return {
     ltp: quote.ltp,
