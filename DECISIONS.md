@@ -213,6 +213,21 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Hard whitelist validation protects the app from stale or invalid symbols stored in legacy app caches.
   - Per-symbol hook `useIsInWatchlist(symbol)` allows Add/Detail buttons to subscribe only to their own inclusion status, avoiding re-renders when other symbols are added or re-ordered.
 
+---
+
+### ADR 018: Watchlist UI, Pure Day Metrics Calculation, and Swipeable Gesture Row Isolation
+- **Context**: The Watchlist screen must render live LTP and day changes (₹ and %) for user-selected stocks while maintaining 60 FPS under ~20 Hz ticks. It must allow seamless adding from the 25 allowed NSE universe and removing items via gestures or accessible buttons.
+- **Decision**:
+  - Formulate day change metrics in pure domain function `quoteDayMetrics(quote: Quote | null)` in `src/domain/calcs.ts`. If `ltp` is null or quote is missing, all metrics return `null` and `isPriced: false`, rendering `"--"` without guessing or defaulting to 0.
+  - Implement `WatchRow` as a memoized functional component receiving only `symbol: string` (and stable callbacks), reading its own quote via `usePrice(symbol)` with a fixed 72px row height for O(1) `FlatList` virtualization.
+  - Implement swipe-to-delete using `react-native-gesture-handler` `Swipeable`, while providing accessible direct removal buttons (`watch.remove.<symbol>`) for screen readers and automated testing.
+  - Implement `WatchlistAddModal` displaying the 25 `ALLOWED_SYMBOLS`, with in-sheet search and instant status cues via `useIsInWatchlist(symbol)`.
+- **Rationale**:
+  - Maintains strict tick isolation: receiving a price tick for `TCS` only re-renders the `TCS` row in the Watchlist.
+  - Pure calculation functions ensure 100% testable day change arithmetic with zero float errors.
+  - Consistent layout and visual tokens match the Portfolio screen and the Stitch design specification.
+
+
 
 
 

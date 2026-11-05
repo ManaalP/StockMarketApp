@@ -252,3 +252,40 @@ export function getSortedHoldingSymbols(
 
   return sorted.map((h) => h.symbol);
 }
+
+export interface QuoteDayMetrics {
+  readonly ltp: Paise | null;
+  readonly dayChangePaise: Paise | null;
+  readonly dayChangePct: number | null;
+  readonly isPriced: boolean;
+}
+
+/**
+ * Computes day change metrics for a quote (used by Watchlist rows and Stock Detail).
+ *
+ * Rules:
+ *   - If quote is null or quote.ltp is null, all metrics are null and isPriced is false.
+ *   - Missing prices are never guessed or defaulted to 0.
+ *   - Day change = ltp - prevClose.
+ *   - Day change % = safePercent(dayChangePaise, prevClose).
+ */
+export function quoteDayMetrics(quote: Quote | null): QuoteDayMetrics {
+  if (!quote || quote.ltp === null) {
+    return {
+      ltp: null,
+      dayChangePaise: null,
+      dayChangePct: null,
+      isPriced: false,
+    };
+  }
+
+  const dayChangePaise = quote.ltp - quote.prevClose;
+  const dayChangePct = safePercent(dayChangePaise, quote.prevClose);
+
+  return {
+    ltp: quote.ltp,
+    dayChangePaise,
+    dayChangePct,
+    isPriced: true,
+  };
+}

@@ -30,6 +30,7 @@ export interface WatchlistStore {
   has(symbol: string): boolean;
   add(symbol: string): Promise<boolean>;
   remove(symbol: string): Promise<boolean>;
+  setSymbols(symbols: readonly string[]): Promise<void>;
   isLoaded(): boolean;
   hydrate(): Promise<void>;
   subscribe(callback: () => void): () => void;
@@ -131,6 +132,13 @@ export function createWatchlistStore(options: WatchlistStoreOptions = {}): Watch
     return true;
   };
 
+  const setSymbols = async (nextSymbols: readonly string[]): Promise<void> => {
+    symbols = Array.from(new Set(nextSymbols.filter(isAllowed)));
+    isLoaded = true;
+    notify();
+    await persist(symbols);
+  };
+
   const subscribe = (callback: () => void): (() => void) => {
     listeners.add(callback);
     return () => {
@@ -143,6 +151,7 @@ export function createWatchlistStore(options: WatchlistStoreOptions = {}): Watch
     has,
     add,
     remove,
+    setSymbols,
     isLoaded: () => isLoaded,
     hydrate,
     subscribe,
@@ -168,6 +177,15 @@ export function createWatchlistHooks(store: WatchlistStore) {
     const add = useCallback((s: string) => store.add(s), []);
     const remove = useCallback((s: string) => store.remove(s), []);
     const has = useCallback((s: string) => store.has(s), []);
+    const toggleSymbol = useCallback(
+      async (s: string) => {
+        if (store.has(s)) {
+          return store.remove(s);
+        }
+        return store.add(s);
+      },
+      []
+    );
 
     return {
       symbols,
@@ -175,6 +193,9 @@ export function createWatchlistHooks(store: WatchlistStore) {
       add,
       remove,
       has,
+      addSymbol: add,
+      removeSymbol: remove,
+      toggleSymbol,
     };
   }
 
