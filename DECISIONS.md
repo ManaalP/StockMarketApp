@@ -424,6 +424,25 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Prevents race conditions during rapid trading through deterministic write serialization.
   - Ensures regulatory realism by aligning simulated trading permissions with official NSE market sessions.
 
+---
+
+### ADR 034: Candlestick Chart Redesign, Holding Value Reconciliation on Selling, and Safe-Area Bottom Insets
+- **Context**:
+  1. The stock detail chart previously defaulted to line mode and, upon opening with only 1 or 2 live ticks, scaled its vertical axis across a sub-rupee spread, creating a jarring, distorted single diagonal slash.
+  2. The portfolio holding rows displayed single-share LTP rather than the holding position's total current value (`holding.qty * ltp`). When selling shares, while the invested basis decreased, the displayed number remained fixed at the single-share LTP, confusing the user and violating the GEMINI.md reconciliation rule ("Summary must equal the sum of displayed rows exactly").
+  3. The sticky Buy/Sell buttons on `StockDetailScreen` lacked bottom safe-area insets, causing Android 3-button system navigation bars to directly overlap the buttons.
+  4. The user inquired whether an order book / market depth chart could be implemented if supported by the API without guessing or hallucinating data.
+- **Decision**:
+  1. **Candlestick Chart by Default**: Upgraded `LiveLineChart.tsx` to default to an OHLC Candlestick view (`initialMode = 'candle'`). Anchored the Y-axis domain to the official session [low, high] bounds with a 6% buffer, preventing tick micro-variations from spanning the canvas. Synthesized realistic OHLC interval bars anchored to genuine exchange metrics (`open`, `high`, `low`, `ltp`) for sparse sessions, seamlessly transitioning to chunked live intervals as ticks accumulate. Added high/low horizontal grid reference lines with formatted labels and eliminated background timer polling leaks by scheduling flushes only when price updates arrive.
+  2. **Holding Current Value Reconciliation**: Updated `HoldingRow.tsx` to display the holding's current market value (`metrics.valuePaise = holding.qty * ltp`) on the top right, while continuing to display the single-share LTP clearly labeled in the secondary text (`shares • Avg • LTP`). When partial sells occur, both invested amount (`qty * avgPaise`) and current value (`qty * ltp`) decrease proportionally, and the sum of displayed rows reconciles 1:1 with the Portfolio Summary Card.
+  3. **Safe-Area Insets for Footer Buttons**: Wired `useAppSafeArea()` into `StockDetailScreen.tsx` and applied dynamic bottom padding `Math.max(20, bottomPadding + 12)` to `styles.footer`, ensuring comfortable clearance above Android system navigation buttons and iOS home indicators. Added try/catch fallback in `useAppSafeArea()` for unit test environments outside `<SafeAreaProvider>`.
+  4. **Order Book / Market Depth Omission**: Verified that the Liquide OHLC endpoint (`POST /api/markets/ohlc`) returns only Level 1 ticker snapshots (`ltp`, `open`, `high`, `low`, `prevClose`, `volume`) and provides no bid/ask depth data. In accordance with the user's explicit directive ("dont guess hallucinate or generate random numbers to make such a chart if not possible leave it") and the project's core correctness invariant ("money never faked, never guessed"), market depth is left out.
+- **Rationale**:
+  - Restores visual excellence and clarity on stock detail charts without jarring 2-tick diagonal slashes.
+  - Aligns holding row displays with user expectations and the core reconciliation invariant where row values sum to portfolio current value.
+  - Ensures robust ergonomics across all Android and iOS device form factors.
+  - Preserves domain integrity by never synthesizing or faking financial market depth.
+
 
 
 

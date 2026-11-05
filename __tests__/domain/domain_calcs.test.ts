@@ -251,6 +251,47 @@ describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
       expect(updated?.avgPaise).toBe(240000); // Average price MUST remain unchanged
     });
 
+    it('verifies that selling shares proportionally decreases both invested value and current value', () => {
+      // 10 shares held @ 240000 paise (invested: 24,00,000 paise)
+      // Current market quote is 250000 paise (value: 25,00,000 paise)
+      const quote: Quote = sampleQuotePriced; // ltp = 250000 paise
+      const initialHolding: Holding = { symbol: 'RELIANCE', qty: 10, avgPaise: 240000 };
+
+      const beforeMetrics = rowMetrics(initialHolding, quote);
+      expect(beforeMetrics.investedPaise).toBe(2400000);
+      expect(beforeMetrics.valuePaise).toBe(2500000);
+
+      // Sell 4 shares
+      const sellOrder: Order = {
+        side: 'SELL',
+        symbol: 'RELIANCE',
+        qty: 4,
+        fillPaise: quote.ltp!,
+      };
+      const updatedHoldings = applyOrder([initialHolding], sellOrder);
+      const afterHolding = updatedHoldings[0]!;
+
+      expect(afterHolding.qty).toBe(6);
+      expect(afterHolding.avgPaise).toBe(240000);
+
+      const afterMetrics = rowMetrics(afterHolding, quote);
+      // Invested value must drop by exactly 4 * 240000 = 960000 paise
+      expect(afterMetrics.investedPaise).toBe(6 * 240000); // 1440000
+      expect(beforeMetrics.investedPaise - afterMetrics.investedPaise).toBe(4 * 240000);
+
+      // Current value MUST drop by exactly 4 * quote.ltp = 1000000 paise
+      expect(afterMetrics.valuePaise).toBe(6 * 250000); // 1500000
+      expect(beforeMetrics.valuePaise! - afterMetrics.valuePaise!).toBe(4 * 250000);
+
+      // Summaries before and after must also reflect exact reduction
+      const beforeSummary = summarize([beforeMetrics]);
+      const afterSummary = summarize([afterMetrics]);
+      expect(beforeSummary.totals?.currentValuePaise).toBe(2500000);
+      expect(afterSummary.totals?.currentValuePaise).toBe(1500000);
+      expect(beforeSummary.totals?.totalInvestedPaise).toBe(2400000);
+      expect(afterSummary.totals?.totalInvestedPaise).toBe(1440000);
+    });
+
     it('removes the holding completely when selling all shares', () => {
       const order: Order = {
         side: 'SELL',

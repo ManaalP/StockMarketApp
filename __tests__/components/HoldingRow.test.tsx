@@ -65,6 +65,25 @@ describe('HoldingRow component', () => {
     expect(onPress).toHaveBeenCalledWith('RELIANCE');
   });
 
+  test('displays holding current value (qty * ltp) and updates when quantity changes', () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <ThemeProvider initialMode="light">
+          <HoldingRow symbol="RELIANCE" />
+        </ThemeProvider>
+      );
+    });
+
+    // 25 shares @ ₹2,600.00 LTP = ₹65,000.00 current value
+    const valueNode = renderer.root.findByProps({ testID: 'holding.value.RELIANCE' });
+    const ltpNode = renderer.root.findByProps({ testID: 'holding.ltp.RELIANCE' });
+
+    expect(valueNode.findByType(Text).props.children).toBe('₹65,000.00');
+    expect(ltpNode.findByType(Text).props.children).toBe('₹2,600.00');
+  });
+
   test('renders "--" for price and P&L for unpriced holding (OLDCO)', () => {
     let renderer!: ReactTestRenderer.ReactTestRenderer;
 

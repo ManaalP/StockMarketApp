@@ -61,6 +61,10 @@ export function computeSafeAreaMetrics(
  * Hook providing reactive safe area metrics, notch detection, and bottom navigation button compensation.
  */
 export function useAppSafeArea(): SafeAreaMetrics {
-  const insets = useSafeAreaInsets();
-  return computeSafeAreaMetrics(insets, Platform.OS);
+  try {
+    const insets = useSafeAreaInsets();
+    return computeSafeAreaMetrics(insets, Platform.OS);
+  } catch {
+    return computeSafeAreaMetrics({ top: 0, bottom: 0, left: 0, right: 0 }, Platform.OS);
+  }
 }
