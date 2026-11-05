@@ -23,6 +23,8 @@ export interface WatchRowProps {
   readonly symbol: string;
   readonly onPress?: (symbol: string) => void;
   readonly onRemove?: (symbol: string) => void;
+  readonly onSwipeOpen?: (symbol: string, ref: unknown) => void;
+  readonly onSwipeClose?: (symbol: string) => void;
   readonly style?: StyleProp<ViewStyle>;
   readonly testID?: string;
 }
@@ -41,12 +43,15 @@ export const WatchRow = memo(function WatchRow({
   symbol,
   onPress,
   onRemove,
+  onSwipeOpen,
+  onSwipeClose,
   style,
   testID,
 }: WatchRowProps) {
   const { tokens } = useTheme();
   const quote = usePrice(symbol);
   const metrics = quoteDayMetrics(quote);
+  const swipeableRef = React.useRef<Swipeable | null>(null);
 
   const renderCount = useRenderCount();
   const showPerf = usePerfOverlay();
@@ -143,8 +148,12 @@ export const WatchRow = memo(function WatchRow({
 
   return (
     <Swipeable
+      ref={swipeableRef}
       friction={2}
       rightThreshold={40}
+      overshootRight={false}
+      onSwipeableWillOpen={() => onSwipeOpen?.(symbol, swipeableRef.current)}
+      onSwipeableClose={() => onSwipeClose?.(symbol)}
       renderRightActions={renderRightActions}
       containerStyle={styles.swipeContainer}
     >
