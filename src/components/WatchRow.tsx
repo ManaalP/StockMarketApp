@@ -13,6 +13,7 @@ import { usePrice } from '../stores/priceStore';
 import { quoteDayMetrics } from '../domain/calcs';
 import { PriceText } from './PriceText';
 import { PnLText } from './PnLText';
+import { PriceFlash } from './PriceFlash';
 import { useRenderCount } from '../utils/useRenderCount';
 import { usePerfOverlay } from '../utils/perfOverlay';
 
@@ -117,11 +118,13 @@ export const WatchRow = memo(function WatchRow({
 
       {/* Right Column: Live LTP, Day change amount and percentage */}
       <View style={styles.rightCol}>
-        <PriceText
-          paise={metrics.ltp}
-          testID={`watch.ltp.${symbol}`}
-          style={styles.ltpText}
-        />
+        <PriceFlash ltp={metrics.ltp} testID={`watch.flash.${symbol}`}>
+          <PriceText
+            paise={metrics.ltp}
+            testID={`watch.ltp.${symbol}`}
+            style={styles.ltpText}
+          />
+        </PriceFlash>
         <View style={styles.dayChangeRow}>
           <PnLText
             pnlPaise={metrics.dayChangePaise}

@@ -14,6 +14,7 @@ import { rowMetrics } from '../domain/calcs';
 import { formatINR } from '../domain/format';
 import { PriceText } from './PriceText';
 import { PnLText } from './PnLText';
+import { PriceFlash } from './PriceFlash';
 import { useRenderCount } from '../utils/useRenderCount';
 import { usePerfOverlay } from '../utils/perfOverlay';
 
@@ -98,11 +99,13 @@ export const HoldingRow = memo(function HoldingRow({
 
       {/* Right Column: Live LTP, Total Gain/Loss (Amount + %) */}
       <View style={styles.rightCol}>
-        <PriceText
-          paise={quote?.ltp ?? null}
-          testID={`holding.ltp.${symbol}`}
-          style={styles.ltpText}
-        />
+        <PriceFlash ltp={quote?.ltp ?? null} testID={`holding.flash.${symbol}`}>
+          <PriceText
+            paise={quote?.ltp ?? null}
+            testID={`holding.ltp.${symbol}`}
+            style={styles.ltpText}
+          />
+        </PriceFlash>
         <PnLText
           pnlPaise={metrics?.pnlPaise ?? null}
           pnlPct={metrics?.pnlPct ?? null}
