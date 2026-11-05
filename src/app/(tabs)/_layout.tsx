@@ -1,14 +1,16 @@
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
-import { Tabs } from 'expo-router';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { Tabs, useRouter } from 'expo-router';
 import { useTheme } from '../../theme/useTheme';
 import {
   PortfolioTabIcon,
   WatchlistTabIcon,
   ThemeToggleIcon,
+  OrdersIcon,
 } from '../../components/icons';
 
 export default function TabLayout() {
+  const router = useRouter();
   const { tokens, toggleTheme, isDark } = useTheme();
 
   return (
@@ -23,16 +25,28 @@ export default function TabLayout() {
           fontWeight: '700',
         },
         headerRight: () => (
-          <Pressable
-            testID="theme.toggle.button"
-            accessibilityRole="button"
-            accessibilityLabel={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-            onPress={toggleTheme}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.themeToggleBtn}
-          >
-            <ThemeToggleIcon color={tokens.textSecondary} size={22} />
-          </Pressable>
+          <View style={styles.headerRightContainer}>
+            <Pressable
+              testID="orders.header.button"
+              accessibilityRole="button"
+              accessibilityLabel="View order history"
+              onPress={() => router.push('/orders')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.headerBtn}
+            >
+              <OrdersIcon color={tokens.textSecondary} size={22} />
+            </Pressable>
+            <Pressable
+              testID="theme.toggle.button"
+              accessibilityRole="button"
+              accessibilityLabel={`Switch to ${isDark ? 'light' : 'dark'} mode`}
+              onPress={toggleTheme}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.headerBtn}
+            >
+              <ThemeToggleIcon color={tokens.textSecondary} size={22} />
+            </Pressable>
+          </View>
         ),
         tabBarStyle: {
           backgroundColor: tokens.surface,
@@ -70,11 +84,16 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  themeToggleBtn: {
+  headerRightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+    gap: 4,
+  },
+  headerBtn: {
     minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
 });
