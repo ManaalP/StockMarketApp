@@ -18,45 +18,45 @@ export interface ThemeTokens {
 }
 
 /**
- * Precision Fiscal - Clean Light Theme Tokens (from Stitch export).
+ * Premium Fiscal - Clean Minimal Light Theme Tokens (Groww / Zerodha inspired).
  */
 export const lightTokens: ThemeTokens = {
-  background: '#faf8ff',
+  background: '#f8fafc',
   surface: '#ffffff',
-  surfaceAlt: '#f2f3ff',
-  surfaceContainer: '#eaedff',
-  textPrimary: '#131b2e',
-  textSecondary: '#434655',
-  textMuted: '#737686',
-  border: '#e2e7ff',
-  primary: '#004ac6',
-  gain: '#006e2d', // Accessible dark forest green
-  gainBg: '#e6f7ec',
-  loss: '#ae0010', // Accessible deep crimson red
-  lossBg: '#ffecea',
-  warning: '#b45309',
+  surfaceAlt: '#f1f5f9',
+  surfaceContainer: '#e2e8f0',
+  textPrimary: '#0f172a',
+  textSecondary: '#475569',
+  textMuted: '#94a3b8',
+  border: '#e2e8f0',
+  primary: '#2563eb',
+  gain: '#16a34a', // Emerald/green
+  gainBg: '#dcfce7',
+  loss: '#dc2626', // Red
+  lossBg: '#fee2e2',
+  warning: '#d97706',
   warningBg: '#fef3c7',
   pausedBg: '#fef3c7',
 };
 
 /**
- * Terminal Precision - Dark Mode Tokens (from Stitch export).
+ * Terminal Precision - Premium Dark Mode Tokens (Dark slate / Zerodha dark inspired).
  */
 export const darkTokens: ThemeTokens = {
-  background: '#0b0f14',
-  surface: '#12171e',
-  surfaceAlt: '#1a212a',
-  surfaceContainer: '#232b35',
-  textPrimary: '#f1f5f9',
+  background: '#090d12',
+  surface: '#111720',
+  surfaceAlt: '#18202c',
+  surfaceContainer: '#222d3d',
+  textPrimary: '#f8fafc',
   textSecondary: '#cbd5e1',
-  textMuted: '#8a94a3',
-  border: '#232b35',
-  primary: '#4f8cff',
-  gain: '#3dd68c', // Vibrant mint green
-  gainBg: '#0d2b1f',
-  loss: '#ff6b6b', // Soft coral red
-  lossBg: '#361414',
-  warning: '#f5b84b',
+  textMuted: '#64748b',
+  border: '#1e293b',
+  primary: '#3b82f6',
+  gain: '#22c55e', // Crisp vibrant green
+  gainBg: '#052e16',
+  loss: '#ef4444', // Crisp vibrant red
+  lossBg: '#450a0a',
+  warning: '#f59e0b',
   warningBg: '#2a2110',
   pausedBg: '#2a2110',
 };

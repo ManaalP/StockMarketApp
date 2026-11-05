@@ -359,6 +359,7 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
     holdings = seedHoldings;
     orders = [];
     notifyHoldings();
+    await orderStore.clearOrders();
     await storage.setItem(
       PORTFOLIO_STORAGE_KEY,
       JSON.stringify({ version: 1, holdings: seedHoldings, orders: [] })
