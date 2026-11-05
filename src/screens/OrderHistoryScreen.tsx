@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/useTheme';
 import { useOrderHistory, orderStore, type ExecutedOrder } from '../stores/orderStore';
-import { portfolioStore } from '../stores/portfolioStore';
+import { portfolioStore, useHolding } from '../stores/portfolioStore';
 import { usePrice } from '../stores/priceStore';
 import { formatINR, formatSigned, formatPercent, formatOrderTimestamp } from '../domain/format';
 
@@ -27,6 +27,7 @@ const OrderRow = memo(function OrderRow({
 }) {
   const { tokens } = useTheme();
   const quote = usePrice(order.symbol);
+  const holding = useHolding(order.symbol);
   const isBuy = order.side === 'BUY';
   const isPending = order.status === 'PENDING';
   const isFailed = order.status === 'FAILED';
@@ -180,6 +181,14 @@ const OrderRow = memo(function OrderRow({
             ? `${order.qty} shares • Target ${formatINR(order.targetPaise ?? order.pricePaise)}`
             : `${order.qty} shares @ ${formatINR(order.pricePaise)}`}
         </Text>
+        {holding && holding.qty > 0 ? (
+          <Text
+            testID={`order.holdingAvg.${order.id}`}
+            style={[styles.holdingAvgText, { color: tokens.textMuted }]}
+          >
+            {`Holding Avg ${formatINR(holding.avgPaise)}`}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -437,6 +446,12 @@ const styles = StyleSheet.create({
   sharesText: {
     fontSize: 13,
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
+  holdingAvgText: {
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '500',
     fontVariant: ['tabular-nums'],
   },
   emptyContainer: {
