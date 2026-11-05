@@ -6,6 +6,8 @@ import { PnLText } from './PnLText';
 import { useSummary } from '../stores/summaryStore';
 import { formatINR } from '../domain/format';
 import type { PortfolioSummary } from '../domain/types';
+import { useRenderCount } from '../utils/useRenderCount';
+import { usePerfOverlay } from '../utils/perfOverlay';
 
 export interface SummaryCardProps {
   readonly summary?: PortfolioSummary;
@@ -32,6 +34,9 @@ export const SummaryCard = memo(function SummaryCard({
   const storeSummary = useSummary();
   const summary = propSummary ?? storeSummary;
 
+  const renderCount = useRenderCount();
+  const showPerf = usePerfOverlay();
+
   const totals = summary.totals;
   const unpricedCount = summary.unpricedCount;
 
@@ -49,9 +54,18 @@ export const SummaryCard = memo(function SummaryCard({
     >
       {/* Current Portfolio Value */}
       <View style={styles.header}>
-        <Text style={[styles.label, { color: tokens.textMuted }]}>
-          Current value
-        </Text>
+        <View style={styles.headerTitleRow}>
+          <Text style={[styles.label, { color: tokens.textMuted }]}>
+            Current value
+          </Text>
+          {showPerf ? (
+            <View style={[styles.perfBadge, { backgroundColor: tokens.warningBg }]}>
+              <Text testID="perf.badge.summary" style={[styles.perfBadgeText, { color: tokens.warning }]}>
+                {`R: ${renderCount}`}
+              </Text>
+            </View>
+          ) : null}
+        </View>
         <PriceText
           paise={totals?.currentValuePaise ?? null}
           testID="summary.currentValue"
@@ -150,6 +164,21 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'column',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  perfBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  perfBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   label: {
     fontSize: 13,
