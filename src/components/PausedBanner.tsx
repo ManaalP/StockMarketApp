@@ -12,7 +12,8 @@ export interface PausedBannerProps {
 }
 
 /**
- * Functional component displaying feed status notices:
+ * Functional component displaying feed status notices as a floating overlay banner:
+ * - Rendered as an absolute overlay to prevent shifting or jarring jumps of the underlying UI.
  * - When offline: Red "No internet connection" banner.
  * - When price feed stalls (> 2s): Amber "Prices paused" warning banner.
  * - When price ticks become on / resume: Green "Prices live" confirmation banner (auto-dismisses).
@@ -49,19 +50,23 @@ export const PausedBanner = memo(function PausedBanner({
         testID="banner.offline"
         accessibilityRole="alert"
         accessibilityLiveRegion="polite"
-        style={[
-          styles.banner,
-          {
-            backgroundColor: tokens.lossBg,
-            borderColor: tokens.loss,
-          },
-          style,
-        ]}
+        pointerEvents="box-none"
+        style={[styles.overlayContainer, style]}
       >
-        <View style={[styles.indicator, { backgroundColor: tokens.loss }]} />
-        <Text style={[styles.text, { color: tokens.loss }]}>
-          No internet connection. Price updates paused.
-        </Text>
+        <View
+          style={[
+            styles.banner,
+            {
+              backgroundColor: tokens.lossBg,
+              borderColor: tokens.loss,
+            },
+          ]}
+        >
+          <View style={[styles.indicator, { backgroundColor: tokens.loss }]} />
+          <Text style={[styles.text, { color: tokens.loss }]}>
+            No internet connection. Price updates paused.
+          </Text>
+        </View>
       </View>
     );
   }
@@ -72,19 +77,23 @@ export const PausedBanner = memo(function PausedBanner({
         testID={testID}
         accessibilityRole="alert"
         accessibilityLiveRegion="polite"
-        style={[
-          styles.banner,
-          {
-            backgroundColor: tokens.pausedBg,
-            borderColor: tokens.warning,
-          },
-          style,
-        ]}
+        pointerEvents="box-none"
+        style={[styles.overlayContainer, style]}
       >
-        <View style={[styles.indicator, { backgroundColor: tokens.warning }]} />
-        <Text style={[styles.text, { color: tokens.warning }]}>
-          {message}
-        </Text>
+        <View
+          style={[
+            styles.banner,
+            {
+              backgroundColor: tokens.pausedBg,
+              borderColor: tokens.warning,
+            },
+          ]}
+        >
+          <View style={[styles.indicator, { backgroundColor: tokens.warning }]} />
+          <Text style={[styles.text, { color: tokens.warning }]}>
+            {message}
+          </Text>
+        </View>
       </View>
     );
   }
@@ -95,19 +104,23 @@ export const PausedBanner = memo(function PausedBanner({
         testID="banner.live"
         accessibilityRole="alert"
         accessibilityLiveRegion="polite"
-        style={[
-          styles.banner,
-          {
-            backgroundColor: tokens.gainBg,
-            borderColor: tokens.gain,
-          },
-          style,
-        ]}
+        pointerEvents="box-none"
+        style={[styles.overlayContainer, style]}
       >
-        <View style={[styles.indicator, { backgroundColor: tokens.gain }]} />
-        <Text style={[styles.text, { color: tokens.gain }]}>
-          Prices live. Feed active and updating.
-        </Text>
+        <View
+          style={[
+            styles.banner,
+            {
+              backgroundColor: tokens.gainBg,
+              borderColor: tokens.gain,
+            },
+          ]}
+        >
+          <View style={[styles.indicator, { backgroundColor: tokens.gain }]} />
+          <Text style={[styles.text, { color: tokens.gain }]}>
+            Prices live. Feed active and updating.
+          </Text>
+        </View>
       </View>
     );
   }
@@ -116,15 +129,29 @@ export const PausedBanner = memo(function PausedBanner({
 });
 
 const styles = StyleSheet.create({
+  overlayContainer: {
+    position: 'absolute',
+    top: 8,
+    left: 0,
+    right: 0,
+    zIndex: 900,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    marginHorizontal: 16,
-    marginVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
+    width: '100%',
+    maxWidth: 420,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   indicator: {
     width: 8,
