@@ -78,6 +78,7 @@ describe('OrderSheet component', () => {
   });
 
   test('executes BUY order and calls portfolioStore.executeOrder', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0.5); // Ensure not random test failure
     const executeSpy = jest.spyOn(portfolioStore, 'executeOrder');
     const onClose = jest.fn();
     let renderer!: ReactTestRenderer.ReactTestRenderer;

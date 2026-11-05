@@ -52,9 +52,9 @@ export const SummaryCard = memo(function SummaryCard({
         style,
       ]}
     >
-      {/* Top Section: Primary Metric (Current value + Total return pill) */}
-      <View style={styles.primaryRow}>
-        <View style={styles.primaryLeft}>
+      {/* Top Section: Primary Metric (Current value full-width hero + Total return alongside/below) */}
+      <View style={styles.primaryContainer}>
+        <View style={styles.primaryHeaderRow}>
           <View style={styles.labelRow}>
             <Text style={[styles.primaryLabel, { color: tokens.textMuted }]}>
               Current value
@@ -67,24 +67,25 @@ export const SummaryCard = memo(function SummaryCard({
               </View>
             ) : null}
           </View>
-          <PriceText
-            paise={totals?.currentValuePaise ?? null}
-            testID="summary.currentValue"
-            style={[styles.currentValueText, { color: tokens.textPrimary }]}
-          />
+
+          <View style={styles.pnlHeaderContainer}>
+            <Text style={[styles.secondaryLabelRight, { color: tokens.textMuted }]}>
+              Total P&L
+            </Text>
+            <PnLText
+              pnlPaise={totals?.totalPnlPaise ?? null}
+              pnlPct={totals?.totalPnlPct ?? null}
+              testID="summary.totalPnl"
+              style={styles.totalPnlText}
+            />
+          </View>
         </View>
 
-        <View style={styles.primaryRight}>
-          <Text style={[styles.secondaryLabelRight, { color: tokens.textMuted }]}>
-            Total P&L
-          </Text>
-          <PnLText
-            pnlPaise={totals?.totalPnlPaise ?? null}
-            pnlPct={totals?.totalPnlPct ?? null}
-            testID="summary.totalPnl"
-            style={styles.totalPnlText}
-          />
-        </View>
+        <PriceText
+          paise={totals?.currentValuePaise ?? null}
+          testID="summary.currentValue"
+          style={[styles.currentValueText, { color: tokens.textPrimary }]}
+        />
       </View>
 
       {/* Secondary Metrics: Space-efficient 3-column / 2-column strip */}
@@ -170,18 +171,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 3,
   },
-  primaryRow: {
+  primaryContainer: {
+    flexDirection: 'column',
+  },
+  primaryHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
-  primaryLeft: {
-    flex: 1,
-  },
-  primaryRight: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    paddingTop: 2,
+  pnlHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   labelRow: {
     flexDirection: 'row',
@@ -199,18 +200,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    marginBottom: 4,
   },
   currentValueText: {
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 32,
+    lineHeight: 40,
     fontWeight: '700',
     marginTop: 4,
     letterSpacing: -0.5,
   },
   totalPnlText: {
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 18,
     fontWeight: '600',
   },
   perfBadge: {
