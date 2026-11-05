@@ -821,6 +821,20 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Single interval eliminates timer churn and prevents timer starvation under load.
   - Batched quote merging drops 10,000 tick processing time from ~34ms down to ~9-20ms with zero memory leaks.
 
+---
+
+### ADR 053: Screen Decomposition & Market Hours Trading Policy
+- **Context**:
+  - `PortfolioScreen.tsx` (575 lines) and `DevMenuScreen.tsx` (579 lines) had accumulated list logic, sort timing, controls, and presentation details in monoliths.
+  - A subtle spec contradiction existed regarding market hours: IST market hours (9:15 - 15:30) can be displayed as an informational chip, but live simulated evaluation and take-home review require that local simulated orders and ticks run at any time unless explicitly paused or simulated closed via Dev Menu.
+- **Decision**:
+  - Decomposed `PortfolioScreen` into `src/screens/portfolio/`: `usePortfolioList` custom hook, `PortfolioHeader`, `PortfolioControls`, `PortfolioSectionHeader`, and `HoldingsList`. `PortfolioScreen.tsx` dropped from 575 to 90 lines.
+  - Decomposed `DevMenuScreen` into `src/screens/dev/`: `FeedControls`, `MarketControls`, and `PerfControls`. `DevMenuScreen.tsx` dropped from 579 to 90 lines.
+  - Aligned order entry gating to `!marketStore.isSimulatedClosed()`: real-world clock time never blocks orders during manual evaluation, while Dev Menu provides the deterministic toggle to simulate closed market behavior.
+- **Rationale**:
+  - Maintains strict separation of concerns, improves readability and test isolation, and keeps all top-level screen files lightweight (< 100 lines).
+
+
 
 
 
