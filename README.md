@@ -50,7 +50,8 @@ flowchart TD
 
 ### 5. Strict TypeScript & Unit Test Coverage (10%)
 - `strict: true`, `noUncheckedIndexedAccess: true`, zero `any`, zero `as unknown as`, zero `@ts-ignore`.
-- **40 test suites, 223 unit and integration tests** passing with 100% coverage across all domain calculations, feeds, stores, UI screens, and integration layers.
+- **42 test suites, 238 unit, integration, and property tests** passing with 100% coverage across all domain calculations, feeds, stores, UI screens, and integration layers.
+- **7 Property-Based Invariant Tests with `fast-check`** (7,000 permutations verifying mathematical correctness, exact summary reconciliation, and state immutability).
 
 ---
 
@@ -105,15 +106,19 @@ npm run typecheck
 # Verify ESLint discipline (0 errors, no any)
 npm run lint
 
-# Run all 40 test suites (223 tests)
+# Run all 42 test suites (238 tests)
 npm test
+
+# Run property-based invariant tests with fast-check (7,000 runs)
+npm run test:prop
 ```
 
 ---
 
 ## Tested Platforms
 - **Android**: Tested via Expo Go on physical device (LAN mode) and Android Emulator.
-- **Linux Environment / Node.js**: Verified with Jest preset (`jest-expo`) across all 223 tests.
+- **Linux Environment / Node.js**: Verified with Jest preset (`jest-expo`) across all 238 tests.
+- **QA Automation**: Maestro E2E persona flows in `e2e/flows/` and testing guide in [`docs/TESTING.md`](./docs/TESTING.md).
 
 ---
 
