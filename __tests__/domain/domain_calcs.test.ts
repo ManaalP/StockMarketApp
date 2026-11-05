@@ -6,6 +6,7 @@ import {
   summarize,
   applyOrder,
   getSortedHoldingSymbols,
+  quoteDayMetrics,
   OrderValidationError,
   toPaise,
 } from '@/domain';
@@ -373,6 +374,58 @@ describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
 
       const asc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'pnl', direction: 'asc' });
       expect(asc).toEqual(['OLDCO', 'TCS', 'RELIANCE', 'INFY']);
+    });
+  });
+
+  describe('quoteDayMetrics', () => {
+    it('calculates day change paise and percentage for a priced quote', () => {
+      // ltp: 250000, prevClose: 245000 -> change: +5000 paise (+₹50.00)
+      // pct: (5000 / 245000) * 100 = 2.0408... -> 2.04%
+      const metrics = quoteDayMetrics(sampleQuotePriced);
+      expect(metrics.isPriced).toBe(true);
+      expect(metrics.ltp).toBe(250000);
+      expect(metrics.dayChangePaise).toBe(5000);
+      expect(metrics.dayChangePct).toBe(2.04);
+    });
+
+    it('calculates negative day change accurately', () => {
+      const downQuote: Quote = {
+        ltp: toPaise(2400.0), // 240000
+        open: toPaise(2450.0),
+        high: toPaise(2460.0),
+        low: toPaise(2390.0),
+        prevClose: toPaise(2500.0), // 250000
+        volume: 800000,
+      };
+      // change: 240000 - 250000 = -10000 (-₹100.00)
+      // pct: (-10000 / 250000) * 100 = -4.00%
+      const metrics = quoteDayMetrics(downQuote);
+      expect(metrics.isPriced).toBe(true);
+      expect(metrics.ltp).toBe(240000);
+      expect(metrics.dayChangePaise).toBe(-10000);
+      expect(metrics.dayChangePct).toBe(-4.0);
+    });
+
+    it('returns nulls when quote is null or ltp is null', () => {
+      const nullMetrics = quoteDayMetrics(null);
+      expect(nullMetrics.isPriced).toBe(false);
+      expect(nullMetrics.ltp).toBeNull();
+      expect(nullMetrics.dayChangePaise).toBeNull();
+      expect(nullMetrics.dayChangePct).toBeNull();
+
+      const unpricedQuote: Quote = {
+        ltp: null,
+        open: toPaise(2400.0),
+        high: toPaise(2400.0),
+        low: toPaise(2400.0),
+        prevClose: toPaise(2400.0),
+        volume: 0,
+      };
+      const unpricedMetrics = quoteDayMetrics(unpricedQuote);
+      expect(unpricedMetrics.isPriced).toBe(false);
+      expect(unpricedMetrics.ltp).toBeNull();
+      expect(unpricedMetrics.dayChangePaise).toBeNull();
+      expect(unpricedMetrics.dayChangePct).toBeNull();
     });
   });
 });
