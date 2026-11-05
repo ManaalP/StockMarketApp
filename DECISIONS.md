@@ -658,24 +658,20 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 
 ---
 
-### ADR 044: Stock Detail & Portfolio Redesign & WCAG AA Legibility Polish
+### ADR 042: Non-Time-Dependent Live Market Hours Default and 5-Second Temporary Feed Drop
 - **Context**:
-  - User requested a fintech redesign for the Stock Detail Screen and Portfolio Overview Screen with focus on:
-    - Clear separation of primary hero metrics (Total Portfolio Value vs Total P&L pill badge) without string collision or awkward wrapping.
-    - Contrast and legibility meeting WCAG AA standards using primary `#F8FAFC`, secondary `#94A3B8`, muted `#64748B`, border `#1E293B`, emerald gain `#10B981`, and rose loss `#EF4444`.
-    - Floating / non-shifting subtle pill status banner for live tick pauses (`top: 10`, `position: 'absolute'`, `zIndex: 900`, `pointerEvents="box-none"`).
-    - Unified cohesive position card removing nested box-in-a-box borders.
-    - Integrated clean 2x3 market statistics grid and refined day range indicator with min/max bounds.
-    - Dynamic bottom safe area insets for Buy/Sell action buttons.
+  - In `src/stores/marketStore.ts`, checking the system wall clock against NSE market hours (9:15 AM - 3:30 PM IST) caused the app to detect the market as closed when running tests or testing on device outside those hours (e.g. at night or on weekends). As a result, the feed paused immediately on boot, blocking price updates and preventing users from seeing simulated price ticks.
+  - Users need developer simulation controls to be non-time-dependent by default:
+    1. Default state: internet is ON, feed is CONNECTED, market hours are LIVE (ticks are running 20 Hz regardless of the current wall-clock hour).
+    2. "Simulate After Market Hours" toggle: pauses price ticks and blocks trade execution when explicitly activated.
+    3. Feed disconnect for 5s: simulates a temporary 5-second connection drop with active countdown before automatically restoring ticks.
+    4. Internet connectivity simulation: toggles offline mode, pausing ticks and displaying the offline banner.
 - **Decision**:
-  - Updated theme tokens in `src/theme/tokens.ts` to high-contrast palette.
-  - Refactored `SummaryCard.tsx` with dedicated full-width `Current value` hero amount and adjacent semantic `Total P&L` badge pill.
-  - Redesigned `PositionCard.tsx` with unified surface card, clean horizontal divider, and semantic unrealized P&L pill.
-  - Refactored `StockStatsGrid.tsx` into a modern 2x3 borderless grid container.
-  - Redesigned `StockDetailScreen.tsx` price section with prominent LTP and integrated +₹114.23 (+4.72%) change pill badge, retaining dynamic safe-area padded sticky CTA footer.
-  - Styled `PausedBanner.tsx` as an elevated floating pill banner with zero Cumulative Layout Shift (CLS).
+  - Update `marketStore.isMarketOpen()` to return `!simulatedClosed` by default (independent of wall-clock time).
+  - Update `marketStore.setSimulatedClosed` messages to reflect simulated after-market hours.
+  - Add "Disconnect Feed for 5s (Temporary Drop)" button with dynamic countdown in `DevMenuScreen.tsx`.
 - **Rationale**:
-  - Delivers a fintech trading aesthetic inspired by Groww, Zerodha, and Robinhood while strictly preserving pure domain calculations, zero float arithmetic on money, per-symbol memoization, and 100% test coverage.
+  - Ensures a reliable, fully testable, and demonstrable application at any hour of day or weekend while preserving full fidelity of simulated after-hours and network disconnect edge cases.
 
 
 

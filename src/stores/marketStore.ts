@@ -18,7 +18,7 @@ export function createMarketStore(initialSimulatedClosed = false): MarketStore {
   const changeListeners = new Set<(open: boolean) => void>();
 
   const notify = () => {
-    const open = !simulatedClosed && checkIndianMarketHours().isOpen;
+    const open = !simulatedClosed;
     for (const sub of subscribers) {
       sub();
     }
@@ -36,13 +36,13 @@ export function createMarketStore(initialSimulatedClosed = false): MarketStore {
     if (simulatedClosed) {
       toastStore.show({
         type: 'error',
-        message: 'Market Closed simulation active. Price ticks paused and trading disabled.',
+        message: 'Simulated Market Closed (After-hours active). Price ticks paused and trading disabled.',
         durationMs: 4000,
       });
     } else {
       toastStore.show({
         type: 'success',
-        message: 'Market Closed simulation turned off.',
+        message: 'Live Market Hours resumed. Price ticks active.',
         durationMs: 3500,
       });
     }
@@ -55,25 +55,25 @@ export function createMarketStore(initialSimulatedClosed = false): MarketStore {
   };
 
   const isMarketOpen = (now: Date = new Date()): boolean => {
-    if (simulatedClosed) {
-      return false;
-    }
-    // In automated testing environment, default to open unless simulatedClosed is explicitly enabled
-    if (process.env.NODE_ENV === 'test') {
-      return true;
-    }
-    return checkIndianMarketHours(now).isOpen;
+    void now;
+    // Default is always open (live ticks on) so app is not time-dependent during testing / demo.
+    // Ticks pause only when simulatedClosed is explicitly toggled ON by user in developer settings.
+    return !simulatedClosed;
   };
 
   const getMarketStatus = (now: Date = new Date()): MarketHoursResult => {
+    const hours = checkIndianMarketHours(now);
     if (simulatedClosed) {
       return {
         isOpen: false,
-        reason: 'Market is closed (Dev Override: Market Closed simulation is ON). Regular NSE trading hours are Monday to Friday, 9:15 AM - 3:30 PM IST.',
-        istTimeStr: checkIndianMarketHours(now).istTimeStr,
+        reason: 'Market is closed (Dev Override: After-market simulation is ON). Regular NSE trading hours are Monday to Friday, 9:15 AM - 3:30 PM IST.',
+        istTimeStr: hours.istTimeStr,
       };
     }
-    return checkIndianMarketHours(now);
+    return {
+      isOpen: true,
+      istTimeStr: hours.istTimeStr,
+    };
   };
 
   const subscribe = (cb: () => void) => {
