@@ -11,6 +11,7 @@ import {
   priceFlashDirection,
   OrderValidationError,
   toPaise,
+  type SortField,
 } from '@/domain';
 
 describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
@@ -573,6 +574,56 @@ describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
     it('returns down when next LTP is less than previous LTP', () => {
       expect(priceFlashDirection(250050, 250000)).toBe('down');
       expect(priceFlashDirection(200, 100)).toBe('down');
+    });
+  });
+
+  describe('getSortedHoldingSymbols additional sort criteria', () => {
+    const holdings: Holding[] = [
+      { symbol: 'RELIANCE', qty: 10, avgPaise: 200000 },
+      { symbol: 'TCS', qty: 5, avgPaise: 300000 },
+    ];
+    const quotes: Record<string, Quote> = {
+      RELIANCE: {
+        ltp: 250000,
+        open: 240000,
+        high: 260000,
+        low: 230000,
+        prevClose: 240000,
+        volume: 1000,
+      },
+      TCS: {
+        ltp: 350000,
+        open: 320000,
+        high: 360000,
+        low: 310000,
+        prevClose: 320000,
+        volume: 500,
+      },
+    };
+
+    it('sorts holdings by ltp asc and desc', () => {
+      const asc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'ltp' as SortField, direction: 'asc' });
+      expect(asc).toEqual(['RELIANCE', 'TCS']);
+      const desc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'ltp' as SortField, direction: 'desc' });
+      expect(desc).toEqual(['TCS', 'RELIANCE']);
+    });
+
+    it('sorts holdings by change pct asc and desc', () => {
+      // RELIANCE: (2500 - 2400) / 2400 = +4.16%
+      // TCS: (3500 - 3200) / 3200 = +9.375%
+      const asc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'change' as SortField, direction: 'asc' });
+      expect(asc).toEqual(['RELIANCE', 'TCS']);
+      const desc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'change' as SortField, direction: 'desc' });
+      expect(desc).toEqual(['TCS', 'RELIANCE']);
+    });
+
+    it('sorts holdings by pnlPct asc and desc', () => {
+      // RELIANCE pnlPct: (2500 - 2000) / 2000 = +25%
+      // TCS pnlPct: (3500 - 3000) / 3000 = +16.66%
+      const asc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'pnlPct' as SortField, direction: 'asc' });
+      expect(asc).toEqual(['TCS', 'RELIANCE']);
+      const desc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'pnlPct' as SortField, direction: 'desc' });
+      expect(desc).toEqual(['RELIANCE', 'TCS']);
     });
   });
 });

@@ -231,5 +231,23 @@ describe('OHLC API Client (src/api/ohlcClient.ts)', () => {
       if (result.ok) return;
       expect(result.error.kind).toBe('parse');
     });
+
+    test('handles timeout abort when network request takes too long', async () => {
+      const shortTimeoutClient = createOhlcClient({ timeoutMs: 20 });
+      globalThis.fetch = jest.fn().mockImplementation((_url, opts) => {
+        return new Promise((resolve, reject) => {
+          opts.signal.addEventListener('abort', () => {
+            const err = new Error('The operation was aborted');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        });
+      });
+
+      const result = await shortTimeoutClient.fetchOhlc(['RELIANCE']);
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('timeout');
+    });
   });
 });
