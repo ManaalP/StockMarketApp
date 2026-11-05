@@ -761,6 +761,24 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Full testability with pure functions, zero UI/React coupling, guaranteed preservation of price extremes during decimation, and integer paise monetary precision.
 
+---
+
+### ADR 049: Stock Detail Live Line Chart Layout & Isolated Price Store Subscription
+- **Context**:
+  - The stock detail chart previously defaulted to candles with misleading "DAILY OHLC" labels, overlapping price and interval labels, clipped zoom controls, and called `usePrice(symbol)` which caused unnecessary re-renders.
+- **Decision**:
+  - In `src/components/LiveLineChart.tsx`:
+    - Retitled to `"Live ticks since you opened this screen"` with right-aligned `"{n} ticks"`.
+    - Default view is `'line'`. Sized clean horizontal toggle `[ Line | Candles ]` fitting 340-360px widths with no zoom clutter.
+    - Subscribes directly via `priceStore.subscribe(symbol)` without calling `usePrice()`. Flushes ring buffer (`TickPoint[]`) to React state at most once every 250 ms.
+    - 2px stroke colored by direction versus `prevClose` (gain/loss tokens), soft area fill at 8% opacity, last-price dot, and dashed muted `prevClose` line (when inside domain).
+    - Nice Y-axis gridline ticks (3 labels) and X-axis local time labels (max 4, never overlapping).
+    - Empty state under 2 points: displays `"Waiting for first tick..."` without fake candles.
+    - Candle mode renders authentic `TimeCandle[]` with wicks and bodies, eliminating overlapping candle price tags.
+- **Rationale**:
+  - Delivers high readability, zero label collision, minimal render churn, and authentic live tick tracking.
+
+
 
 
 

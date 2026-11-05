@@ -1,15 +1,15 @@
 import React from 'react';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 import { Text } from 'react-native';
+import { Text as SvgText } from 'react-native-svg';
 import {
   LiveLineChart,
   CHART_FLUSH_INTERVAL_MS,
-  generateCandles,
 } from '../../src/components/LiveLineChart';
 import { ThemeProvider } from '../../src/theme/useTheme';
 import { priceStore } from '../../src/stores/priceStore';
 
-describe('LiveLineChart', () => {
+describe('LiveLineChart (PR B Specs)', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -26,7 +26,7 @@ describe('LiveLineChart', () => {
     });
   }
 
-  test('displays empty state "Waiting for first tick..." when no price exists', () => {
+  test('displays empty state "Waiting for first tick..." when fewer than 2 points exist', () => {
     act(() => {
       priceStore.seed({
         OLDCO: {
@@ -52,12 +52,14 @@ describe('LiveLineChart', () => {
 
     const texts = getAllText(renderer.root).join(' ');
     expect(texts).toContain('Waiting for first tick...');
+    expect(renderer.root.findByProps({ testID: 'detail.chart.empty' })).toBeDefined();
+
     act(() => {
       renderer.unmount();
     });
   });
 
-  test('renders Candlestick chart by default with authentic OHLC metrics and candle elements', () => {
+  test('defaults to Line mode, displays "{n} ticks", and switches cleanly to Candles mode', () => {
     act(() => {
       priceStore.seed({
         TCS: {
@@ -81,74 +83,27 @@ describe('LiveLineChart', () => {
       );
     });
 
-    // Default mode is Candlestick: candle wicks and bodies are rendered
-    const wicks = renderer.root.findAllByProps({ testID: 'chart.candle.wick.0' });
-    const bodies = renderer.root.findAllByProps({ testID: 'chart.candle.body.0' });
-    expect(wicks.length).toBeGreaterThan(0);
-    expect(bodies.length).toBeGreaterThan(0);
+    // Initial 1 tick from seed -> empty state under 2 points
+    expect(getAllText(renderer.root).join(' ')).toContain('Waiting for first tick...');
 
-    // Verify OHLC strip displays labels
-    const texts = getAllText(renderer.root).join(' ');
-    expect(texts).toContain('O ');
-    expect(texts).toContain('H ');
-    expect(texts).toContain('L ');
-    expect(texts).toContain('C ');
-
-    act(() => {
-      renderer.unmount();
-    });
-  });
-
-  test('flushes newly arrived ticks every 250ms and toggles between modes', () => {
-    act(() => {
-      priceStore.seed({
-        TCS: {
-          ltp: 320000,
-          open: 315000,
-          high: 325000,
-          low: 310000,
-          prevClose: 310000,
-          volume: 50000,
-        },
-      });
-    });
-
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
-
-    act(() => {
-      renderer = ReactTestRenderer.create(
-        <ThemeProvider initialMode="light">
-          <LiveLineChart symbol="TCS" initialMode="line" />
-        </ThemeProvider>
-      );
-    });
-
-    // Initial line mode
-    expect(renderer.root.findByProps({ testID: 'live.chart.path' })).toBeDefined();
-
-    // Arriving ticks
+    // Push second tick and flush
     act(() => {
       priceStore.queueTick({ symbol: 'TCS', seq: 101, ltp: 321000 });
       priceStore.flush();
-    });
-
-    act(() => {
-      jest.advanceTimersByTime(100);
-    });
-
-    act(() => {
-      priceStore.queueTick({ symbol: 'TCS', seq: 102, ltp: 322500 });
-      priceStore.flush();
-    });
-
-    act(() => {
       jest.advanceTimersByTime(CHART_FLUSH_INTERVAL_MS);
     });
 
+    // Default mode is line
     expect(renderer.root.findByProps({ testID: 'live.chart.path' })).toBeDefined();
 
-    // Toggle back to Candlestick mode
-    const candleBtn = renderer.root.findByProps({ testID: 'chart.mode.candle' });
+    // Verify title and right-aligned ticks
+    const texts = getAllText(renderer.root).join(' ');
+    expect(texts).toContain('Live ticks since you opened this screen');
+    expect(texts).toContain('2 ticks');
+    expect(texts).not.toContain('DAILY OHLC');
+
+    // Toggle to Candle mode
+    const candleBtn = renderer.root.findByProps({ testID: 'detail.chart.mode.candle' });
     act(() => {
       candleBtn.props.onPress();
     });
@@ -156,21 +111,32 @@ describe('LiveLineChart', () => {
     expect(renderer.root.findAllByProps({ testID: 'live.chart.path' })).toHaveLength(0);
     expect(renderer.root.findAllByProps({ testID: 'chart.candle.body.0' }).length).toBeGreaterThan(0);
 
+    // Toggle back to Line mode
+    const lineBtn = renderer.root.findByProps({ testID: 'detail.chart.mode.line' });
+    act(() => {
+      lineBtn.props.onPress();
+    });
+    expect(renderer.root.findByProps({ testID: 'live.chart.path' })).toBeDefined();
+
+    // Confirm no zoom buttons exist
+    expect(renderer.root.findAllByProps({ testID: 'chart.zoom.in' })).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ testID: 'chart.zoom.out' })).toHaveLength(0);
+
     act(() => {
       renderer.unmount();
     });
   });
 
-  test('supports zoom in/out and candle touch inspection', () => {
+  test('x-axis labels count never exceeds 4', () => {
     act(() => {
       priceStore.seed({
-        TCS: {
-          ltp: 320000,
-          open: 315000,
-          high: 325000,
-          low: 310000,
-          prevClose: 310000,
-          volume: 50000,
+        RELIANCE: {
+          ltp: 250000,
+          open: 248000,
+          high: 252000,
+          low: 247000,
+          prevClose: 249000,
+          volume: 100000,
         },
       });
     });
@@ -180,58 +146,33 @@ describe('LiveLineChart', () => {
     act(() => {
       renderer = ReactTestRenderer.create(
         <ThemeProvider initialMode="light">
-          <LiveLineChart symbol="TCS" />
+          <LiveLineChart symbol="RELIANCE" />
         </ThemeProvider>
       );
     });
 
-    // Zoom In
-    const zoomInBtn = renderer.root.findByProps({ testID: 'chart.zoom.in' });
+    // Push 20 ticks
     act(() => {
-      zoomInBtn.props.onPress();
+      for (let i = 1; i <= 20; i++) {
+        priceStore.queueTick({ symbol: 'RELIANCE', seq: i, ltp: 250000 + i * 10 });
+      }
+      priceStore.flush();
+      jest.advanceTimersByTime(CHART_FLUSH_INTERVAL_MS);
     });
 
-    let texts = getAllText(renderer.root).join(' ');
-    expect(texts).toContain('1.3x');
-
-    // Zoom Out
-    const zoomOutBtn = renderer.root.findByProps({ testID: 'chart.zoom.out' });
-    act(() => {
-      zoomOutBtn.props.onPress();
+    // Find all rendered SvgText elements representing time labels
+    const svgTexts = renderer.root.findAllByType(SvgText);
+    const timeRegex = /^\d{2}:\d{2}:\d{2}$/;
+    const timeSvgLabels = svgTexts.filter((st) => {
+      const val = String(st.props.children ?? '');
+      return timeRegex.test(val);
     });
 
-    texts = getAllText(renderer.root).join(' ');
-    expect(texts).toContain('1.0x');
-
-    // Tap on candle to inspect
-    const candleTouch0 = renderer.root.findByProps({ testID: 'chart.candle.touch.0' });
-    act(() => {
-      candleTouch0.props.onPress();
-    });
-
-    expect(renderer.root.findByProps({ testID: 'chart.active.price.badge' })).toBeDefined();
+    expect(timeSvgLabels.length).toBeLessThanOrEqual(4);
+    expect(timeSvgLabels.length).toBeGreaterThan(0);
 
     act(() => {
       renderer.unmount();
     });
-  });
-
-  test('generateCandles accurately creates OHLC from authentic quote', () => {
-    const quote = {
-      ltp: 320000,
-      open: 315000,
-      high: 325000,
-      low: 310000,
-      prevClose: 310000,
-      volume: 50000,
-    };
-
-    const candles = generateCandles(quote, [320000]);
-    expect(candles.length).toBeGreaterThanOrEqual(1);
-    const today = candles[candles.length - 1]!;
-    expect(today.open).toBe(315000);
-    expect(today.high).toBe(325000);
-    expect(today.low).toBe(310000);
-    expect(today.close).toBe(320000);
   });
 });

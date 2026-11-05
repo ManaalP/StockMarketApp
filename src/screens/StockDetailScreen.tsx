@@ -177,7 +177,7 @@ export const StockDetailScreen = memo(function StockDetailScreen({
         </View>
 
         {/* Live SVG Line Chart */}
-        <LiveLineChart symbol={symbol} />
+        <LiveLineChart symbol={symbol} testID="detail.chart" />
 
         {/* Unavailable Notice */}
         {!isPriced ? (

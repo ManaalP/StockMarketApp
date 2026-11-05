@@ -56,7 +56,10 @@ describe('StockDetailScreen', () => {
     expect(texts).toContain('+₹100.00');
     expect(texts).toContain('Market Statistics');
     expect(texts).toContain('Your Position');
-    expect(renderer!.root.findByProps({ testID: 'live.chart.container' })).toBeDefined();
+    expect(
+      renderer!.root.findAllByProps({ testID: 'detail.chart' }).length +
+      renderer!.root.findAllByProps({ testID: 'live.chart.container' }).length
+    ).toBeGreaterThan(0);
 
     // Verify Buy and Sell action buttons are present and interactive
     const buyBtn = renderer!.root.findByProps({ testID: 'stock.detail.buy.button' });
