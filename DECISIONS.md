@@ -673,6 +673,18 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Ensures a reliable, fully testable, and demonstrable application at any hour of day or weekend while preserving full fidelity of simulated after-hours and network disconnect edge cases.
 
+---
+
+### ADR 043: Tab Swipe Canvas Background & Seamless Horizontal Gesture Navigation
+- **Context**:
+  - In `SwipeTabWrapper.tsx`, when users horizontally swiped across the screen (e.g. from Portfolio to Watchlist), the screen translated leftwards to reveal the underlying view. Because `SwipeTabWrapper` and `Tabs.screenOptions` did not set an explicit background color on their root containers, React Native's default window background (`#FFFFFF` on iOS and Android) showed through as an unseemly white vertical band behind the dark theme UI.
+- **Decision**:
+  - In `src/app/(tabs)/_layout.tsx`, add `sceneStyle: { backgroundColor: tokens.background }` to `<Tabs screenOptions>`.
+  - In `src/components/SwipeTabWrapper.tsx`, add `backgroundColor: tokens.background` to the root gesture container.
+- **Rationale**:
+  - Guarantees seamless color continuity during horizontal swipe transitions between Portfolio and Watchlist in both dark and light modes, eliminating unpainted white spaces.
+
+
 
 
 
