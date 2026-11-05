@@ -2,9 +2,9 @@ import { mulQty, toPaise, type Paise } from './money';
 import { formatINR } from './format';
 import type { Holding, Order } from './types';
 import { applyOrder } from './calcs';
+import { MAX_ORDER_QUANTITY, MAX_SAFE_VALUE_PAISE } from '../data/constants';
 
-export const MAX_ORDER_QUANTITY = 100_000;
-export const MAX_SAFE_VALUE_PAISE = Number.MAX_SAFE_INTEGER;
+export { MAX_ORDER_QUANTITY, MAX_SAFE_VALUE_PAISE };
 
 export interface OrderValidationResult {
   readonly isValid: boolean;

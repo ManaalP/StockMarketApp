@@ -859,6 +859,20 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Guarantees seamless screen reader operation and prevents interactive touch target overlap on all modern iOS and Android form factors.
 
+---
+
+### ADR 056: Eliminating Domain Require Cycle & Chart Touch Crash Fix
+- **Context**:
+  - Metro bundler emitted a warning: `Require cycle: src/domain/calcs.ts -> src/domain/orders.ts -> src/domain/calcs.ts`.
+  - Tapping or clicking inside `LiveLineChart` crashed in some runtimes due to Gesture Pan tracking unconstrained scrub points and missing gesture handler root context on canvas SVGs.
+- **Decision**:
+  - Moved `MAX_ORDER_QUANTITY` and `MAX_SAFE_VALUE_PAISE` to `src/data/constants.ts`, cleanly breaking the dependency cycle between `calcs.ts` and `orders.ts`.
+  - Removed gesture scrubbing and the `"Press and drag to inspect"` hint from `LiveLineChart.tsx`. Simplified chart canvas to pure, robust SVG rendering with Line/Candles view mode toggle.
+  - Linked design & architecture specification PDF in `README.md` and added roadmap for persistent SQLite time-series storage.
+- **Rationale**:
+  - Completely eliminates runtime Metro circular dependency warnings and prevents unexpected touch/click gesture crashes on native SVG charts.
+
+
 
 
 
