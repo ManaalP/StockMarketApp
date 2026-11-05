@@ -30,3 +30,17 @@ export {
   type SummaryStore,
   type SummaryStoreOptions,
 } from './summaryStore';
+
+export {
+  createWatchlistStore,
+  createWatchlistHooks,
+  watchlistStore,
+  useWatchlist,
+  useIsInWatchlist,
+  DEFAULT_WATCHLIST_SYMBOLS,
+  WATCHLIST_STORAGE_KEY,
+  type WatchlistStore,
+  type WatchlistStoreOptions,
+  type StorageBackend,
+} from './watchlistStore';
+
