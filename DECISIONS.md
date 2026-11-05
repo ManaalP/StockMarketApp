@@ -276,18 +276,21 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 
 ---
 
-### ADR 025: Persisted Order History Ledger and OrderStore Architecture
-- **Context**: The Buy/Sell sheet executes local orders, but users need an audit ledger to review historical trades, executed prices, total outlay, and timestamps across app restarts.
+### ADR 026: Interactive Developer Controls, Dynamic Tick Rate Tuning, and Force Disconnect Simulation
+- **Context**: Demonstrating and validating high-frequency market data apps requires live control over simulation parameters: testing UI responsiveness at 50 Hz stress loads, verifying paused state alerts under abrupt disconnects, and observing render counter badges without tethered profiling harnesses.
 - **Decision**:
-  - Implement pure domain timestamp formatting in `src/domain/format.ts` (`formatOrderTimestamp(timestamp)` -> `"DD MMM YYYY, hh:mm A"`).
-  - Implement `createOrderStore` in `src/stores/orderStore.ts` using pluggable `StorageBackend` backed by `AsyncStorage` (`@live_portfolio_order_history_v1`).
-  - Automatically record executed trades by connecting `portfolioStore.executeOrder` directly to `orderStore.recordOrder(order)`.
-  - Maintain reverse-chronological order (newest trade at the top) and provide safe fallback to an empty array on JSON corruption.
-  - Implement `OrderHistoryScreen` in `src/screens/OrderHistoryScreen.tsx` with side badges (BUY green / SELL red), executed share quantities, tabular rupee formatting, formatted timestamps, empty state, and history clearing.
-  - Expose `/orders` route and header action icon on Portfolio and Watchlist headers.
+  - Extend `PriceFeed` with `setTickRate(rateHz)` and `getTickRate()`.
+  - In `SimulatedFeed`, implement dynamic tick rate adjustment without destroying subscriber closures or dropping sequence monotonic guarantees.
+  - Implement `DevMenuScreen` in `src/screens/DevMenuScreen.tsx`:
+    - Live feed transport status badge (`CONNECTED`, `RECONNECTING`, `DISCONNECTED`).
+    - Simulator tick-rate selector: `1 Hz`, `5 Hz`, `10 Hz`, `20 Hz` (default), and `50 Hz` (stress test).
+    - "Force Disconnect Feed" action calling `feed.simulateDisconnect()`, instantly demonstrating paused indicators and triggering resilient exponential backoff reconnect with catch-up fetch.
+    - Profiler toggle calling `togglePerfOverlay()` to display per-row render count badges (`R: N`).
+  - Add native SVG `DevMenuIcon` and expose `/dev` modal route accessible directly from the main header.
 - **Rationale**:
-  - Delivers complete trade visibility and compliance for local-only trading simulation.
-  - Pure domain formatting and decoupled store architecture guarantee fast, hermetic unit tests with zero flaky date calculations.
+  - Provides a complete, interactive demonstration suite for technical evaluation and stress testing.
+  - Keeps dev tools cleanly separated from domain logic while directly manipulating feed parameters in memory.
+
 
 
 
