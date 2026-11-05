@@ -21,7 +21,11 @@ export default function WatchlistTabRoute() {
   }, [router]);
 
   return (
-    <SwipeTabWrapper onSwipeRight={handleSwipeToPortfolio} testID="swipe.wrapper.watchlist">
+    <SwipeTabWrapper
+      onSwipeRight={handleSwipeToPortfolio}
+      rightTargetTitle="Portfolio"
+      testID="swipe.wrapper.watchlist"
+    >
       <WatchlistScreen onSelectStock={handleSelectStock} />
     </SwipeTabWrapper>
   );

@@ -18,7 +18,11 @@ export default function PortfolioTab() {
   }, [router]);
 
   return (
-    <SwipeTabWrapper onSwipeLeft={handleSwipeToWatchlist} testID="swipe.wrapper.portfolio">
+    <SwipeTabWrapper
+      onSwipeLeft={handleSwipeToWatchlist}
+      leftTargetTitle="Watchlist"
+      testID="swipe.wrapper.portfolio"
+    >
       <PortfolioScreen onSelectStock={handleSelectStock} />
     </SwipeTabWrapper>
   );

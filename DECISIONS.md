@@ -373,6 +373,28 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Eliminates jarring duplicate headers and unstyled native white header strips across all secondary screens.
   - Guarantees seamless dark/light theme consistency across both navigation bars and system status bars.
 
+---
+
+### ADR 032: Interactive Tab Swipe Action, Gesture Disambiguation, and UI-Thread Visual Feedback
+- **Context**:
+  1. Users need an intuitive swipe action to switch between tabs (Portfolio and Watchlist) and understand the relationship between them.
+  2. Previously, gesture detection had no interactive visual translation during dragging (the screen stayed static until finger release), resulting in an abrupt jump cut without tactile continuity.
+  3. Swiping over list rows could be captured by child `Pressable` elements because `onMoveShouldSetPanResponderCapture` was omitted.
+  4. Swiping left on Watchlist could conflict with row-level swipe-to-delete unless gated by available actions.
+  5. `GestureHandlerRootView` was missing at the application root in `src/app/_layout.tsx`.
+- **Decision**:
+  - Implement pure helper functions in `src/components/SwipeTabWrapper.tsx`:
+    - `shouldCaptureSwipe(dx, dy, hasLeftAction, hasRightAction)`: strictly gates capture to configured tab targets, leaving Watchlist row-level swipe-to-delete completely unobstructed.
+    - `computeDampedOffset(dx, canSwipeLeft, canSwipeRight)`: enables 1:1 translation for supported swipe directions while providing rubber-band resistance against dead ends.
+    - `resolveSwipeDirection(dx, threshold, vx)`: resolves directional navigation with distance thresholding and velocity-assisted flick detection (`vx > 0.5` / `vx < -0.5`).
+  - Animate screen translation (`translateX`) with `useNativeDriver: true` during touch gestures, ensuring 60fps/120fps motion directly on the UI thread without triggering React re-renders or competing with 20Hz price tick flushes.
+  - Render dynamic directional target badges (`"Watchlist →"`, `"← Portfolio"`) with opacity and translation interpolated from `translateX` on the native animation thread.
+  - Mount `GestureHandlerRootView` at root of `src/app/_layout.tsx` and configure `react-native-gesture-handler/jestSetup` in `jest.setup.ts`.
+- **Rationale**:
+  - Delivers immediate physical and visual feedback during swipes, making tab switching intuitive, smooth, and easily discoverable.
+  - Completely isolates gesture animation from React rendering performance, ensuring silky smooth interactions even under heavy simulated price tick streams.
+
+
 
 
 
