@@ -60,6 +60,16 @@ Exported via `src/testing/ids.ts`.
 
 ---
 
+## 4. Manual Performance & Scrub Inspection Checklist
+- **Chart Drag Inspection Under Load**: Open Stock Detail on a device or simulator while ticks are streaming at ~20 Hz. Press and drag horizontally across the chart. Verify:
+  1. The vertical crosshair and inspect dot follow the finger fluidly without stuttering or competing with JavaScript tick flushes.
+  2. The readout row shows the formatted price and time (`₹XX,XXX.XX at HH:MM:SS`) for the nearest point.
+  3. Releasing touch immediately hides the crosshair and restores live tick views.
+  4. In React DevTools Profiler, confirm that scrubbing does not trigger parent `StockDetailScreen` re-renders.
+
+
+---
+
 ## 4. End-to-End Persona Testing (Maestro)
 
 Install Maestro:

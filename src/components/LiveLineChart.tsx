@@ -8,6 +8,12 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 import Svg, { Path, Circle, Line as SvgLine, Rect, Text as SvgText } from 'react-native-svg';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  runOnJS,
+} from 'react-native-reanimated';
 import { useTheme } from '../theme/useTheme';
 import { priceStore } from '../stores/priceStore';
 import { formatINR } from '../domain/format';
@@ -23,6 +29,7 @@ import {
   niceTicks,
   timeLabels,
   direction,
+  nearestPointIndex,
 } from '../domain/chart';
 
 export const MAX_RING_BUFFER_POINTS = 120;
@@ -54,6 +61,13 @@ export const LiveLineChart = memo(function LiveLineChart({
   const [renderedPoints, setRenderedPoints] = useState<TickPoint[]>([]);
   const [tickCount, setTickCount] = useState<number>(0);
 
+  // Scrub readout state
+  const [scrubPoint, setScrubPoint] = useState<TickPoint | null>(null);
+
+  // Reanimated shared values for UI thread crosshair
+  const crosshairX = useSharedValue(-100);
+  const isScrubbing = useSharedValue(false);
+
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
     if (w > 0) {
@@ -74,6 +88,7 @@ export const LiveLineChart = memo(function LiveLineChart({
       setTickCount(0);
     }
     setSelectedCandle(null);
+    setScrubPoint(null);
 
     let timer: ReturnType<typeof setTimeout> | null = null;
     let isMounted = true;
@@ -90,7 +105,6 @@ export const LiveLineChart = memo(function LiveLineChart({
       }, CHART_FLUSH_INTERVAL_MS);
     };
 
-    // Direct priceStore subscription for symbol only. Do NOT call usePrice() in this component.
     const unsubscribe = priceStore.subscribe(symbol, () => {
       const q = priceStore.getQuote(symbol);
       if (q && q.ltp !== null) {
@@ -115,7 +129,51 @@ export const LiveLineChart = memo(function LiveLineChart({
   const strokeColor = dir === 'up' ? tokens.gain : dir === 'down' ? tokens.loss : tokens.primary;
   const fillColor = strokeColor;
 
-  // Empty state under 2 points
+  const plotPaddingRight = 75; // for niceTicks price labels
+  const plotPaddingTop = 16;
+  const plotPaddingBottom = 26;
+  const usableWidth = Math.max(100, containerWidth - plotPaddingRight - 24);
+  const usableHeight = Math.max(80, height - plotPaddingTop - plotPaddingBottom - 80);
+
+  const updateScrubState = (idx: number) => {
+    if (idx >= 0 && idx < renderedPoints.length) {
+      setScrubPoint(renderedPoints[idx]!);
+    }
+  };
+
+  const clearScrubState = () => {
+    setScrubPoint(null);
+  };
+
+  const panGesture = Gesture.Pan()
+    .minDistance(0)
+    .onBegin((e) => {
+      'worklet';
+      isScrubbing.value = true;
+      crosshairX.value = Math.max(0, Math.min(usableWidth, e.x));
+      const idx = nearestPointIndex(renderedPoints, e.x, usableWidth);
+      runOnJS(updateScrubState)(idx);
+    })
+    .onUpdate((e) => {
+      'worklet';
+      crosshairX.value = Math.max(0, Math.min(usableWidth, e.x));
+      const idx = nearestPointIndex(renderedPoints, e.x, usableWidth);
+      runOnJS(updateScrubState)(idx);
+    })
+    .onFinalize(() => {
+      'worklet';
+      isScrubbing.value = false;
+      crosshairX.value = -100;
+      runOnJS(clearScrubState)();
+    });
+
+  const animatedCrosshairStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: crosshairX.value }],
+      opacity: isScrubbing.value ? 1 : 0,
+    };
+  });
+
   if (renderedPoints.length < 2) {
     return (
       <View
@@ -149,40 +207,34 @@ export const LiveLineChart = memo(function LiveLineChart({
     );
   }
 
-  const plotPaddingRight = 75; // for niceTicks price labels
-  const plotPaddingTop = 16;
-  const plotPaddingBottom = 26;
-  const usableWidth = Math.max(100, containerWidth - plotPaddingRight - 24);
-  const usableHeight = Math.max(80, height - plotPaddingTop - plotPaddingBottom - 80);
-
-  // Y-Domain over points and prevClose
   const yDomain = computeYDomain(renderedPoints, [prevClose]);
   const yTicks = niceTicks(yDomain.min, yDomain.max, 3);
   const xLabels = timeLabels(renderedPoints, 4);
 
-  // Last point coordinates
   const lastPoint = renderedPoints[renderedPoints.length - 1]!;
   const span = Math.max(1, yDomain.max - yDomain.min);
   const lastNorm = (lastPoint.price - yDomain.min) / span;
   const lastY = usableHeight - lastNorm * usableHeight;
   const lastX = usableWidth;
 
-  // PrevClose line position (only if inside range)
   let prevCloseY: number | null = null;
   if (prevClose !== null && prevClose >= yDomain.min && prevClose <= yDomain.max) {
     const pcNorm = (prevClose - yDomain.min) / span;
     prevCloseY = usableHeight - pcNorm * usableHeight;
   }
 
-  // Paths
   const linePath = buildLinePath(renderedPoints, usableWidth, usableHeight, yDomain);
   const areaPath = buildAreaPath(renderedPoints, usableWidth, usableHeight, yDomain);
 
-  // Candles
   const bucketMs = chooseBucketMs(renderedPoints);
   const candles = buildTimeCandles(renderedPoints, bucketMs);
   const candleSlotWidth = candles.length > 0 ? usableWidth / candles.length : 0;
   const candleBodyWidth = Math.max(4, Math.min(20, candleSlotWidth * 0.7));
+
+  const scrubDate = scrubPoint ? new Date(scrubPoint.t) : null;
+  const scrubTimeStr = scrubDate
+    ? `${String(scrubDate.getHours()).padStart(2, '0')}:${String(scrubDate.getMinutes()).padStart(2, '0')}:${String(scrubDate.getSeconds()).padStart(2, '0')}`
+    : '';
 
   return (
     <View
@@ -207,7 +259,7 @@ export const LiveLineChart = memo(function LiveLineChart({
         </Text>
       </View>
 
-      {/* Mode Selector Row (Fits width without clipping) */}
+      {/* Controls / Readout Row */}
       <View style={styles.controlsRow}>
         <View style={[styles.modeToggleGroup, { backgroundColor: tokens.surfaceAlt, borderColor: tokens.border }]}>
           <Pressable
@@ -254,168 +306,185 @@ export const LiveLineChart = memo(function LiveLineChart({
           </Pressable>
         </View>
 
-        {selectedCandle ? (
-          <View style={styles.candleReadoutRow}>
+        {scrubPoint ? (
+          <View testID="detail.chart.scrub.readout" style={styles.readoutRow}>
+            <Text style={[styles.readoutText, { color: tokens.textPrimary }]}>
+              {formatINR(scrubPoint.price)} at {scrubTimeStr}
+            </Text>
+          </View>
+        ) : selectedCandle ? (
+          <View testID="detail.chart.candle.readout" style={styles.readoutRow}>
             <Text style={[styles.candleReadoutText, { color: tokens.textSecondary }]}>
               O: {formatINR(selectedCandle.open)} H: {formatINR(selectedCandle.high)} L: {formatINR(selectedCandle.low)} C: {formatINR(selectedCandle.close)}
             </Text>
           </View>
-        ) : null}
+        ) : (
+          <View style={styles.readoutRow}>
+            <Text style={[styles.hintText, { color: tokens.textMuted }]}>
+              Press and drag to inspect
+            </Text>
+          </View>
+        )}
       </View>
 
-      {/* SVG Plot Canvas */}
-      <View style={[styles.plotArea, { height: usableHeight + plotPaddingTop + plotPaddingBottom }]}>
-        <Svg width={containerWidth - 24} height={usableHeight + plotPaddingTop + plotPaddingBottom}>
-          {/* Prev Close Muted Dashed Reference Line (only when inside domain) */}
-          {prevCloseY !== null ? (
-            <>
-              <SvgLine
-                x1={0}
-                y1={prevCloseY + plotPaddingTop}
-                x2={usableWidth}
-                y2={prevCloseY + plotPaddingTop}
-                stroke={tokens.textMuted}
-                strokeWidth={1}
-                strokeDasharray="4 4"
-                opacity={0.4}
-              />
-              <SvgText
-                x={usableWidth + 6}
-                y={prevCloseY + plotPaddingTop + 3}
-                fill={tokens.textMuted}
-                fontSize={9}
-                opacity={0.7}
-              >
-                Prev close
-              </SvgText>
-            </>
-          ) : null}
+      {/* Interactive SVG Plot Canvas */}
+      <GestureDetector gesture={panGesture}>
+        <View style={[styles.plotArea, { height: usableHeight + plotPaddingTop + plotPaddingBottom }]}>
+          {/* Reanimated Vertical Crosshair on UI thread */}
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.crosshairLine,
+              {
+                height: usableHeight,
+                top: plotPaddingTop,
+                backgroundColor: tokens.primary,
+              },
+              animatedCrosshairStyle,
+            ]}
+          />
 
-          {/* Line Mode View */}
-          {chartMode === 'line' ? (
-            <>
-              {/* Soft area fill at 8% opacity */}
-              <Path
-                d={areaPath}
-                fill={fillColor}
-                opacity={0.08}
-                transform={`translate(0, ${plotPaddingTop})`}
-              />
+          <Svg width={containerWidth - 24} height={usableHeight + plotPaddingTop + plotPaddingBottom}>
+            {prevCloseY !== null ? (
+              <>
+                <SvgLine
+                  x1={0}
+                  y1={prevCloseY + plotPaddingTop}
+                  x2={usableWidth}
+                  y2={prevCloseY + plotPaddingTop}
+                  stroke={tokens.textMuted}
+                  strokeWidth={1}
+                  strokeDasharray="4 4"
+                  opacity={0.4}
+                />
+                <SvgText
+                  x={usableWidth + 6}
+                  y={prevCloseY + plotPaddingTop + 3}
+                  fill={tokens.textMuted}
+                  fontSize={9}
+                  opacity={0.7}
+                >
+                  Prev close
+                </SvgText>
+              </>
+            ) : null}
 
-              {/* 2px stroke line */}
-              <Path
-                testID="live.chart.path"
-                d={linePath}
-                stroke={strokeColor}
-                strokeWidth={2}
-                fill="none"
-                transform={`translate(0, ${plotPaddingTop})`}
-              />
+            {chartMode === 'line' ? (
+              <>
+                <Path
+                  d={areaPath}
+                  fill={fillColor}
+                  opacity={0.08}
+                  transform={`translate(0, ${plotPaddingTop})`}
+                />
 
-              {/* Last price dot */}
-              <Circle
-                cx={lastX}
-                cy={lastY + plotPaddingTop}
-                r={3.5}
-                fill={strokeColor}
-              />
+                <Path
+                  testID="live.chart.path"
+                  d={linePath}
+                  stroke={strokeColor}
+                  strokeWidth={2}
+                  fill="none"
+                  transform={`translate(0, ${plotPaddingTop})`}
+                />
 
-              {/* Last price tag / line on right edge */}
-              <SvgLine
-                x1={0}
-                y1={lastY + plotPaddingTop}
-                x2={usableWidth}
-                y2={lastY + plotPaddingTop}
-                stroke={strokeColor}
-                strokeWidth={1}
-                strokeDasharray="2 3"
-                opacity={0.3}
-              />
-            </>
-          ) : (
-            /* Candlestick Mode View */
-            candles.map((candle, idx) => {
-              const xCenter = idx * candleSlotWidth + candleSlotWidth / 2;
-              const openNorm = (candle.open - yDomain.min) / span;
-              const closeNorm = (candle.close - yDomain.min) / span;
-              const highNorm = (candle.high - yDomain.min) / span;
-              const lowNorm = (candle.low - yDomain.min) / span;
+                <Circle
+                  cx={lastX}
+                  cy={lastY + plotPaddingTop}
+                  r={3.5}
+                  fill={strokeColor}
+                />
 
-              const openY = usableHeight - openNorm * usableHeight + plotPaddingTop;
-              const closeY = usableHeight - closeNorm * usableHeight + plotPaddingTop;
-              const highY = usableHeight - highNorm * usableHeight + plotPaddingTop;
-              const lowY = usableHeight - lowNorm * usableHeight + plotPaddingTop;
+                <SvgLine
+                  x1={0}
+                  y1={lastY + plotPaddingTop}
+                  x2={usableWidth}
+                  y2={lastY + plotPaddingTop}
+                  stroke={strokeColor}
+                  strokeWidth={1}
+                  strokeDasharray="2 3"
+                  opacity={0.3}
+                />
+              </>
+            ) : (
+              candles.map((candle, idx) => {
+                const xCenter = idx * candleSlotWidth + candleSlotWidth / 2;
+                const openNorm = (candle.open - yDomain.min) / span;
+                const closeNorm = (candle.close - yDomain.min) / span;
+                const highNorm = (candle.high - yDomain.min) / span;
+                const lowNorm = (candle.low - yDomain.min) / span;
 
-              const isGain = candle.close >= candle.open;
-              const candleColor = isGain ? tokens.gain : tokens.loss;
-              const bodyTop = Math.min(openY, closeY);
-              const bodyHeight = Math.max(2, Math.abs(openY - closeY));
+                const openY = usableHeight - openNorm * usableHeight + plotPaddingTop;
+                const closeY = usableHeight - closeNorm * usableHeight + plotPaddingTop;
+                const highY = usableHeight - highNorm * usableHeight + plotPaddingTop;
+                const lowY = usableHeight - lowNorm * usableHeight + plotPaddingTop;
 
+                const isGain = candle.close >= candle.open;
+                const candleColor = isGain ? tokens.gain : tokens.loss;
+                const bodyTop = Math.min(openY, closeY);
+                const bodyHeight = Math.max(2, Math.abs(openY - closeY));
+
+                return (
+                  <React.Fragment key={candle.startT}>
+                    <SvgLine
+                      testID={`chart.candle.wick.${idx}`}
+                      x1={xCenter}
+                      y1={highY}
+                      x2={xCenter}
+                      y2={lowY}
+                      stroke={candleColor}
+                      strokeWidth={1.5}
+                    />
+
+                    <Rect
+                      testID={`chart.candle.body.${idx}`}
+                      x={xCenter - candleBodyWidth / 2}
+                      y={bodyTop}
+                      width={candleBodyWidth}
+                      height={bodyHeight}
+                      fill={candleColor}
+                      rx={1}
+                      onPress={() => setSelectedCandle(candle)}
+                    />
+                  </React.Fragment>
+                );
+              })
+            )}
+
+            {yTicks.map((tickVal) => {
+              const tNorm = (tickVal - yDomain.min) / span;
+              const yPos = usableHeight - tNorm * usableHeight + plotPaddingTop + 3;
               return (
-                <React.Fragment key={candle.startT}>
-                  {/* Wick */}
-                  <SvgLine
-                    testID={`chart.candle.wick.${idx}`}
-                    x1={xCenter}
-                    y1={highY}
-                    x2={xCenter}
-                    y2={lowY}
-                    stroke={candleColor}
-                    strokeWidth={1.5}
-                  />
-
-                  {/* Body */}
-                  <Rect
-                    testID={`chart.candle.body.${idx}`}
-                    x={xCenter - candleBodyWidth / 2}
-                    y={bodyTop}
-                    width={candleBodyWidth}
-                    height={bodyHeight}
-                    fill={candleColor}
-                    rx={1}
-                    onPress={() => setSelectedCandle(candle)}
-                  />
-                </React.Fragment>
+                <SvgText
+                  key={tickVal}
+                  x={usableWidth + 6}
+                  y={yPos}
+                  fill={tokens.textMuted}
+                  fontSize={10}
+                  fontWeight="500"
+                >
+                  {formatINR(tickVal)}
+                </SvgText>
               );
-            })
-          )}
+            })}
 
-          {/* Right Y-Axis: niceTicks (3 labels max, no collision) */}
-          {yTicks.map((tickVal) => {
-            const tNorm = (tickVal - yDomain.min) / span;
-            const yPos = usableHeight - tNorm * usableHeight + plotPaddingTop + 3;
-            return (
-              <SvgText
-                key={tickVal}
-                x={usableWidth + 6}
-                y={yPos}
-                fill={tokens.textMuted}
-                fontSize={10}
-                fontWeight="500"
-              >
-                {formatINR(tickVal)}
-              </SvgText>
-            );
-          })}
-
-          {/* Bottom X-Axis: timeLabels (max 4, no collision) */}
-          {xLabels.map((lbl) => {
-            const xPos = lbl.xFraction * usableWidth;
-            return (
-              <SvgText
-                key={lbl.t}
-                x={xPos}
-                y={usableHeight + plotPaddingTop + 18}
-                fill={tokens.textMuted}
-                fontSize={9}
-                textAnchor={lbl.xFraction > 0.8 ? 'end' : lbl.xFraction < 0.2 ? 'start' : 'middle'}
-              >
-                {lbl.label}
-              </SvgText>
-            );
-          })}
-        </Svg>
-      </View>
+            {xLabels.map((lbl) => {
+              const xPos = lbl.xFraction * usableWidth;
+              return (
+                <SvgText
+                  key={lbl.t}
+                  x={xPos}
+                  y={usableHeight + plotPaddingTop + 18}
+                  fill={tokens.textMuted}
+                  fontSize={9}
+                  textAnchor={lbl.xFraction > 0.8 ? 'end' : lbl.xFraction < 0.2 ? 'start' : 'middle'}
+                >
+                  {lbl.label}
+                </SvgText>
+              );
+            })}
+          </Svg>
+        </View>
+      </GestureDetector>
     </View>
   );
 });
@@ -465,18 +534,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  candleReadoutRow: {
+  readoutRow: {
     flex: 1,
     marginLeft: 10,
     alignItems: 'flex-end',
   },
+  readoutText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   candleReadoutText: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  hintText: {
     fontSize: 10,
     fontWeight: '500',
   },
   plotArea: {
     width: '100%',
     overflow: 'hidden',
+    position: 'relative',
+  },
+  crosshairLine: {
+    position: 'absolute',
+    width: 1.5,
+    zIndex: 10,
   },
   emptyContainer: {
     flex: 1,

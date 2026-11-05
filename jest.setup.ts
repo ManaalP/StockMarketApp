@@ -29,6 +29,9 @@ jest.mock('react-native-reanimated', () => ({
   createAnimatedComponent: mockCreateAnimatedComponent,
   useSharedValue: <T>(initialValue: T): { value: T } => ({ value: initialValue }),
   useAnimatedStyle: <T extends Record<string, unknown>>(fn: () => T): T => fn(),
+  useEvent: () => jest.fn(),
+  useHandler: () => ({ context: {}, doDependenciesDiffer: false }),
+  runOnJS: <Args extends unknown[], R>(fn: (...args: Args) => R) => fn,
   withTiming: <T>(toValue: T): T => toValue,
   interpolateColor: (
     _val: number,

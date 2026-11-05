@@ -778,6 +778,20 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Delivers high readability, zero label collision, minimal render churn, and authentic live tick tracking.
 
+---
+
+### ADR 050: UI-Thread Chart Scrubbing & Crosshair via Pan Gesture
+- **Context**:
+  - Users need to inspect individual price points and timestamps on the live chart without triggering JavaScript re-renders or frame drops during 20Hz tick streams.
+- **Decision**:
+  - Implement press-and-drag inspection via `react-native-gesture-handler` `Gesture.Pan().minDistance(0)`.
+  - Animate crosshair position on the UI thread using Reanimated `useSharedValue` and `useAnimatedStyle`.
+  - Derive nearest price and local timestamp via pure domain `nearestPointIndex(points, x, w)`.
+  - On release, hide crosshair and restore live readout cleanly.
+- **Rationale**:
+  - Keeps 60/120 fps gesture responsiveness on the UI thread while preventing React re-render churn during live tick ingestion.
+
+
 
 
 
