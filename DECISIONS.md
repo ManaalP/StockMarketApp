@@ -330,6 +330,24 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Eliminates test flakiness and network-induced test failures in CI and local development.
   - Property-based testing explores millions of boundary conditions (unpriced stocks, extreme quantities, fractional values, sequence anomalies) that manual test cases would miss.
 
+---
+
+### ADR 030: Android System Navigation Button Compensation, Display Notch Detection, and Tab Swipe Motion
+- **Context**: On Android devices equipped with 3-button navigation (Back, Home, Recent Apps) or gesture bars, a static bottom tab bar height causes tab icons (Portfolio and Watchlist) to render behind the system buttons. Additionally, users require horizontal swipe gestures to toggle between the Portfolio and Watchlist sections without conflicting with vertical list scrolling or swipe-to-delete gestures.
+- **Decision**:
+  - Implement `computeSafeAreaMetrics` and `useAppSafeArea()` in `src/theme/useSafeArea.ts`:
+    - Computes `hasNotch` (`top > 28` on Android, `top > 20` on iOS).
+    - Computes `hasBottomButtons` and dynamic `tabHeight` (`56 + bottomPadding`), elevating tab icons and labels safely above Android system buttons.
+    - Applies dynamic `tabPaddingBottom` in `src/app/(tabs)/_layout.tsx`.
+  - Implement `SwipeTabWrapper` (`src/components/SwipeTabWrapper.tsx`) using `PanResponder`:
+    - Filters touch events with pure function `shouldSetHorizontalSwipe(dx, dy)` (`Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 20`), ensuring vertical `FlatList` scrolling is 100% unhindered.
+    - Swiping left on Portfolio navigates to Watchlist; swiping right on Watchlist navigates to Portfolio.
+    - On Watchlist, right-swipe tab switching does not conflict with left-swipe row deletion.
+- **Rationale**:
+  - Eliminates UI clipping on modern and legacy Android form factors.
+  - Gives users a natural gesture-driven navigation experience between the two primary dashboard sections.
+
+
 
 
 
