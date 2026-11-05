@@ -7,6 +7,8 @@ import { INITIAL_FETCH_SYMBOLS } from '../data/constants';
 import { priceStore as defaultPriceStore, type PriceStore } from './priceStore';
 import { ohlcClient as defaultOhlcClient, type OhlcClient, type OhlcError } from '../api/ohlcClient';
 import type { PriceFeed } from '../feed/types';
+import { createSimulatedFeed } from '../feed/SimulatedFeed';
+import { createResilientFeed } from '../feed/resilientFeed';
 import { orderStore as defaultOrderStore, type OrderStore } from './orderStore';
 
 export type AppStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -31,6 +33,7 @@ export interface PortfolioStore {
   bootstrap(): Promise<void>;
   refresh(): Promise<void>;
   retry(): Promise<void>;
+  getFeed(): PriceFeed | undefined;
 }
 
 /**
@@ -47,7 +50,7 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
   const priceStore = options.priceStore ?? defaultPriceStore;
   const apiClient = options.apiClient ?? defaultOhlcClient;
   const orderStore = options.orderStore ?? defaultOrderStore;
-  const feed = options.feed;
+  let feed = options.feed;
 
   let holdings: Holding[] = options.initialHoldings ?? parseHoldingsCsv(STARTING_HOLDINGS_CSV);
   let status: AppStatus = 'idle';
@@ -124,9 +127,19 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
 
     priceStore.seed(result.quotes);
 
-    if (feed) {
-      priceStore.connectFeed(feed);
+    if (!feed) {
+      feed = createResilientFeed(createSimulatedFeed(result.quotes), {
+        catchUpFetch: async () => {
+          const res = await apiClient.fetchOhlc([...INITIAL_FETCH_SYMBOLS]);
+          return res.ok ? res.quotes : {};
+        },
+        onCatchUp: (quotes) => {
+          priceStore.seed(quotes);
+        },
+      });
     }
+
+    priceStore.connectFeed(feed);
 
     setStatus('ready', null);
   };
@@ -143,6 +156,8 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
     await bootstrap();
   };
 
+  const getFeed = (): PriceFeed | undefined => feed;
+
   return {
     getHoldings,
     getHolding,
@@ -155,6 +170,7 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
     bootstrap,
     refresh,
     retry,
+    getFeed,
   };
 }
 
