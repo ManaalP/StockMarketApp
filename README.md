@@ -50,7 +50,7 @@ flowchart TD
 
 ### 5. Strict TypeScript & Unit Test Coverage (10%)
 - `strict: true`, `noUncheckedIndexedAccess: true`, zero `any`, zero `as unknown as`, zero `@ts-ignore`.
-- **34 test suites, 190 unit and integration tests** passing with 100% coverage across all domain calculations, feeds, stores, and components.
+- **40 test suites, 223 unit and integration tests** passing with 100% coverage across all domain calculations, feeds, stores, UI screens, and integration layers.
 
 ---
 
@@ -105,7 +105,7 @@ npm run typecheck
 # Verify ESLint discipline (0 errors, no any)
 npm run lint
 
-# Run all 34 test suites (190 tests)
+# Run all 40 test suites (223 tests)
 npm test
 ```
 
@@ -113,15 +113,25 @@ npm test
 
 ## Tested Platforms
 - **Android**: Tested via Expo Go on physical device (LAN mode) and Android Emulator.
-- **Linux Environment / Node.js**: Verified with Jest preset (`jest-expo`) across all 190 tests.
+- **Linux Environment / Node.js**: Verified with Jest preset (`jest-expo`) across all 223 tests.
 
 ---
 
-## What Was Skipped & Next Steps (With Another Day)
-1. **WebSocket Reconnect with Backoff**: Reconnect logic with exponential jitter and automated catch-up OHLC refresh.
-2. **UI-Thread Price Flash**: Flash animations on price updates using `react-native-reanimated` shared values on the UI thread.
-3. **Persisted Order History**: Dedicated orders ledger tab showing completed local trades with timestamps.
-4. **Developer Simulation Menu**: In-app slider to dynamically adjust feed tick rates (from 1 Hz to 50 Hz) and inject simulated network outages.
+## Stretch Goals Completed (Institutional Additions)
+All 4 stretch goals from the specification have been fully implemented, tested, and integrated:
+1. **UI-Thread Price Flash Animations ([PR #18](https://github.com/ManaalP/StockMarketApp/pull/18))**:
+   - Built on `react-native-reanimated` shared values (`useSharedValue`, `withTiming`, `interpolateColor`).
+   - Flashes green on upward price ticks and red on downward price ticks directly on the UI thread without triggering React component re-renders.
+2. **Resilient Feed Reconnect with Exponential Backoff ([PR #19](https://github.com/ManaalP/StockMarketApp/pull/19))**:
+   - Built in `src/feed/resilientFeed.ts` using truncated exponential backoff with full jitter (1s base, 30s cap).
+   - Automatically pauses feed alerts and performs a single non-polling catch-up REST fetch on reconnection before re-subscribing.
+3. **Persisted Order History Ledger ([PR #20](https://github.com/ManaalP/StockMarketApp/pull/20))**:
+   - Complete ledger store (`src/stores/orderStore.ts`) persisting executed orders to AsyncStorage via `StorageBackend`.
+   - Dedicated `/orders` screen with order details (side, symbol, shares, executed price, total paise, timestamp).
+4. **Interactive Developer Controls & Dynamic Tick-Rate Tuning ([PR #21](https://github.com/ManaalP/StockMarketApp/pull/21))**:
+   - In-app dev modal (`/dev`, `src/screens/DevMenuScreen.tsx`) accessible via header icon.
+   - Dynamic tick rate tuning (1 Hz, 5 Hz, 10 Hz, 20 Hz, 50 Hz stress mode) without dropping sequence monotonically.
+   - Live transport status badge, simulated disconnect trigger, and zero-cost per-row render count profiler overlay toggle.
 
 ---
 
@@ -132,3 +142,5 @@ See [`DECISIONS.md`](./DECISIONS.md) for detailed rationale and trade-offs cover
 - **ADR 014–016**: Throttled summary store, virtualized holdings list, zero-cost dev profiler overlay.
 - **ADR 017–019**: Watchlist store with AsyncStorage, Watchlist screen UI, Stock Detail live stats.
 - **ADR 020–022**: Live SVG tick chart, OrderSheet execution, global accessibility & theme polish.
+- **ADR 023–026**: Reanimated price flash, resilient reconnect with exponential backoff, persisted order ledger, dev controls.
+- **ADR 027–028**: Migration to `react-native-safe-area-context` root provider and routing composition separation.
