@@ -70,7 +70,7 @@ export const SummaryCard = memo(function SummaryCard({
 
           <View style={styles.pnlHeaderContainer}>
             <Text style={[styles.secondaryLabelRight, { color: tokens.textMuted }]}>
-              Total P&L
+              Total P&L:
             </Text>
             <PnLText
               pnlPaise={totals?.totalPnlPaise ?? null}

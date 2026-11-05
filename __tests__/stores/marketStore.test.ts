@@ -22,7 +22,7 @@ describe('MarketStore (src/stores/marketStore.ts)', () => {
 
     const status = store.getMarketStatus();
     expect(status.isOpen).toBe(false);
-    expect(status.reason).toContain('Market is closed (Dev Override: Market Closed simulation is ON)');
+    expect(status.reason).toContain('Market is closed (Dev Override: After-market simulation is ON)');
 
     // Toggle back off
     store.toggleSimulatedClosed();

@@ -31,11 +31,16 @@ export const DevMenuScreen = memo(function DevMenuScreen({
   const isMarketClosedSimulated = useMarketClosedSimulation();
   const [resetSuccess, setResetSuccess] = useState(false);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disconnect5sTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [disconnectCountdown, setDisconnectCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     return () => {
       if (resetTimerRef.current) {
         clearTimeout(resetTimerRef.current);
+      }
+      if (disconnect5sTimerRef.current) {
+        clearTimeout(disconnect5sTimerRef.current);
       }
     };
   }, []);
@@ -66,6 +71,35 @@ export const DevMenuScreen = memo(function DevMenuScreen({
 
   const handleSimulateDisconnect = useCallback(() => {
     feed?.simulateDisconnect?.();
+  }, [feed]);
+
+  const handleDisconnect5s = useCallback(() => {
+    if (disconnect5sTimerRef.current) {
+      clearTimeout(disconnect5sTimerRef.current);
+    }
+    feed?.disconnect?.();
+    setFeedStatus('disconnected');
+    setDisconnectCountdown(5);
+
+    let secondsLeft = 5;
+    const interval = setInterval(() => {
+      secondsLeft -= 1;
+      if (secondsLeft > 0) {
+        setDisconnectCountdown(secondsLeft);
+      } else {
+        clearInterval(interval);
+        setDisconnectCountdown(null);
+        feed?.connect?.();
+        setFeedStatus('connected');
+      }
+    }, 1000);
+
+    disconnect5sTimerRef.current = setTimeout(() => {
+      clearInterval(interval);
+      setDisconnectCountdown(null);
+      feed?.connect?.();
+      setFeedStatus('connected');
+    }, 5000);
   }, [feed]);
 
   const handleToggleFeedConnection = useCallback(() => {
@@ -171,6 +205,23 @@ export const DevMenuScreen = memo(function DevMenuScreen({
             </Pressable>
 
             <Pressable
+              testID="dev.disconnect.5s"
+              accessibilityRole="button"
+              accessibilityLabel="Disconnect feed for 5 seconds"
+              onPress={handleDisconnect5s}
+              style={[
+                styles.actionButton,
+                { backgroundColor: disconnectCountdown !== null ? tokens.warning : tokens.surfaceAlt },
+              ]}
+            >
+              <Text style={[styles.actionButtonText, { color: disconnectCountdown !== null ? '#FFFFFF' : tokens.textPrimary }]}>
+                {disconnectCountdown !== null
+                  ? `Feed Disconnected (${disconnectCountdown}s remaining...)`
+                  : 'Disconnect Feed for 5s (Temporary Drop)'}
+              </Text>
+            </Pressable>
+
+            <Pressable
               testID="dev.force.disconnect"
               accessibilityRole="button"
               accessibilityLabel="Simulate feed transport drop"
@@ -183,7 +234,7 @@ export const DevMenuScreen = memo(function DevMenuScreen({
             </Pressable>
           </View>
           <Text style={[styles.footnote, { color: tokens.textMuted }]}>
-            Use "Pause & Hold" to keep feed quiet and observe the &gt;2s paused warning. Use "Transport Drop" to test exponential backoff.
+            Use "Disconnect for 5s" to temporarily drop ticks and verify paused state, or "Pause & Hold" to keep disconnected.
           </Text>
         </View>
 
@@ -248,11 +299,11 @@ export const DevMenuScreen = memo(function DevMenuScreen({
           ]}
         >
           <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
-            Market Closed Simulation
+            Simulate After Market Hours
           </Text>
           <View style={styles.statusRow}>
             <Text style={[styles.label, { color: tokens.textMuted }]}>
-              Market State:
+              Market Session:
             </Text>
             <View
               style={[
@@ -279,8 +330,8 @@ export const DevMenuScreen = memo(function DevMenuScreen({
             accessibilityRole="button"
             accessibilityLabel={
               isMarketClosedSimulated
-                ? 'Turn off market closed simulation'
-                : 'Turn on market closed simulation'
+                ? 'Turn off after-market simulation'
+                : 'Simulate after market hours'
             }
             onPress={() => marketStore.toggleSimulatedClosed()}
             style={[
@@ -290,12 +341,12 @@ export const DevMenuScreen = memo(function DevMenuScreen({
           >
             <Text style={styles.actionButtonText}>
               {isMarketClosedSimulated
-                ? 'Turn Off Market Closed (Resume Live Market)'
-                : 'Simulate Market Closed (Pause Ticks & Block Trading)'}
+                ? 'Resume Live Trading Session (Enable Ticks & Orders)'
+                : 'Simulate After Market Hours (Pause Ticks & Block Trading)'}
             </Text>
           </Pressable>
           <Text style={[styles.footnote, { color: tokens.textMuted }]}>
-            When turned on: price ticks pause immediately and you cannot buy or sell stocks in the order sheet. Default is turned off.
+            By default, live market trading and ticks are active at any time for testing. Clicking "Simulate After Market Hours" pauses ticks immediately and prevents buying/selling in the order sheet.
           </Text>
         </View>
 

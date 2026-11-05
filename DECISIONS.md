@@ -656,6 +656,24 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Completely prevents numbers from wrapping or splitting across lines on mobile viewports.
   - Improves primary vs secondary visual hierarchy so the portfolio value is instantly readable at a glance without awkward wrapping.
 
+---
+
+### ADR 042: Non-Time-Dependent Live Market Hours Default and 5-Second Temporary Feed Drop
+- **Context**:
+  - In `src/stores/marketStore.ts`, checking the system wall clock against NSE market hours (9:15 AM - 3:30 PM IST) caused the app to detect the market as closed when running tests or testing on device outside those hours (e.g. at night or on weekends). As a result, the feed paused immediately on boot, blocking price updates and preventing users from seeing simulated price ticks.
+  - Users need developer simulation controls to be non-time-dependent by default:
+    1. Default state: internet is ON, feed is CONNECTED, market hours are LIVE (ticks are running 20 Hz regardless of the current wall-clock hour).
+    2. "Simulate After Market Hours" toggle: pauses price ticks and blocks trade execution when explicitly activated.
+    3. Feed disconnect for 5s: simulates a temporary 5-second connection drop with active countdown before automatically restoring ticks.
+    4. Internet connectivity simulation: toggles offline mode, pausing ticks and displaying the offline banner.
+- **Decision**:
+  - Update `marketStore.isMarketOpen()` to return `!simulatedClosed` by default (independent of wall-clock time).
+  - Update `marketStore.setSimulatedClosed` messages to reflect simulated after-market hours.
+  - Add "Disconnect Feed for 5s (Temporary Drop)" button with dynamic countdown in `DevMenuScreen.tsx`.
+- **Rationale**:
+  - Ensures a reliable, fully testable, and demonstrable application at any hour of day or weekend while preserving full fidelity of simulated after-hours and network disconnect edge cases.
+
+
 
 
 
