@@ -194,6 +194,26 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Guards against performance regressions in CI without relying on manual Profiler sessions.
   - Guarantees zero production bundle impact.
 
+---
+
+### ADR 017: Pluggable Watchlist Store with AsyncStorage Persistence and Whitelist Enforcement
+- **Context**: Users can customize their watchlist by adding or removing symbols. This preference must persist across app reloads via mobile local storage (`AsyncStorage`). Furthermore, the app must remain resilient to storage corruption, enforce the strict 25-symbol universe (disallowing unlisted tickers like `OLDCO`), prevent duplicate entries, and allow isolated subscriptions via hooks.
+- **Decision**:
+  - Implement functional closure factory `createWatchlistStore(storage?: StorageBackend)` in `src/stores/watchlistStore.ts`.
+  - Abstract storage operations behind a lightweight `StorageBackend` interface (`getItem`, `setItem`), defaulting to `@react-native-async-storage/async-storage`.
+  - Seed default watchlist with 5 core large-cap scrips: `['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK']`.
+  - **Storage Resilience & Sanitization**:
+    - During hydration, parse JSON and validate that entries are arrays of strings.
+    - Discard any ticker not present in `ALLOWED_SYMBOLS` (disallowing unknown symbols and unlisted holdings like `OLDCO`).
+    - Deduplicate entries while preserving order.
+    - If storage is corrupted or unreadable, fall back gracefully to the safe default watchlist without throwing or blocking render.
+  - Export per-symbol hook `useIsInWatchlist(symbol)` returning a boolean, and `useWatchlist()` returning `{ symbols, addSymbol, removeSymbol, toggleSymbol, isLoaded }`.
+- **Rationale**:
+  - Decoupling storage via `StorageBackend` allows fast, deterministic Jest unit tests using in-memory mock storage with zero native runtime dependencies.
+  - Hard whitelist validation protects the app from stale or invalid symbols stored in legacy app caches.
+  - Per-symbol hook `useIsInWatchlist(symbol)` allows Add/Detail buttons to subscribe only to their own inclusion status, avoiding re-renders when other symbols are added or re-ordered.
+
+
 
 
 
