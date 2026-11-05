@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SystemUI from 'expo-system-ui';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, useTheme } from '../theme/useTheme';
@@ -11,12 +12,17 @@ import { watchlistStore } from '../stores/watchlistStore';
 export function RootNavigation() {
   const { tokens, isDark } = useTheme();
 
+  useEffect(() => {
+    // Keep root window background synchronized with active theme to prevent white flashes during screen transitions
+    void SystemUI.setBackgroundColorAsync(tokens.background);
+  }, [tokens.background]);
+
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
-          animation: 'fade',
+          animation: 'slide_from_right',
           headerStyle: {
             backgroundColor: tokens.surface,
           },

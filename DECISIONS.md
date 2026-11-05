@@ -699,6 +699,21 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Eliminates all layout shift when feed status transitions occur. The underlying UI stays completely stable and responsive while real-time feed diagnostics remain clearly visible and accessible.
 
+---
+
+### ADR 045: Elimination of Screen Transition White Flash & Native Slide Animation
+- **Context**:
+  - When navigating between screens (e.g. from Portfolio or Watchlist to Stock Detail, Order History, or Developer Menu), users experienced an unseemly white flash or blank screen during the route push.
+  - Root cause investigation identified two compounding issues:
+    1. The root application window background defaulted to pure white (`#FFFFFF`) on native iOS/Android window managers.
+    2. `Stack` in `src/app/_layout.tsx` was configured with `animation: 'fade'`. During a fade transition in React Native Screens, screen A's opacity fades down towards 0 before screen B's content fully renders, briefly exposing the white native OS window beneath.
+- **Decision**:
+  - Change `Stack.screenOptions` in `src/app/_layout.tsx` from `animation: 'fade'` to `animation: 'slide_from_right'`.
+  - Use `expo-system-ui` (`SystemUI.setBackgroundColorAsync(tokens.background)`) synchronized in an effect inside `RootNavigation` to ensure the native Android/iOS root window background color always matches the active theme (`#080D14` in dark mode, `#F8FAFC` in light mode).
+- **Rationale**:
+  - Standard native slide transitions (`slide_from_right`) completely overlap the incoming and outgoing viewports, eliminating transparent fade-through gaps.
+  - Synchronizing `SystemUI.setBackgroundColorAsync` with active theme tokens ensures that any native window margins or initialization frames render in matching dark/light background rather than an unstyled `#FFFFFF` canvas.
+
 
 
 
