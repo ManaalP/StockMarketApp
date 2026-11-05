@@ -20,9 +20,9 @@ describe('Safe Area & Android Buttons Inset Compensation', () => {
     expect(metrics.hasNotch).toBe(true);
     expect(metrics.hasBottomButtons).toBe(true);
     expect(metrics.bottomPadding).toBe(48);
-    // Tab bar height must expand by bottom insets (56 + 48 = 104px)
-    expect(metrics.tabHeight).toBe(104);
-    expect(metrics.tabPaddingBottom).toBe(50);
+    // Tab bar height elevates for soft buttons
+    expect(metrics.tabHeight).toBe(108);
+    expect(metrics.tabPaddingBottom).toBe(54);
   });
 
   test('accurately detects iOS notch and dynamic island with home indicator', () => {
@@ -33,8 +33,8 @@ describe('Safe Area & Android Buttons Inset Compensation', () => {
     expect(metrics.hasNotch).toBe(true);
     expect(metrics.hasBottomButtons).toBe(true);
     expect(metrics.bottomPadding).toBe(34);
-    expect(metrics.tabHeight).toBe(90);
-    expect(metrics.tabPaddingBottom).toBe(36);
+    expect(metrics.tabHeight).toBe(94);
+    expect(metrics.tabPaddingBottom).toBe(40);
   });
 
   test('provides sensible defaults when bottom insets are 0 (hardware buttons)', () => {
@@ -44,8 +44,8 @@ describe('Safe Area & Android Buttons Inset Compensation', () => {
     expect(metrics.hasNotch).toBe(false);
     expect(metrics.hasBottomButtons).toBe(false);
     expect(metrics.bottomPadding).toBe(8);
-    expect(metrics.tabHeight).toBe(64);
-    expect(metrics.tabPaddingBottom).toBe(8);
+    expect(metrics.tabHeight).toBe(68);
+    expect(metrics.tabPaddingBottom).toBe(12);
   });
 });
 

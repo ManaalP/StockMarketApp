@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/useTheme';
-import { ALLOWED_SYMBOLS } from '../data/constants';
+import { ALLOWED_SYMBOLS, COMPANY_NAMES } from '../data/constants';
 import { useWatchlist, useIsInWatchlist } from '../stores/watchlistStore';
 
 export interface WatchlistAddModalProps {
@@ -50,7 +50,7 @@ const SymbolPickerRow = React.memo(function SymbolPickerRow({
           {symbol}
         </Text>
         <Text style={[styles.subText, { color: tokens.textMuted }]}>
-          NSE Equity
+          {COMPANY_NAMES[symbol] ?? 'NSE Equity'}
         </Text>
       </View>
 
@@ -86,7 +86,11 @@ export function WatchlistAddModal({ visible, onClose }: WatchlistAddModalProps) 
   const filteredSymbols = useMemo(() => {
     const q = query.trim().toUpperCase();
     if (!q) return ALLOWED_SYMBOLS;
-    return ALLOWED_SYMBOLS.filter((sym) => sym.toUpperCase().includes(q));
+    return ALLOWED_SYMBOLS.filter((sym) => {
+      const symMatch = sym.toUpperCase().includes(q);
+      const companyName = COMPANY_NAMES[sym]?.toUpperCase() ?? '';
+      return symMatch || companyName.includes(q);
+    });
   }, [query]);
 
   const handleAdd = useCallback(

@@ -443,6 +443,38 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Ensures robust ergonomics across all Android and iOS device form factors.
   - Preserves domain integrity by never synthesizing or faking financial market depth.
 
+## ADR 035: Interactive Candlestick Chart, Limit Target Orders, and Trading Ergonomics Polish
+
+- **Context**:
+  - Users experienced a stutter during order execution due to cascading component updates.
+  - The stock chart required richer interactivity: multi-timeframe filters (`1D`, `1W`, `1M`, `1Y`), pinch-to-zoom / zoom buttons (`+`/`−`), and clear candle and price labels.
+  - Users requested selling by quantity (Market order) vs target price (Limit order), where limit orders remain pending until market price reaches the target price, with status tracking in Order History and on-demand refresh evaluation.
+  - Search filtering needed to support both ticker symbol and registered company name across Portfolio and Watchlist.
+  - Large lists required a floating "Back to top" button (`↑`) for quick navigation.
+  - Tab bar buttons and Buy/Sell action buttons required ergonomic vertical inset refinements.
+
+- **Decision**:
+  1. **Domain Pure Functions for Candles & Limit Orders**:
+     - Created `src/domain/candles.ts` with `generateCandlesForTimeframe` and `applyZoomToCandles` ensuring all metrics are integer paise without floating point issues.
+     - Added pure order validation and trigger functions: `validateTargetPrice`, `checkOrderTrigger`, and `executePendingOrder` in `src/domain/orders.ts`.
+  2. **Reactive Limit Order Execution Engine**:
+     - `portfolioStore` maintains pending limit orders without immediately deducting held quantity.
+     - Subscribed to `priceStore.subscribeAll`: incoming market ticks dynamically evaluate pending orders; when target price conditions are satisfied, orders execute, holdings update, and changes persist to storage.
+     - Added pull-to-refresh and a header `↻ Refresh` button in `OrderHistoryScreen` to evaluate pending orders on demand.
+  3. **Interactive Candlestick Architecture**:
+     - Added timeframe filters (`1D`, `1W`, `1M`, `1Y`) and interactive zoom controls (PinchGestureHandler & `+`/`−` zoom buttons).
+     - Rendered right Y-axis price levels (High, Low, Prev Close, and Active LTP pill) alongside X-axis date/time labels and tap inspection for individual candles.
+  4. **Smooth Selling & Confirmation Screens**:
+     - Eliminated stutter by separating confirmation view rendering and guarding state resets with visibility refs.
+     - Provided distinct confirmation screens for Market orders (Success) vs Limit orders (Order Placed & In Progress).
+  5. **Company Name Search & List Navigation**:
+     - Integrated `COMPANY_NAMES` mapping for all 25 NSE scrips into search filters in `PortfolioScreen`, `WatchlistScreen`, and `WatchlistAddModal`.
+     - Added floating `↑ Back to top` buttons in `PortfolioScreen` and `WatchlistScreen` triggering smooth scroll-to-top when scrolled past 240px.
+
+- **Rationale**:
+  - Delivers a high-performance, responsive trading experience adhering to strict domain purity, integer paise arithmetic, and non-blocking state updates.
+
+
 
 
 

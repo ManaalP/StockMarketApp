@@ -1,15 +1,17 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   Pressable,
+  RefreshControl,
   StyleSheet,
   type ListRenderItemInfo,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/useTheme';
 import { useOrderHistory, orderStore, type ExecutedOrder } from '../stores/orderStore';
+import { portfolioStore } from '../stores/portfolioStore';
 import { formatINR, formatOrderTimestamp } from '../domain/format';
 
 export interface OrderHistoryScreenProps {
@@ -24,6 +26,7 @@ const OrderRow = memo(function OrderRow({
 }) {
   const { tokens } = useTheme();
   const isBuy = order.side === 'BUY';
+  const isPending = order.status === 'PENDING';
 
   return (
     <View
@@ -56,6 +59,22 @@ const OrderRow = memo(function OrderRow({
               {order.side}
             </Text>
           </View>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: isPending ? tokens.warningBg : tokens.gainBg },
+            ]}
+          >
+            <Text
+              testID={`order.status.${order.id}`}
+              style={[
+                styles.statusText,
+                { color: isPending ? tokens.warning : tokens.gain },
+              ]}
+            >
+              {isPending ? 'IN PROGRESS' : 'EXECUTED'}
+            </Text>
+          </View>
         </View>
         <Text style={[styles.metaText, { color: tokens.textMuted }]}>
           {formatOrderTimestamp(order.timestamp)}
@@ -67,7 +86,9 @@ const OrderRow = memo(function OrderRow({
           {formatINR(order.totalPaise)}
         </Text>
         <Text style={[styles.sharesText, { color: tokens.textSecondary }]}>
-          {`${order.qty} shares @ ${formatINR(order.pricePaise)}`}
+          {isPending
+            ? `${order.qty} shares • Target ${formatINR(order.targetPaise ?? order.pricePaise)}`
+            : `${order.qty} shares @ ${formatINR(order.pricePaise)}`}
         </Text>
       </View>
     </View>
@@ -80,6 +101,16 @@ export const OrderHistoryScreen = memo(function OrderHistoryScreen({
 }: OrderHistoryScreenProps) {
   const { tokens } = useTheme();
   const orders = useOrderHistory();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await portfolioStore.evaluatePendingOrders();
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const handleClear = useCallback(() => {
     void orderStore.clearOrders();
@@ -118,20 +149,31 @@ export const OrderHistoryScreen = memo(function OrderHistoryScreen({
           Order History
         </Text>
 
-        {orders.length > 0 ? (
+        <View style={styles.headerRightActions}>
           <Pressable
-            testID="order.history.clear"
+            testID="order.history.refresh"
             accessibilityRole="button"
-            accessibilityLabel="Clear order history"
-            onPress={handleClear}
+            accessibilityLabel="Refresh order status"
+            onPress={handleRefresh}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            style={styles.clearButton}
+            style={styles.refreshButton}
           >
-            <Text style={[styles.clearText, { color: tokens.loss }]}>Clear</Text>
+            <Text style={[styles.refreshText, { color: tokens.primary }]}>↻ Refresh</Text>
           </Pressable>
-        ) : (
-          <View style={styles.headerSpacer} />
-        )}
+
+          {orders.length > 0 ? (
+            <Pressable
+              testID="order.history.clear"
+              accessibilityRole="button"
+              accessibilityLabel="Clear order history"
+              onPress={handleClear}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.clearButton}
+            >
+              <Text style={[styles.clearText, { color: tokens.loss }]}>Clear</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
 
       {/* List or Empty State */}
@@ -150,6 +192,14 @@ export const OrderHistoryScreen = memo(function OrderHistoryScreen({
           data={orders}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={tokens.primary}
+              colors={[tokens.primary]}
+            />
+          }
           contentContainerStyle={styles.listContent}
         />
       )}
@@ -180,6 +230,22 @@ const styles = StyleSheet.create({
   },
   backText: {
     fontSize: 16,
+    fontWeight: '600',
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  refreshButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  refreshText: {
+    fontSize: 13,
     fontWeight: '600',
   },
   clearButton: {
@@ -227,6 +293,16 @@ const styles = StyleSheet.create({
   sideText: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   metaText: {
     fontSize: 12,

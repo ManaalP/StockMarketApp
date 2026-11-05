@@ -16,6 +16,7 @@ import { WatchRow, WATCH_ROW_HEIGHT } from '../components/WatchRow';
 import { WatchlistAddModal } from '../components/WatchlistAddModal';
 import { PausedBanner } from '../components/PausedBanner';
 import { StateView } from '../components/StateView';
+import { COMPANY_NAMES } from '../data/constants';
 
 export interface WatchlistScreenProps {
   readonly onSelectStock?: (symbol: string) => void;
@@ -41,11 +42,17 @@ export function WatchlistScreen({ onSelectStock, testID }: WatchlistScreenProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const flatListRef = React.useRef<FlatList<string>>(null);
 
   const filteredSymbols = useMemo(() => {
     const q = searchQuery.trim().toUpperCase();
     if (!q) return symbols;
-    return symbols.filter((sym) => sym.toUpperCase().includes(q));
+    return symbols.filter((sym) => {
+      const symMatch = sym.toUpperCase().includes(q);
+      const companyName = COMPANY_NAMES[sym]?.toUpperCase() ?? '';
+      return symMatch || companyName.includes(q);
+    });
   }, [searchQuery, symbols]);
 
   const handleRefresh = useCallback(async () => {
@@ -178,11 +185,18 @@ export function WatchlistScreen({ onSelectStock, testID }: WatchlistScreenProps)
         </View>
       ) : (
         <FlatList
+          testID="watchlist.list"
+          ref={flatListRef}
           data={filteredSymbols}
           keyExtractor={(sym) => sym}
           renderItem={renderItem}
           getItemLayout={getItemLayout}
           initialNumToRender={25}
+          onScroll={(e) => {
+            const y = e.nativeEvent.contentOffset.y;
+            setShowBackToTop(y > 240);
+          }}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -193,6 +207,19 @@ export function WatchlistScreen({ onSelectStock, testID }: WatchlistScreenProps)
           contentContainerStyle={styles.listContent}
         />
       )}
+
+      {/* Floating Back to Top Button */}
+      {showBackToTop ? (
+        <Pressable
+          testID="watchlist.backToTop"
+          accessibilityRole="button"
+          accessibilityLabel="Back to top"
+          onPress={() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true })}
+          style={[styles.backToTopBtn, { backgroundColor: tokens.primary }]}
+        >
+          <Text style={styles.backToTopText}>↑</Text>
+        </Pressable>
+      ) : null}
 
       {/* Add Symbol Modal Sheet */}
       <WatchlistAddModal
@@ -281,5 +308,27 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 15,
     fontWeight: '700',
+  },
+  backToTopBtn: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    zIndex: 99,
+  },
+  backToTopText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '700',
+    lineHeight: 24,
   },
 });

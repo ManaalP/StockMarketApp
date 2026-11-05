@@ -138,6 +138,46 @@ describe('WatchlistScreen', () => {
     const texts = getAllText(renderer.root).join(' ');
     expect(texts).toContain('RELIANCE');
     expect(texts).not.toContain('TCS');
+
+    // Filter by company name
+    act(() => {
+      searchInput.props.onChangeText('Consultancy');
+    });
+
+    const companyTexts = getAllText(renderer.root).join(' ');
+    expect(companyTexts).toContain('TCS');
+    expect(companyTexts).not.toContain('RELIANCE');
+  });
+
+  test('displays back to top button when scrolled and scrolls up when tapped', () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <ThemeProvider initialMode="light">
+          <WatchlistScreen />
+        </ThemeProvider>
+      );
+    });
+
+    const flatList = renderer.root.findByProps({ testID: 'watchlist.list' });
+    expect(renderer.root.findAllByProps({ testID: 'watchlist.backToTop' })).toHaveLength(0);
+
+    // Scroll down past 240px
+    act(() => {
+      flatList.props.onScroll({
+        nativeEvent: {
+          contentOffset: { y: 320 },
+        },
+      });
+    });
+
+    const backToTopBtn = renderer.root.findByProps({ testID: 'watchlist.backToTop' });
+    expect(backToTopBtn).toBeDefined();
+
+    act(() => {
+      backToTopBtn.props.onPress();
+    });
   });
 
   test('opens add modal when + Add is pressed', () => {
