@@ -534,6 +534,25 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Guarantees seamless UX, zero toast clutter, exact design fidelity to trading apps, and realistic exchange order lifecycle handling.
 
+## Decision 33: Complete Spec Reconciliation, Reset Order History & Feed Price Drift Fix
+
+- **Context**:
+  - Audited against `docs/React_Native_Take-Home_Live_Portfolio.pdf`.
+  - Portfolio reset needed to ensure order history is completely wiped alongside holdings reset.
+  - Price walk had upward drift over long sessions due to asymmetric compounding and zero-clamping without anchor reversion.
+  - Feed silence / online-offline cycle needed clean isolated rendering without tearing.
+- **Decision**:
+  1. **Portfolio Reset Clears Order History**:
+     - `portfolioStore.resetPortfolio()` invokes `await orderStore.clearOrders()` to ensure complete state reset across both holdings and order records.
+  2. **Unbiased Mean-Reverting Price Walk**:
+     - Anchored `SimulatedFeed` ticks to each symbol's initial LTP with a gentle mean-reverting drift (`drift = -0.05 * ((ltp - anchor) / anchor)`).
+     - Clamped strictly within `[-0.002, 0.002]` (±0.2% per tick) satisfying the assignment specification while preventing runaway positive/negative bias.
+  3. **Rerender Isolation & Polish**:
+     - `PausedBanner` is memoized and isolated from list item re-renders. List rows use `usePrice(symbol)` with `useSyncExternalStore` so that feed silence / online transitions only affect the banner component without re-rendering individual holding or watchlist rows.
+- **Rationale**:
+  - Delivers complete spec compliance, realistic long-term market price behavior, deterministic reset, and 60 FPS scrolling performance.
+
+
 
 
 
