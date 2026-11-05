@@ -4,3 +4,4 @@ export * from './types';
 export * from './calcs';
 export * from './tickMerge';
 export * from './chart';
+export * from './orders';
