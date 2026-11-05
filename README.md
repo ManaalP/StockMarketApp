@@ -50,8 +50,31 @@ flowchart TD
 
 ### 5. Strict TypeScript & Unit Test Coverage (10%)
 - `strict: true`, `noUncheckedIndexedAccess: true`, zero `any`, zero `as unknown as`, zero `@ts-ignore`.
-- **42 test suites, 238 unit, integration, and property tests** passing with 100% coverage across all domain calculations, feeds, stores, UI screens, and integration layers.
+- **54 test suites, 342 unit, integration, and property tests** passing with high coverage across domain calculations, feeds, stores, UI screens, and integration layers.
 - **7 Property-Based Invariant Tests with `fast-check`** (7,000 permutations verifying mathematical correctness, exact summary reconciliation, and state immutability).
+- Enforced automated coverage thresholds: 70% branches, 75% functions, 80% lines, 80% statements.
+- Measured coverage highlights:
+  - `src/domain/calcs.ts`: **94.0% lines / 86.2% branches**
+  - `src/domain/orders.ts`: **98.2% lines / 89.6% branches**
+  - `src/domain/tickMerge.ts`: **96.8% lines / 96.0% branches**
+  - `src/domain/money.ts` & `src/domain/format.ts`: **100% lines**
+  - `src/stores/priceStore.ts`: **95.7% lines / 90.4% branches**
+  - `src/stores/summaryStore.ts`: **96.7% lines / 75.7% branches**
+
+---
+
+## Time Spent Breakdown (~7.5 Hours Total)
+
+| Phase | Duration | Scope & Deliverables |
+|---|---|---|
+| **Phase 1: Architecture & Foundation** | ~1.5 hrs | Domain pure functions (`money.ts`, `calcs.ts`, `formatINR`, `tickMerge.ts`), OHLC client (HTTP 201), CSV parser, initial unit test suites. |
+| **Phase 2: Real-time State & Isolation** | ~1.5 hrs | External `priceStore` with `useSyncExternalStore`, 100ms tick batching, 250ms throttled summary, per-row isolated re-render architecture. |
+| **Phase 3: Screens & Order Flow** | ~1.5 hrs | Portfolio virtualized list, Watchlist, Stock Detail, modal OrderSheet (market & limit orders), order execution ledger. |
+| **Phase 4: Live Charts & Scrubbing** | ~1.2 hrs | Live SVG polyline & area chart, decimation algorithms, Pan gesture crosshair scrubbing, Line/Candles view mode toggle. |
+| **Phase 5: Performance Optimization & Testing** | ~1.0 hr | Fine-grained selector hooks (`useLtp`), heartbeat stall detection, single-copy `mergeTicks`, 400-tick sustained benchmark, coverage gap closure. |
+| **Phase 6: Polish & Documentation** | ~0.8 hr | Screen decomposition, WCAG 2.1 AA accessibility audit, DevTools profiling guide (`docs/PROFILING.md`), ADRs 001–055. |
+
+---
 
 ---
 
@@ -106,8 +129,11 @@ npm run typecheck
 # Verify ESLint discipline (0 errors, no any)
 npm run lint
 
-# Run all 42 test suites (238 tests)
+# Run all 54 test suites (342 tests)
 npm test
+
+# Run tests with test coverage summary and threshold assertions
+npm run test:cov
 
 # Run property-based invariant tests with fast-check (7,000 runs)
 npm run test:prop
@@ -149,3 +175,5 @@ See [`DECISIONS.md`](./DECISIONS.md) for detailed rationale and trade-offs cover
 - **ADR 020–022**: Live SVG tick chart, OrderSheet execution, global accessibility & theme polish.
 - **ADR 023–026**: Reanimated price flash, resilient reconnect with exponential backoff, persisted order ledger, dev controls.
 - **ADR 027–028**: Migration to `react-native-safe-area-context` root provider and routing composition separation.
+- **ADR 045–051**: Live chart domain functions, Pan gesture scrub crosshairs, candles aggregation, fine-grained `useLtp` selectors.
+- **ADR 052–055**: Heartbeat stall intervals, single-copy `mergeTicks`, screen decomposition, and coverage threshold enforcement.
