@@ -1,32 +1,16 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
-import { useTheme } from '../../theme/useTheme';
-import { SummaryCard } from '../../components/SummaryCard';
-import { PausedBanner } from '../../components/PausedBanner';
-import { portfolioStore } from '../../stores/portfolioStore';
+import React, { useCallback } from 'react';
+import { useRouter } from 'expo-router';
+import { PortfolioScreen } from '../../screens/PortfolioScreen';
 
-export default function PortfolioScreen() {
-  const { tokens } = useTheme();
+export default function PortfolioTab() {
+  const router = useRouter();
 
-  useEffect(() => {
-    void portfolioStore.bootstrap();
-  }, []);
-
-  return (
-    <View style={[styles.container, { backgroundColor: tokens.background }]}>
-      <PausedBanner />
-      <ScrollView contentContainerStyle={styles.content}>
-        <SummaryCard />
-      </ScrollView>
-    </View>
+  const handleSelectStock = useCallback(
+    (symbol: string) => {
+      router.push(`/stock/${symbol}`);
+    },
+    [router]
   );
-}
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-  },
-});
+  return <PortfolioScreen onSelectStock={handleSelectStock} />;
+}
