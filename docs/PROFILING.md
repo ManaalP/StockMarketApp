@@ -37,7 +37,9 @@ The app features a built-in live render counter overlay (`useRenderCount` + `use
 
 ---
 
-## 3. React DevTools Profiler: 10-Second Capture
+## 3. React DevTools Profiler: Step-by-Step Capture Guide
+
+Follow these exact steps to capture and analyze React DevTools profiling traces under high frequency market feeds:
 
 ### Step 1: Connect React DevTools
 Run the standalone React DevTools profiler:
@@ -50,23 +52,45 @@ Alternatively, in Chrome DevTools via Expo Hermes Inspector:
 
 ### Step 2: Configure Profiler Settings
 Under Profiler Settings (gear icon):
-- Check **"Record why each component rendered while profiling"**.
+- Check **"Record why each component rendered while profiling"** (critical for verifying hook selector granularity).
 - Check **"Hide commits below 1 ms"** (optional, to focus on active commits).
 
-### Step 3: Record 10 Seconds of Live Ticks
-1. Click the blue **Record** button in React DevTools.
-2. Let the simulated feed run undisturbed for **10 seconds** (~200 ticks will be generated).
-3. Click **Stop Recording**.
+### Step 3: Record High-Frequency Scenarios
 
-### Step 4: Verify the Flamegraph
+#### Scenario A: 10-Second Live Feed Stream (~20 Hz)
+1. Navigate to the **Portfolio** tab.
+2. Click the blue **Record** button in React DevTools.
+3. Let the simulated feed run undisturbed for **10 to 20 seconds** (~200 to 400 ticks streamed).
+4. Click **Stop Recording**.
+
+#### Scenario B: High-Speed Scroll Under Extreme Load (~50 Hz)
+1. Open the Dev Menu (`Settings` / gear icon) and crank the Feed Tick Rate to **50 Hz** (or set simulated network latency to 0).
+2. Open React DevTools Profiler and click **Record**.
+3. Vigorously fling-scroll up and down through all 21 holdings for 10 seconds.
+4. Click **Stop Recording**.
+
+---
+
+### Step 4: Reading and Explaining "Why did this render?"
+
 Inspect each recorded commit in the timeline:
-- **Only 1 `HoldingRow` renders per tick**:
-  - Hover over the committing component: it displays `HoldingRow (symbol: "...")`.
-  - "Why did this render?": **`Hook 2 changed`** (`usePrice(symbol)`).
-  - Inspect adjacent rows (`HoldingRow (symbol: "TCS")`): marked in gray as **"Did not render"**.
-- **SummaryCard renders at ~4 Hz**:
-  - Filter commits: `SummaryCard` commits at roughly ~250 ms intervals, never on every individual tick.
-  - Commits that do not alter the portfolio total show `SummaryCard` as **"Did not render"** due to snapshot reference stability (`areSummariesEqual`).
+1. **Isolated Row Commits**:
+   - In any commit triggered by a price feed tick, observe that **only 1 `HoldingRow`** appears highlighted in the commit flamegraph.
+   - Click the rendered `HoldingRow`:
+     - Inspect the right sidebar under **"Why did this render?"**.
+     - It reports: **`Hook 2 changed`** (the `useSyncExternalStore` subscription inside `useLtp(symbol)`).
+   - Click adjacent rows (`HoldingRow (symbol: "TCS")` or `HoldingRow (symbol: "INFY")`):
+     - The right sidebar states: **"Did not render during this commit"**.
+     - Rationale: Component is wrapped in `React.memo` and props (`symbol`) remain referentially identical primitives (`string`).
+2. **Volume / Range-Only Ticks (Zero Row Re-renders)**:
+   - When ticks update high, low, or volume without altering `ltp`, `HoldingRow` does NOT render at all. The selector cache returns the previous snapshot reference.
+3. **Throttled SummaryCard Commits**:
+   - Filter or step through commits. `SummaryCard` commits at roughly ~250 ms intervals (~4 Hz), never on every individual tick.
+   - The right sidebar shows: **`Hook 1 changed`** (`useSyncExternalStore` from `useSummary()`).
+   - If a batch of ticks netted zero change in aggregate portfolio value, `SummaryCard` is marked **"Did not render"** because `areSummariesEqual` preserved object reference identity.
+4. **Scroll Commits (Windowing / Virtualization)**:
+   - During the 50 Hz scroll test, commits are driven exclusively by `FlatList` windowing events (`ScrollResponder` / `VirtualizedList`).
+   - Because `getItemLayout` provides exact offsets `(HOLDING_ROW_HEIGHT * index = 72 * index)`, no asynchronous layout measurements or dynamic cell recalculations take place, preserving a flat 60 FPS frame rate on both the JS and UI threads.
 
 ---
 
@@ -86,13 +110,14 @@ Inspect each recorded commit in the timeline:
 
 ## 5. Automated Unit Test Verification
 
-To mathematically prove tick isolation in CI without manual profiler inspection, run:
+To mathematically prove tick isolation and sustained throughput in CI without manual profiler inspection, run:
 
 ```bash
-npm test __tests__/perf/isolatedRowRerender.test.tsx
+npm test __tests__/perf/
 ```
 
-### Test Guarantee (`__tests__/perf/isolatedRowRerender.test.tsx`):
+### 1. Isolated Row Re-render Test (`__tests__/perf/isolatedRowRerender.test.tsx`):
+Guarantees that a single tick queued for `RELIANCE` re-renders only `RELIANCE` while `TCS` remains at count 1:
 ```ts
 test('one price tick re-renders ONLY the affected row, leaving unaffected rows untouched', () => {
   // 1. Initial render count is 1 for both RELIANCE and TCS
@@ -110,6 +135,12 @@ test('one price tick re-renders ONLY the affected row, leaving unaffected rows u
   expect(tcsBadge.props.children).toBe('R: 1');
 });
 ```
+
+### 2. Sustained 20s @ 20Hz Benchmark (`__tests__/perf/fullPortfolioBenchmark.test.tsx`):
+Renders the complete 21-holding portfolio and streams 400 seeded ticks over 20 virtual seconds:
+- **Per-row isolation**: Asserts that every row's render count strictly equals `1 + (number of ticks modifying its LTP)`. Non-LTP ticks (volume/high/low) cause 0 row re-renders.
+- **Unpriced stability**: `OLDCO` never receives a tick and stays strictly at `R: 1`.
+- **Throttled summary**: `SummaryCard` renders at `<= 4/sec` (at most 81 renders across 20s), proving that aggregate recomputation is decoupled from high-frequency ticks.
 
 ---
 
