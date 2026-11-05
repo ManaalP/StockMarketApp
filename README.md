@@ -8,19 +8,7 @@ An institutional-grade, real-time stock portfolio and watchlist tracking app bui
 
 Refer to the take-home design & architectural specification PDF: [`docs/React_Native_Take-Home_Live_Portfolio.pdf`](./docs/React_Native_Take-Home_Live_Portfolio.pdf)
 
-```mermaid
-flowchart TD
-    API["OHLC REST API (HTTP 201)"] -->|Initial Fetch & Pull-to-Refresh| PS["portfolioStore"]
-    FEED["Simulated Feed (~20 ticks/sec)"] -->|queueTick| PRICE_STORE["priceStore (External Store)"]
-    PRICE_STORE -->|100ms Batch Flush| SYNC["useSyncExternalStore (Per-Symbol)"]
-    PS -->|Holdings & Order Execution| ROWS["HoldingRow (React.memo)"]
-    SYNC -->|useLtp(symbol)| ROWS
-    SYNC -->|useLtp(symbol)| WATCH_ROWS["WatchRow (React.memo)"]
-    PRICE_STORE -->|250ms Throttled Flusher| SUMMARY_STORE["summaryStore (~4 Hz)"]
-    SUMMARY_STORE -->|useSummary()| SUMMARY["SummaryCard"]
-    STORAGE["AsyncStorage (StorageBackend)"] -->|Hydrate & Persist| WS["watchlistStore"]
-    WS -->|useWatchlist()| WATCHLIST["WatchlistScreen"]
-```
+![Live Portfolio Architecture Overview](./assets/images/architecture.png)
 
 ---
 
