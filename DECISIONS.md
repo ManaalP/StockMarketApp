@@ -291,6 +291,21 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Provides a complete, interactive demonstration suite for technical evaluation and stress testing.
   - Keeps dev tools cleanly separated from domain logic while directly manipulating feed parameters in memory.
 
+---
+
+### ADR 027: Migration to react-native-safe-area-context and Application Root SafeAreaProvider
+- **Context**: React Native deprecated `SafeAreaView` from the core `'react-native'` library (`@deprecated — Use react-native-safe-area-context instead. This component is deprecated and will be removed in a future release.`). In high-frequency trading apps with modal sheets, edge-to-edge rendering, and notch/dynamic island screens on iOS and Android, unhandled safe area insets can lead to clipped controls or layout jitter.
+- **Decision**:
+  - Audit and eliminate all imports of `SafeAreaView` from `'react-native'`.
+  - Standardize on `SafeAreaView` from `'react-native-safe-area-context'` across all modals and screens (`OrderSheet`, `WatchlistAddModal`, `StockDetailScreen`, `DevMenuScreen`, `OrderHistoryScreen`).
+  - Render `<SafeAreaProvider>` from `'react-native-safe-area-context'` at the top-level application root in `src/app/_layout.tsx`, enclosing `<ThemeProvider>` and navigation `<Stack>`.
+  - Add Jest unit tests and mock configuration for `expo-router` in `jest.setup.ts` to ensure root layout rendering and safe area context provider stability.
+- **Rationale**:
+  - `react-native-safe-area-context` computes hardware insets natively on both Android (gesture bar, cutout) and iOS (notch, home indicator) without layout delays or deprecation warnings.
+  - Wrapping `<SafeAreaProvider>` at the root guarantees that all descendent hooks (`useSafeAreaInsets()`) and `<SafeAreaView>` instances receive accurate, zero-latency inset measurements.
+
+
+
 
 
 
