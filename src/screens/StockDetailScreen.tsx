@@ -1,4 +1,4 @@
-import React, { useCallback, memo } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { DayRangeBar } from '../components/DayRangeBar';
 import { StockStatsGrid } from '../components/StockStatsGrid';
 import { LiveLineChart } from '../components/LiveLineChart';
 import { PositionCard } from '../components/PositionCard';
+import { OrderSheet } from '../components/OrderSheet';
 
 export interface StockDetailScreenProps {
   readonly symbol: string;
@@ -54,6 +55,9 @@ export const StockDetailScreen = memo(function StockDetailScreen({
   const isPriced = metrics.isPriced && metrics.ltp !== null;
   const isTradingDisabled = !isPriced || isPaused;
 
+  const [orderSheetVisible, setOrderSheetVisible] = useState(false);
+  const [orderSide, setOrderSide] = useState<'BUY' | 'SELL'>('BUY');
+
   const handleToggleWatchlist = useCallback(async () => {
     if (inWatchlist) {
       await watchlistStore.remove(symbol);
@@ -64,12 +68,16 @@ export const StockDetailScreen = memo(function StockDetailScreen({
 
   const handleBuy = useCallback(() => {
     if (!isTradingDisabled) {
+      setOrderSide('BUY');
+      setOrderSheetVisible(true);
       onBuy?.(symbol);
     }
   }, [isTradingDisabled, onBuy, symbol]);
 
   const handleSell = useCallback(() => {
     if (!isTradingDisabled) {
+      setOrderSide('SELL');
+      setOrderSheetVisible(true);
       onSell?.(symbol);
     }
   }, [isTradingDisabled, onSell, symbol]);
@@ -254,6 +262,13 @@ export const StockDetailScreen = memo(function StockDetailScreen({
           </Pressable>
         </View>
       </View>
+
+      <OrderSheet
+        visible={orderSheetVisible}
+        symbol={symbol}
+        initialSide={orderSide}
+        onClose={() => setOrderSheetVisible(false)}
+      />
     </SafeAreaView>
   );
 });

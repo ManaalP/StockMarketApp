@@ -257,6 +257,24 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Caps chart re-renders at ~4 Hz, maintaining a smooth 60 FPS mobile UI.
   - Re-using pure domain `rowMetrics` guarantees 100% arithmetic parity between the Portfolio and Stock Detail screens.
 
+---
+
+### ADR 021: Local Order Sheet Execution, Pure Validation, and Instant Summary Reconciliation
+- **Context**: The Buy/Sell order sheet allows local simulated trade execution from the Stock Detail screen. Trading actions must strictly enforce positive integer quantities, prevent overselling, disallow execution during paused feeds or when prices are unavailable, and update portfolio holdings atomically so summary totals immediately reflect the trade without diverging from displayed row values.
+- **Decision**:
+  - Pure domain validation in `validateOrder` (`src/domain/orders.ts`): enforces positive whole integers, checks `qty <= heldQty` on SELL, and blocks orders if `ltp === null` or `isPaused === true`.
+  - Pure domain order preview in `computeOrderPreview`: calculates estimated total paise (`mulQty`) and produces informative impact text ("New average ₹...", "25 shares → 15 shares left", "Position will be closed").
+  - `OrderSheet` modal component: uses native numeric keyboard (`keyboardType="number-pad"`), segmented BUY/SELL toggle, quick quantity preset chips ("10", "25", "50", "Sell All"), and confirmation toast.
+  - Atomic local execution: reads live LTP at confirm time and invokes `portfolioStore.executeOrder`, synchronously triggering `applyOrder` and notifying subscribers so the portfolio list and summary card update in lockstep.
+  - Automated integration tests prove:
+    - Summary card totals match the sum of row metrics to the paise after a BUY.
+    - Selling all shares completely removes the holding.
+    - Average price rounds to whole paise.
+- **Rationale**:
+  - Decoupling validation into pure domain functions ensures 100% unit testability without React UI harness overhead.
+  - Atomic execution satisfies the hard financial requirement that summary totals must equal the sum of displayed rows at all times.
+
+
 
 
 
