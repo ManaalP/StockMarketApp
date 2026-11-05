@@ -276,31 +276,7 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
               </Text>
             </Pressable>
 
-            {/* Dev Perf Toggle */}
-            {__DEV__ ? (
-              <Pressable
-                testID="perf.toggle.btn"
-                onPress={togglePerfOverlay}
-                style={[
-                  styles.perfTogglePill,
-                  {
-                    backgroundColor: showPerf
-                      ? tokens.warningBg
-                      : tokens.surface,
-                    borderColor: tokens.border,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.perfTogglePillText,
-                    { color: showPerf ? tokens.warning : tokens.textMuted },
-                  ]}
-                >
-                  {showPerf ? '⚡ ON' : '⚡'}
-                </Text>
-              </Pressable>
-            ) : null}
+    
           </View>
 
           {/* Active Filter Chips (removable) */}

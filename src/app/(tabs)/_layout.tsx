@@ -43,21 +43,7 @@ export default function TabLayout() {
           },
           headerRight: () => (
             <View style={styles.headerRightContainer}>
-              <Pressable
-                testID="header.filter.button"
-                accessibilityRole="button"
-                accessibilityLabel="Filter and sort holdings"
-                onPress={filterStore.openModal}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                style={styles.headerBtn}
-              >
-                <FilterIcon color={hasActiveFilter ? tokens.primary : tokens.textSecondary} size={20} />
-                {hasActiveFilter ? (
-                  <View style={[styles.activeDot, { backgroundColor: tokens.primary }]} />
-                ) : null}
-              </Pressable>
-
-              <Pressable
+                          <Pressable
                 testID="orders.header.button"
                 accessibilityRole="button"
                 accessibilityLabel="View order history"
