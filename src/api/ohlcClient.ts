@@ -1,5 +1,8 @@
 import type { Quote } from '../domain/types';
 import { toPaise, type Paise } from '../domain/money';
+import cannedOhlcJson from '../../fixtures/ohlc.json';
+
+export type ApiMode = 'live' | 'mock' | 'slow' | 'fail' | 'partial' | 'empty' | 'malformed';
 
 export type OhlcErrorKind = 'network' | 'timeout' | 'http' | 'parse';
 
@@ -16,14 +19,17 @@ export type OhlcResult =
 export interface OhlcClientOptions {
   readonly baseUrl?: string;
   readonly timeoutMs?: number;
+  readonly mode?: ApiMode;
+  readonly fallbackToMockOnNetworkError?: boolean;
 }
 
 export interface OhlcClient {
   fetchOhlc(symbols: string[]): Promise<OhlcResult>;
   retry<T>(fn: () => Promise<T>, maxRetries?: number, backoffMs?: number): Promise<T>;
+  getMode?(): ApiMode;
 }
 
-interface RawOhlcRow {
+export interface RawOhlcRow {
   readonly symbol?: unknown;
   readonly ltp?: unknown;
   readonly open?: unknown;
@@ -57,10 +63,68 @@ function parseVolume(val: unknown): number {
 }
 
 /**
+ * Pure parsing of raw API rows into domain Quotes.
+ */
+export function parseRawOhlcRows(
+  rawRows: readonly RawOhlcRow[],
+  symbols: readonly string[]
+): Record<string, Quote> {
+  const quotes: Record<string, Quote> = {};
+
+  for (const row of rawRows) {
+    if (typeof row.symbol !== 'string' || row.symbol.trim().length === 0) {
+      continue;
+    }
+
+    const sym = row.symbol.trim().toUpperCase();
+    const ltp = parsePrice(row.ltp);
+    const open = parsePrice(row.open) ?? (ltp ?? (0 as Paise));
+    const prevClose = parsePrice(row.prevClose) ?? (ltp ?? (0 as Paise));
+    const high = parsePrice(row.high) ?? (ltp ?? (0 as Paise));
+    const low = parsePrice(row.low) ?? (ltp ?? (0 as Paise));
+    const volume = parseVolume(row.volume);
+
+    quotes[sym] = {
+      ltp,
+      open,
+      prevClose,
+      high,
+      low,
+      volume,
+    };
+  }
+
+  for (const sym of symbols) {
+    const upper = sym.trim().toUpperCase();
+    if (!quotes[upper]) {
+      quotes[upper] = {
+        ltp: null,
+        open: 0 as Paise,
+        prevClose: 0 as Paise,
+        high: 0 as Paise,
+        low: 0 as Paise,
+        volume: 0,
+      };
+    }
+  }
+
+  return quotes;
+}
+
+/**
+ * Returns canned quotes for symbols directly from fixtures/ohlc.json.
+ */
+export function getCannedQuotes(symbols: readonly string[]): Record<string, Quote> {
+  const fixtureRows = isOhlcResponse(cannedOhlcJson) ? cannedOhlcJson.message.data : [];
+  return parseRawOhlcRows(fixtureRows, symbols);
+}
+
+/**
  * Functional factory creating an OHLC REST client.
  *
  * Implements:
  * - Single batch request for all 25 symbols + OLDCO.
+ * - Configurable API modes via EXPO_PUBLIC_API_MODE (live | mock | slow | fail | partial | empty | malformed).
  * - HTTP 201 success handling with message.data extraction.
  * - AbortController timeout handling (default 8s).
  * - Defensively converts API floats to integer Paise at this exact input boundary.
@@ -70,8 +134,73 @@ function parseVolume(val: unknown): number {
 export function createOhlcClient(options: OhlcClientOptions = {}): OhlcClient {
   const baseUrl = options.baseUrl ?? 'https://api.v2.liquide.life/api/markets/ohlc';
   const timeoutMs = options.timeoutMs ?? 8000;
+  const initialMode =
+    options.mode ??
+    ((process.env.EXPO_PUBLIC_API_MODE as ApiMode | undefined) ?? 'live');
+  const fallbackToMock = options.fallbackToMockOnNetworkError ?? false;
 
   const fetchOhlc = async (symbols: string[]): Promise<OhlcResult> => {
+    const mode = initialMode;
+
+    if (mode === 'mock') {
+      return {
+        ok: true,
+        quotes: getCannedQuotes(symbols),
+      };
+    }
+
+    if (mode === 'slow') {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      return {
+        ok: true,
+        quotes: getCannedQuotes(symbols),
+      };
+    }
+
+    if (mode === 'fail') {
+      return {
+        ok: false,
+        error: {
+          kind: 'http',
+          message: 'Simulated API failure (EXPO_PUBLIC_API_MODE=fail)',
+          status: 500,
+        },
+      };
+    }
+
+    if (mode === 'partial') {
+      const allCanned = getCannedQuotes(symbols);
+      const partialKeys = Object.keys(allCanned).slice(0, 5);
+      const partialQuotes: Record<string, Quote> = {};
+      for (const k of partialKeys) {
+        if (allCanned[k]) {
+          partialQuotes[k] = allCanned[k];
+        }
+      }
+      return {
+        ok: true,
+        quotes: partialQuotes,
+      };
+    }
+
+    if (mode === 'empty') {
+      return {
+        ok: true,
+        quotes: {},
+      };
+    }
+
+    if (mode === 'malformed') {
+      return {
+        ok: false,
+        error: {
+          kind: 'parse',
+          message: 'Malformed response structure: missing message.data array',
+        },
+      };
+    }
+
+    // Live HTTP request
     const controller = new AbortController();
     const timeoutTimer = setTimeout(() => {
       controller.abort();
@@ -109,54 +238,16 @@ export function createOhlcClient(options: OhlcClientOptions = {}): OhlcClient {
         };
       }
 
-      const rawRows = json.message.data;
-      const quotes: Record<string, Quote> = {};
-
-      // 1. Map returned quotes
-      for (const row of rawRows) {
-        if (typeof row.symbol !== 'string' || row.symbol.trim().length === 0) {
-          continue;
-        }
-
-        const sym = row.symbol.trim().toUpperCase();
-        const ltp = parsePrice(row.ltp);
-        const open = parsePrice(row.open) ?? (ltp ?? (0 as Paise));
-        const prevClose = parsePrice(row.prevClose) ?? (ltp ?? (0 as Paise));
-        const high = parsePrice(row.high) ?? (ltp ?? (0 as Paise));
-        const low = parsePrice(row.low) ?? (ltp ?? (0 as Paise));
-        const volume = parseVolume(row.volume);
-
-        quotes[sym] = {
-          ltp,
-          open,
-          prevClose,
-          high,
-          low,
-          volume,
-        };
-      }
-
-      // 2. Ensure all requested symbols exist; missing symbols (like OLDCO) are unpriced nulls
-      for (const sym of symbols) {
-        const upper = sym.trim().toUpperCase();
-        if (!quotes[upper]) {
-          quotes[upper] = {
-            ltp: null,
-            open: 0 as Paise,
-            prevClose: 0 as Paise,
-            high: 0 as Paise,
-            low: 0 as Paise,
-            volume: 0,
-          };
-        }
-      }
-
+      const quotes = parseRawOhlcRows(json.message.data, symbols);
       return {
         ok: true,
         quotes,
       };
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') {
+        if (fallbackToMock) {
+          return { ok: true, quotes: getCannedQuotes(symbols) };
+        }
         return {
           ok: false,
           error: {
@@ -164,6 +255,10 @@ export function createOhlcClient(options: OhlcClientOptions = {}): OhlcClient {
             message: `OHLC request timed out after ${timeoutMs}ms`,
           },
         };
+      }
+
+      if (fallbackToMock) {
+        return { ok: true, quotes: getCannedQuotes(symbols) };
       }
 
       return {
@@ -198,9 +293,12 @@ export function createOhlcClient(options: OhlcClientOptions = {}): OhlcClient {
     throw new Error('Retry exhausted');
   };
 
+  const getMode = (): ApiMode => initialMode;
+
   return {
     fetchOhlc,
     retry,
+    getMode,
   };
 }
 

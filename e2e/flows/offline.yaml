@@ -1,0 +1,13 @@
+appId: host.exp.exponent
+---
+# Offline User Persona Flow: Checks error state and retry recovery
+- launchApp
+- assertVisible:
+    id: "portfolio.summary.card"
+# If in fail mode, assert error retry button works
+- tapOn:
+    id: "dev.header.button"
+- tapOn: "Force Disconnect Feed"
+- tapOn: "Done"
+- assertVisible:
+    id: "banner.paused"

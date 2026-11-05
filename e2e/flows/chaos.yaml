@@ -1,0 +1,30 @@
+appId: host.exp.exponent
+---
+# Chaos User Persona Flow: Boundary input tests, negative shares, float shares, theme toggles
+- launchApp
+- tapOn:
+    id: "portfolio.row.RELIANCE"
+- tapOn:
+    id: "detail.buy"
+# Test 0 quantity
+- inputText: "0"
+- assertVisible:
+    id: "order.validationError"
+# Test negative quantity
+- eraseText: 1
+- inputText: "-5"
+- assertVisible:
+    id: "order.validationError"
+# Test decimal quantity
+- eraseText: 2
+- inputText: "1.5"
+- assertVisible:
+    id: "order.validationError"
+# Close sheet
+- tapOn:
+    id: "order.cancel"
+# Rapid theme toggle
+- tapOn:
+    id: "theme.toggle.button"
+- tapOn:
+    id: "theme.toggle.button"

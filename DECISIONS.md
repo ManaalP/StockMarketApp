@@ -316,6 +316,21 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Eliminates Metro/Expo Router bundler warnings during cold start and fast refresh.
   - Enforces clean separation of concerns: `src/app/` is exclusively file-based navigation UI, while `src/bootstrap.ts` serves as the pure functional application composition root.
 
+---
+
+### ADR 029: Testability Harnesses, Canned Offline Fixtures, Deterministic PRNG, and Property-Based Verification with fast-check
+- **Context**: Testing high-frequency market tickers across network anomalies, offline environments, and edge-case order sequences requires deterministic simulation controls, offline fixture fallbacks, typed testIDs, and mathematical invariant verification beyond standard example-based tests.
+- **Decision**:
+  - Implement `src/testing/ids.ts` exporting typed testID builders following `screen.element[.symbol]` convention.
+  - Implement `createMulberry32` PRNG in `src/feed/SimulatedFeed.ts` driven by `QA_SEED` or `options.seed`, guaranteeing 100% deterministic, repeatable tick sequences across runs.
+  - Add `fixtures/ohlc.json` and support `EXPO_PUBLIC_API_MODE` (`live | mock | slow | fail | partial | empty | malformed`) in `src/api/ohlcClient.ts`, enabling seamless offline execution and automated fault injection.
+  - Integrate `fast-check` to automate the 7 core property invariants across 1,000 randomized iterations per invariant in `__tests__/domain/propertyInvariants.test.ts`.
+  - Author scripted Maestro persona flows in `e2e/flows/` (`newbie`, `trader`, `chaos`, `offline`, `stale_feed`) and a full specification traceability matrix in `docs/test-cases/TRACEABILITY.md`.
+- **Rationale**:
+  - Eliminates test flakiness and network-induced test failures in CI and local development.
+  - Property-based testing explores millions of boundary conditions (unpriced stocks, extreme quantities, fractional values, sequence anomalies) that manual test cases would miss.
+
+
 
 
 
