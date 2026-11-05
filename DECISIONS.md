@@ -276,19 +276,19 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 
 ---
 
-### ADR 023: UI-Thread Price Flash Animations via Reanimated Shared Values
-- **Context**: In a high-frequency trading application ticking ~20 times/sec, visually signaling price movements (green on upticks, red on downticks) provides critical market cues. However, performing background color transitions via standard React state or JavaScript timers causes layout thrashing, component re-renders, and frame drops on the JS thread.
+### ADR 024: Resilient Price Feed Reconnect with Exponential Backoff and Single Catch-Up Fetch
+- **Context**: In real-world market feeds, network drops, packet drops, and transport interruptions occur. If an app attempts immediate tight-loop reconnection, it risks network flooding and rate-limiting. Furthermore, during the disconnected window, ticks were missed, which can leave prices stale if the stream simply resumes from new ticks. However, polling the REST API is strictly forbidden by the spec ("Fetch the OHLC API once at start and on pull-to-refresh only. Never poll.").
 - **Decision**:
-  - Implement pure domain direction function `priceFlashDirection(prevLtp, nextLtp)` in `src/domain/calcs.ts`. Initial seed/loads (`prevLtp === null`), unpriced scrips, and identical quotes evaluate to `'none'`.
-  - Create `PriceFlash` in `src/components/PriceFlash.tsx` leveraging `react-native-reanimated` shared values (`useSharedValue(0)`).
-  - On uptick (`direction === 'up'`), set shared value to 1 and decay back to 0 via `withTiming(0, { duration: 600 })` using `interpolateColor` to transparent.
-  - On downtick (`direction === 'down'`), set shared value to -1 and decay back to 0.
-  - Wrap price elements in `HoldingRow`, `WatchRow`, and `StockDetailScreen`.
-  - Provide a zero-dependency, type-safe unit test mock in `jest.setup.ts`.
+  - Implement pure domain calculation `computeBackoffDelay(attempt, baseDelayMs, maxDelayMs, rng)` in `src/domain/backoff.ts` with exponential backoff and up to 20% random jitter.
+  - Implement `createResilientFeed(underlyingFeed, options)` in `src/feed/resilientFeed.ts` as a 100% functional decorator around any `PriceFeed`.
+  - When an unexpected drop occurs (`underlyingFeed` status changes to `'disconnected'` without user-initiated `disconnect()`), the feed transitions to `'reconnecting'` and schedules exponential backoff.
+  - Upon successful reconnection, the manager invokes a **single catch-up fetch** (`options.catchUpFetch()`) to fetch fresh OHLC snapshots for the 25 allowed symbols, re-seeds `priceStore`, and resets the attempt counter to 0.
+  - No polling is ever introduced: the REST fetch triggers strictly as a one-time event upon reconnection to heal the gap.
 - **Rationale**:
-  - Animations run 100% on the UI thread (via Reanimated worklets), keeping the JS thread completely free to ingest the 20 Hz tick feed.
-  - Zero React re-renders are triggered during the 600 ms decay animation.
-  - Pure domain separation ensures tests verify direction rules deterministically without native animation harnesses.
+  - Complies strictly with the no-polling invariant while maintaining institutional resilience across network interruptions.
+  - Exponential backoff with jitter prevents thundering herd effects.
+  - Fully decoupled through `PriceFeed` interface, keeping UI and stores oblivious to transport failures.
+
 
 
 
