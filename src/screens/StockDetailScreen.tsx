@@ -16,6 +16,8 @@ import { PnLText } from '../components/PnLText';
 import { PausedBanner } from '../components/PausedBanner';
 import { DayRangeBar } from '../components/DayRangeBar';
 import { StockStatsGrid } from '../components/StockStatsGrid';
+import { LiveLineChart } from '../components/LiveLineChart';
+import { PositionCard } from '../components/PositionCard';
 
 export interface StockDetailScreenProps {
   readonly symbol: string;
@@ -144,6 +146,9 @@ export const StockDetailScreen = memo(function StockDetailScreen({
           </View>
         </View>
 
+        {/* Live SVG Line Chart */}
+        <LiveLineChart symbol={symbol} />
+
         {/* Unavailable Notice */}
         {!isPriced ? (
           <View
@@ -158,6 +163,9 @@ export const StockDetailScreen = memo(function StockDetailScreen({
             </Text>
           </View>
         ) : null}
+
+        {/* Position Section (Rendered only when held) */}
+        <PositionCard symbol={symbol} />
 
         {/* Day Range Bar */}
         <DayRangeBar
