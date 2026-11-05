@@ -9,6 +9,12 @@ describe('Domain: Order Validation & Previews (src/domain/orders.ts)', () => {
       expect(res.qty).toBe(10);
     });
 
+    test('rejects orders when market is closed', () => {
+      const res = validateOrder('BUY', '10', 0, 250000, false, false);
+      expect(res.isValid).toBe(false);
+      expect(res.error).toContain('Market is closed');
+    });
+
     test('rejects non-positive, fractional, and non-numeric inputs', () => {
       expect(validateOrder('BUY', '0', 0, 250000, false)).toEqual({
         isValid: false,

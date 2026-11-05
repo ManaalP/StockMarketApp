@@ -39,6 +39,8 @@ This matrix maps every core and stretch specification requirement to its test ca
 | **Stretch: Resilient reconnect & backoff** | `FEED` | `FEED-007`, `FEED-008` | Unit + Integration | `__tests__/domain/backoff.test.ts`, `__tests__/feed/resilientFeed.test.ts` |
 | **Stretch: Persisted order history ledger** | `ORD`, `PERS` | `ORD-007`, `PERS-002` | Integration + Component | `__tests__/stores/orderStore.test.ts`, `__tests__/screens/OrderHistoryScreen.test.tsx` |
 | **Stretch: Developer controls & tick rate** | `FEED` | `FEED-009` | Component | `__tests__/screens/DevMenuScreen.test.tsx` |
+| **Portfolio & orders AsyncStorage persistence** | `PORT`, `PERS` | `PORT-006`, `PERS-001` | Integration + Unit | `__tests__/stores/portfolioPersistence.test.ts` |
+| **Indian stock market trading hours validation** | `ORD`, `STATE` | `ORD-008`, `STATE-006` | Unit + Component | `__tests__/domain/marketHours.test.ts`, `__tests__/components/OrderSheet.test.tsx` |
 
 ---
 

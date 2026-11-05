@@ -104,5 +104,20 @@ describe('LiveLineChart', () => {
     texts = getAllText(renderer.root).join(' ');
     expect(texts).toContain('3 ticks');
     expect(renderer.root.findByProps({ testID: 'live.chart.path' })).toBeDefined();
+
+    // Verify OHLC metric display on chart header
+    expect(texts).toContain('O ');
+    expect(texts).toContain('H ');
+    expect(texts).toContain('L ');
+    expect(texts).toContain('C ');
+
+    // Toggle to OHLC Candlestick view
+    const candleBtn = renderer.root.findByProps({ testID: 'chart.mode.candle' });
+    act(() => {
+      candleBtn.props.onPress();
+    });
+
+    // In candle mode, candles are rendered instead of polyline path
+    expect(renderer.root.findAllByProps({ testID: 'live.chart.path' })).toHaveLength(0);
   });
 });

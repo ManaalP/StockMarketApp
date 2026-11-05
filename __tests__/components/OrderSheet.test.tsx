@@ -109,4 +109,29 @@ describe('OrderSheet component', () => {
 
     executeSpy.mockRestore();
   });
+
+  test('blocks order submission and displays market closed message when market is closed', () => {
+    const onClose = jest.fn();
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <ThemeProvider initialMode="light">
+          <OrderSheet
+            visible
+            symbol="RELIANCE"
+            initialSide="BUY"
+            isMarketOpenOverride={false}
+            onClose={onClose}
+          />
+        </ThemeProvider>
+      );
+    });
+
+    const texts = getAllText(renderer.root).join(' ');
+    expect(texts).toContain('Market is closed');
+
+    const confirmBtn = renderer.root.findByProps({ testID: 'order.sheet.confirm.button' });
+    expect(confirmBtn.props.disabled).toBe(true);
+  });
 });

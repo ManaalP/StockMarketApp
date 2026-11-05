@@ -23,8 +23,17 @@ export function validateOrder(
   qtyStr: string,
   heldQty: number,
   ltp: Paise | null,
-  isPaused: boolean
+  isPaused: boolean,
+  isMarketOpen = true
 ): OrderValidationResult {
+  if (!isMarketOpen) {
+    return {
+      isValid: false,
+      error: 'Market is closed. Regular NSE trading hours are Monday to Friday, 9:15 AM - 3:30 PM IST.',
+      qty: 0,
+    };
+  }
+
   const trimmed = qtyStr.trim();
   const isPositiveInteger = /^[1-9]\d*$/.test(trimmed);
 

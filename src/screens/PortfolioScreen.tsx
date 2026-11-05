@@ -50,7 +50,7 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
   const { tokens } = useTheme();
 
   const holdings = usePortfolioHoldings();
-  const { status, error, refresh, retry } = useAppStatus();
+  const { status, error, hydrationStatus, refresh, retry } = useAppStatus();
   const showPerf = usePerfOverlay();
 
   // Filter & Sort State
@@ -308,8 +308,8 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
     );
   }, [holdings.length, status, searchQuery]);
 
-  // Full-screen loading when first booting up with zero holdings
-  if (status === 'loading' && holdings.length === 0) {
+  // Full-screen loading when hydrating or first booting up with zero holdings
+  if ((hydrationStatus === 'loading' || status === 'loading') && holdings.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: tokens.background }]}>
         <StateView state="loading" message="Loading portfolio..." />
