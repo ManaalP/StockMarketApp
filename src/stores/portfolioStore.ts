@@ -19,8 +19,10 @@ export interface PortfolioStoreOptions {
 
 export interface PortfolioStore {
   getHoldings(): Holding[];
+  getHolding(symbol: string): Holding | undefined;
   getStatus(): AppStatus;
   getError(): OhlcError | null;
+  getStatusSnapshot(): { readonly status: AppStatus; readonly error: OhlcError | null };
   subscribeHoldings(callback: () => void): () => void;
   subscribeStatus(callback: () => void): () => void;
   executeOrder(order: Order): void;
@@ -47,6 +49,10 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
   let holdings: Holding[] = options.initialHoldings ?? parseHoldingsCsv(STARTING_HOLDINGS_CSV);
   let status: AppStatus = 'idle';
   let error: OhlcError | null = null;
+  let statusSnapshot: { readonly status: AppStatus; readonly error: OhlcError | null } = {
+    status: 'idle',
+    error: null,
+  };
 
   const holdingsListeners = new Set<() => void>();
   const statusListeners = new Set<() => void>();
@@ -54,10 +60,13 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
   const setStatus = (nextStatus: AppStatus, nextError: OhlcError | null = null): void => {
     status = nextStatus;
     error = nextError;
+    statusSnapshot = { status: nextStatus, error: nextError };
     for (const listener of statusListeners) {
       listener();
     }
   };
+
+  const getStatusSnapshot = () => statusSnapshot;
 
   const notifyHoldings = (): void => {
     for (const listener of holdingsListeners) {
@@ -67,6 +76,10 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
 
   const getHoldings = (): Holding[] => {
     return holdings;
+  };
+
+  const getHolding = (symbol: string): Holding | undefined => {
+    return holdings.find((h) => h.symbol === symbol);
   };
 
   const getStatus = (): AppStatus => {
@@ -128,8 +141,10 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
 
   return {
     getHoldings,
+    getHolding,
     getStatus,
     getError,
+    getStatusSnapshot,
     subscribeHoldings,
     subscribeStatus,
     executeOrder,
@@ -155,16 +170,25 @@ export function createPortfolioHooks(store: PortfolioStore) {
     return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   }
 
+  function useHolding(symbol: string): Holding | undefined {
+    const subscribe = useCallback(
+      (notify: () => void) => store.subscribeHoldings(notify),
+      []
+    );
+    const getSnapshot = useCallback(
+      () => store.getHolding(symbol),
+      [symbol]
+    );
+    return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  }
+
   function useAppStatus() {
     const subscribe = useCallback(
       (notify: () => void) => store.subscribeStatus(notify),
       []
     );
     const getSnapshot = useCallback(
-      () => ({
-        status: store.getStatus(),
-        error: store.getError(),
-      }),
+      () => store.getStatusSnapshot(),
       []
     );
 
@@ -189,6 +213,7 @@ export function createPortfolioHooks(store: PortfolioStore) {
 
   return {
     usePortfolioHoldings,
+    useHolding,
     useAppStatus,
   };
 }
@@ -199,5 +224,6 @@ export const portfolioStore = createPortfolioStore();
 // Default global React hooks
 export const {
   usePortfolioHoldings,
+  useHolding,
   useAppStatus,
 } = createPortfolioHooks(portfolioStore);
