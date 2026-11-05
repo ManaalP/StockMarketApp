@@ -20,3 +20,12 @@ export {
   type PortfolioStoreOptions,
   type AppStatus,
 } from './portfolioStore';
+
+export {
+  createSummaryStore,
+  createSummaryHook,
+  summaryStore,
+  useSummary,
+  type SummaryStore,
+  type SummaryStoreOptions,
+} from './summaryStore';
