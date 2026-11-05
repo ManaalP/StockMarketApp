@@ -21,6 +21,7 @@ import { LiveLineChart } from '../components/LiveLineChart';
 import { PositionCard } from '../components/PositionCard';
 import { OrderSheet } from '../components/OrderSheet';
 import { PriceFlash } from '../components/PriceFlash';
+import { COMPANY_NAMES } from '../data/constants';
 
 export interface StockDetailScreenProps {
   readonly symbol: string;
@@ -116,8 +117,8 @@ export const StockDetailScreen = memo(function StockDetailScreen({
           <Text style={[styles.headerSymbol, { color: tokens.textPrimary }]}>
             {symbol}
           </Text>
-          <Text style={[styles.headerSub, { color: tokens.textMuted }]}>
-            NSE Equity
+          <Text style={[styles.headerSub, { color: tokens.textMuted }]} numberOfLines={1}>
+            {COMPANY_NAMES[symbol] ?? 'NSE Equity'}
           </Text>
         </View>
 
@@ -285,7 +286,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    height: 56,
+    height: 58,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -296,8 +297,7 @@ const styles = StyleSheet.create({
     minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
+    alignItems: 'flex-start',
   },
   backText: {
     fontSize: 16,
@@ -305,54 +305,58 @@ const styles = StyleSheet.create({
   },
   headerCenter: {
     alignItems: 'center',
+    maxWidth: '65%',
   },
   headerSymbol: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
+    letterSpacing: -0.2,
   },
   headerSub: {
     fontSize: 11,
-    marginTop: 2,
+    marginTop: 1,
+    fontWeight: '500',
   },
   starButton: {
     minWidth: 44,
     minHeight: 44,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 8,
+    alignItems: 'flex-end',
   },
   starText: {
     fontSize: 22,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 14,
   },
   priceBlock: {
-    marginVertical: 12,
+    marginVertical: 10,
   },
   flashCenter: {
     alignSelf: 'flex-start',
   },
   priceText: {
-    fontSize: 32,
+    fontSize: 38,
+    lineHeight: 44,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
   },
   dayChangeRow: {
-    marginTop: 6,
+    marginTop: 4,
   },
   pnlText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
   noticeBanner: {
-    padding: 12,
-    borderRadius: 8,
+    padding: 14,
+    borderRadius: 12,
     marginVertical: 12,
+    borderWidth: 1,
   },
   noticeTitle: {
     fontSize: 13,
@@ -366,12 +370,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 18,
+    marginBottom: 10,
+    letterSpacing: -0.2,
   },
   footer: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   disabledReasonText: {
@@ -386,13 +391,14 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    height: 48,
-    borderRadius: 8,
+    height: 50,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   actionButtonText: {
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
 });

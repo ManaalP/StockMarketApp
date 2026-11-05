@@ -47,21 +47,52 @@ export const PositionCard = memo(function PositionCard({
         },
       ]}
     >
-      {/* Header */}
+      {/* Header with Title and Quantity Badge */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: tokens.textPrimary }]}>
-          Your Position
-        </Text>
-        <View style={[styles.badge, { backgroundColor: tokens.surfaceContainer }]}>
-          <Text style={[styles.badgeText, { color: tokens.textSecondary }]}>
+        <View style={styles.headerLeft}>
+          <Text style={[styles.title, { color: tokens.textPrimary }]}>
+            Your Position
+          </Text>
+          <Text style={[styles.subtitle, { color: tokens.textMuted }]}>
+            Portfolio Holding
+          </Text>
+        </View>
+        <View style={[styles.badge, { backgroundColor: tokens.surfaceAlt, borderColor: tokens.border }]}>
+          <Text style={[styles.badgeText, { color: tokens.primary }]}>
             {`${holding.qty} SHARES`}
           </Text>
         </View>
       </View>
 
-      {/* Row 1: Avg Price & Total Invested */}
-      <View style={styles.metricRow}>
-        <View style={styles.metricCol}>
+      {/* Primary Value & P&L Hero Strip */}
+      <View style={[styles.heroStrip, { backgroundColor: tokens.surfaceAlt, borderColor: tokens.border }]}>
+        <View style={styles.heroCol}>
+          <Text style={[styles.label, { color: tokens.textMuted }]}>
+            Current Value
+          </Text>
+          <PriceText
+            paise={metrics.valuePaise}
+            testID={`position.value.${symbol}`}
+            style={[styles.heroVal, { color: tokens.textPrimary }]}
+          />
+        </View>
+
+        <View style={[styles.heroCol, styles.alignRight]}>
+          <Text style={[styles.label, { color: tokens.textMuted }]}>
+            Total P&L
+          </Text>
+          <PnLText
+            pnlPaise={metrics.pnlPaise}
+            pnlPct={metrics.pnlPct}
+            testID={`position.pnl.${symbol}`}
+            style={styles.heroPnlVal}
+          />
+        </View>
+      </View>
+
+      {/* Secondary Metrics: 3-column structured grid */}
+      <View style={styles.gridContainer}>
+        <View style={styles.metricItem}>
           <Text style={[styles.label, { color: tokens.textMuted }]}>
             Avg. Price
           </Text>
@@ -73,7 +104,7 @@ export const PositionCard = memo(function PositionCard({
           </Text>
         </View>
 
-        <View style={[styles.metricCol, styles.alignRight]}>
+        <View style={styles.metricItem}>
           <Text style={[styles.label, { color: tokens.textMuted }]}>
             Total Invested
           </Text>
@@ -84,40 +115,8 @@ export const PositionCard = memo(function PositionCard({
             {formatINR(metrics.investedPaise)}
           </Text>
         </View>
-      </View>
 
-      {/* Divider */}
-      <View style={[styles.divider, { backgroundColor: tokens.border }]} />
-
-      {/* Row 2: Current Value & Total P&L */}
-      <View style={styles.metricRow}>
-        <View style={styles.metricCol}>
-          <Text style={[styles.label, { color: tokens.textMuted }]}>
-            Current Value
-          </Text>
-          <PriceText
-            paise={metrics.valuePaise}
-            testID={`position.value.${symbol}`}
-            style={styles.val}
-          />
-        </View>
-
-        <View style={[styles.metricCol, styles.alignRight]}>
-          <Text style={[styles.label, { color: tokens.textMuted }]}>
-            Total P&L
-          </Text>
-          <PnLText
-            pnlPaise={metrics.pnlPaise}
-            pnlPct={metrics.pnlPct}
-            testID={`position.pnl.${symbol}`}
-            style={styles.val}
-          />
-        </View>
-      </View>
-
-      {/* Row 3: Today's P&L */}
-      <View style={[styles.metricRow, styles.marginTopSmall]}>
-        <View style={styles.metricCol}>
+        <View style={[styles.metricItem, styles.alignRight]}>
           <Text style={[styles.label, { color: tokens.textMuted }]}>
             Today's P&L
           </Text>
@@ -135,56 +134,78 @@ export const PositionCard = memo(function PositionCard({
 const styles = StyleSheet.create({
   card: {
     padding: 16,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 14,
+    borderWidth: 1,
     marginVertical: 12,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 12,
+  },
+  headerLeft: {
+    gap: 2,
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  subtitle: {
+    fontSize: 11,
+    fontWeight: '500',
   },
   badge: {
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  metricRow: {
+  heroStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginVertical: 4,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 14,
   },
-  marginTopSmall: {
-    marginTop: 8,
+  heroCol: {
+    flex: 1,
   },
-  metricCol: {
+  heroVal: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  heroPnlVal: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  metricItem: {
     flex: 1,
   },
   alignRight: {
     alignItems: 'flex-end',
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    marginBottom: 2,
+    marginBottom: 3,
   },
   val: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    marginVertical: 10,
   },
 });

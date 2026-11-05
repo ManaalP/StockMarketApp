@@ -14,6 +14,7 @@ import { quoteDayMetrics } from '../domain/calcs';
 import { PriceText } from './PriceText';
 import { PnLText } from './PnLText';
 import { PriceFlash } from './PriceFlash';
+import { COMPANY_NAMES } from '../data/constants';
 import { useRenderCount } from '../utils/useRenderCount';
 import { usePerfOverlay } from '../utils/perfOverlay';
 
@@ -94,10 +95,10 @@ export const WatchRow = memo(function WatchRow({
         style,
       ]}
     >
-      {/* Left Column: Symbol Name, EQ Badge, Perf badge */}
+      {/* Left Column: Symbol Name, EQ Badge, Company Name / NSE Equity */}
       <View style={styles.leftCol}>
         <View style={styles.symbolRow}>
-          <Text style={[styles.symbolText, { color: tokens.textPrimary }]}>
+          <Text style={[styles.symbolText, { color: tokens.textPrimary }]} numberOfLines={1}>
             {symbol}
           </Text>
           <View style={[styles.badge, { backgroundColor: tokens.surfaceContainer }]}>
@@ -116,6 +117,9 @@ export const WatchRow = memo(function WatchRow({
             </View>
           ) : null}
         </View>
+        <Text style={[styles.companyText, { color: tokens.textSecondary }]} numberOfLines={1}>
+          {COMPANY_NAMES[symbol] ?? symbol}
+        </Text>
         <Text style={[styles.subText, { color: tokens.textMuted }]}>
           NSE Equity
         </Text>
@@ -177,43 +181,47 @@ const styles = StyleSheet.create({
   leftCol: {
     justifyContent: 'center',
     flex: 1,
+    paddingRight: 12,
   },
   symbolRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   symbolText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
     letterSpacing: -0.2,
   },
   badge: {
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
     borderRadius: 4,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   perfBadge: {
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'transparent',
   },
   perfText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
+  companyText: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 1,
+  },
   subText: {
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 10,
+    marginTop: 1,
     fontVariant: ['tabular-nums'],
   },
   rightCol: {
@@ -221,7 +229,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   ltpText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
@@ -231,7 +239,7 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   dayChangeRow: {
-    marginTop: 4,
+    marginTop: 2,
   },
   removeButton: {
     width: 80,
