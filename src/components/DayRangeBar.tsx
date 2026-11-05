@@ -104,21 +104,21 @@ export const DayRangeBar = memo(function DayRangeBar({
 const styles = StyleSheet.create({
   container: {
     padding: 14,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginVertical: 10,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   ratioText: {
     fontSize: 12,
@@ -126,14 +126,14 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   track: {
-    height: 6,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
     position: 'relative',
-    marginVertical: 6,
+    marginVertical: 8,
   },
   indicator: {
     position: 'absolute',
-    top: -4,
+    top: -5,
     width: 14,
     height: 14,
     borderRadius: 7,
@@ -143,11 +143,13 @@ const styles = StyleSheet.create({
   labelsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 6,
+    marginTop: 4,
   },
   subLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   boundText: {
     fontSize: 13,

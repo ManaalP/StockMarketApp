@@ -67,11 +67,31 @@ export const SummaryCard = memo(function SummaryCard({
               </View>
             ) : null}
           </View>
+        </View>
 
-          <View style={styles.pnlHeaderContainer}>
-            <Text style={[styles.secondaryLabelRight, { color: tokens.textMuted }]}>
-              Total P&L
-            </Text>
+        <PriceText
+          paise={totals?.currentValuePaise ?? null}
+          testID="summary.currentValue"
+          style={[styles.currentValueText, { color: tokens.textPrimary }]}
+        />
+
+        <View style={styles.pnlSubRow}>
+          <Text style={[styles.pnlSubLabel, { color: tokens.textMuted }]}>
+            Total P&L
+          </Text>
+          <View
+            style={[
+              styles.pnlBadge,
+              {
+                backgroundColor:
+                  (totals?.totalPnlPaise ?? 0) > 0
+                    ? tokens.gainBg
+                    : (totals?.totalPnlPaise ?? 0) < 0
+                    ? tokens.lossBg
+                    : tokens.surfaceAlt,
+              },
+            ]}
+          >
             <PnLText
               pnlPaise={totals?.totalPnlPaise ?? null}
               pnlPct={totals?.totalPnlPct ?? null}
@@ -80,12 +100,6 @@ export const SummaryCard = memo(function SummaryCard({
             />
           </View>
         </View>
-
-        <PriceText
-          paise={totals?.currentValuePaise ?? null}
-          testID="summary.currentValue"
-          style={[styles.currentValueText, { color: tokens.textPrimary }]}
-        />
       </View>
 
       {/* Secondary Metrics: Space-efficient 3-column / 2-column strip */}
@@ -162,14 +176,14 @@ export const SummaryCard = memo(function SummaryCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    elevation: 1,
+    elevation: 2,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   primaryContainer: {
     flexDirection: 'column',
@@ -179,27 +193,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  pnlHeaderContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   primaryLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  secondaryLabelRight: {
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
   },
   currentValueText: {
     fontSize: 32,
@@ -207,11 +210,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 4,
     letterSpacing: -0.5,
+    fontVariant: ['tabular-nums'],
+  },
+  pnlSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 8,
+  },
+  pnlSubLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  pnlBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   totalPnlText: {
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: 18,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   perfBadge: {
     paddingHorizontal: 6,
@@ -224,8 +244,8 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   metricsStrip: {
-    marginTop: 14,
-    paddingTop: 12,
+    marginTop: 16,
+    paddingTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     alignItems: 'center',

@@ -64,8 +64,8 @@ export const PositionCard = memo(function PositionCard({
         </View>
       </View>
 
-      {/* Primary Value & P&L Hero Strip */}
-      <View style={[styles.heroStrip, { backgroundColor: tokens.surfaceAlt, borderColor: tokens.border }]}>
+      {/* Primary Value & Unrealized P&L Overview */}
+      <View style={[styles.heroRow, { borderBottomColor: tokens.border }]}>
         <View style={styles.heroCol}>
           <Text style={[styles.label, { color: tokens.textMuted }]}>
             Current Value
@@ -81,12 +81,26 @@ export const PositionCard = memo(function PositionCard({
           <Text style={[styles.label, { color: tokens.textMuted }]}>
             Total P&L
           </Text>
-          <PnLText
-            pnlPaise={metrics.pnlPaise}
-            pnlPct={metrics.pnlPct}
-            testID={`position.pnl.${symbol}`}
-            style={styles.heroPnlVal}
-          />
+          <View
+            style={[
+              styles.pnlPill,
+              {
+                backgroundColor:
+                  (metrics.pnlPaise ?? 0) > 0
+                    ? tokens.gainBg
+                    : (metrics.pnlPaise ?? 0) < 0
+                    ? tokens.lossBg
+                    : tokens.surfaceAlt,
+              },
+            ]}
+          >
+            <PnLText
+              pnlPaise={metrics.pnlPaise}
+              pnlPct={metrics.pnlPct}
+              testID={`position.pnl.${symbol}`}
+              style={styles.heroPnlVal}
+            />
+          </View>
         </View>
       </View>
 
@@ -167,26 +181,33 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  heroStrip: {
+  heroRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     marginBottom: 14,
   },
   heroCol: {
     flex: 1,
   },
-  heroVal: {
-    fontSize: 18,
-    fontWeight: '700',
+  pnlPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     marginTop: 2,
   },
-  heroPnlVal: {
-    fontSize: 16,
+  heroVal: {
+    fontSize: 20,
     fontWeight: '700',
     marginTop: 2,
+    fontVariant: ['tabular-nums'],
+  },
+  heroPnlVal: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   gridContainer: {
     flexDirection: 'row',

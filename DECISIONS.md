@@ -656,6 +656,28 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Completely prevents numbers from wrapping or splitting across lines on mobile viewports.
   - Improves primary vs secondary visual hierarchy so the portfolio value is instantly readable at a glance without awkward wrapping.
 
+---
+
+### ADR 044: Stock Detail & Portfolio Redesign & WCAG AA Legibility Polish
+- **Context**:
+  - User requested a fintech redesign for the Stock Detail Screen and Portfolio Overview Screen with focus on:
+    - Clear separation of primary hero metrics (Total Portfolio Value vs Total P&L pill badge) without string collision or awkward wrapping.
+    - Contrast and legibility meeting WCAG AA standards using primary `#F8FAFC`, secondary `#94A3B8`, muted `#64748B`, border `#1E293B`, emerald gain `#10B981`, and rose loss `#EF4444`.
+    - Floating / non-shifting subtle pill status banner for live tick pauses (`top: 10`, `position: 'absolute'`, `zIndex: 900`, `pointerEvents="box-none"`).
+    - Unified cohesive position card removing nested box-in-a-box borders.
+    - Integrated clean 2x3 market statistics grid and refined day range indicator with min/max bounds.
+    - Dynamic bottom safe area insets for Buy/Sell action buttons.
+- **Decision**:
+  - Updated theme tokens in `src/theme/tokens.ts` to high-contrast palette.
+  - Refactored `SummaryCard.tsx` with dedicated full-width `Current value` hero amount and adjacent semantic `Total P&L` badge pill.
+  - Redesigned `PositionCard.tsx` with unified surface card, clean horizontal divider, and semantic unrealized P&L pill.
+  - Refactored `StockStatsGrid.tsx` into a modern 2x3 borderless grid container.
+  - Redesigned `StockDetailScreen.tsx` price section with prominent LTP and integrated +₹114.23 (+4.72%) change pill badge, retaining dynamic safe-area padded sticky CTA footer.
+  - Styled `PausedBanner.tsx` as an elevated floating pill banner with zero Cumulative Layout Shift (CLS).
+- **Rationale**:
+  - Delivers a fintech trading aesthetic inspired by Groww, Zerodha, and Robinhood while strictly preserving pure domain calculations, zero float arithmetic on money, per-symbol memoization, and 100% test coverage.
+
+
 
 
 

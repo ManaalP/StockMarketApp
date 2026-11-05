@@ -20,13 +20,7 @@ export const StatCell = memo(function StatCell({
   return (
     <View
       testID={testID}
-      style={[
-        styles.cell,
-        {
-          backgroundColor: tokens.surface,
-          borderColor: tokens.border,
-        },
-      ]}
+      style={styles.cell}
     >
       <Text style={[styles.label, { color: tokens.textMuted }]}>{label}</Text>
       <Text
@@ -86,8 +80,10 @@ export const StockStatsGrid = memo(function StockStatsGrid({
   prevClose,
   volume,
 }: StockStatsGridProps) {
+  const { tokens } = useTheme();
+
   return (
-    <View style={styles.grid}>
+    <View style={[styles.grid, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
       <View style={styles.row}>
         <OpenStat value={open} />
         <HighStat value={high} />
@@ -106,24 +102,27 @@ export const StockStatsGrid = memo(function StockStatsGrid({
 
 const styles = StyleSheet.create({
   grid: {
-    gap: 8,
+    gap: 12,
     marginVertical: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   row: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
   },
   cell: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   value: {
     fontSize: 15,
