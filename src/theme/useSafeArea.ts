@@ -49,8 +49,8 @@ export function computeSafeAreaMetrics(
 
   // Clearance for floating toasts: ensures they never touch status/notification bar
   const toastTopPadding = Math.max(
-    topPadding + (platformOS === 'android' ? 36 : 16),
-    platformOS === 'android' ? 84 : 56
+    topPadding + (platformOS === 'android' ? 44 : 20),
+    platformOS === 'android' ? 96 : 64
   );
 
   // Soft system navigation bar (Android 3-button or gesture bar) or iOS Home Indicator

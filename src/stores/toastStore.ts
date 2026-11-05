@@ -55,12 +55,16 @@ export function createToastStore() {
       durationMs: duration,
     };
 
-    // Keep at most 2 simultaneous toasts to prevent screen crowding
-    if (toasts.length >= 2) {
-      const oldest = toasts[0];
-      if (oldest) {
-        dismiss(oldest.id);
+    // Keep at most 1 active toast to completely prevent stacked popups
+    if (toasts.length > 0) {
+      for (const t of toasts) {
+        const timer = timers.get(t.id);
+        if (timer) {
+          clearTimeout(timer);
+          timers.delete(t.id);
+        }
       }
+      toasts = [];
     }
 
     toasts = [...toasts, toast];
