@@ -2,6 +2,19 @@ import mockAsyncStorage from '@react-native-async-storage/async-storage/jest/asy
 
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 
+// Lightweight mock for expo-router Stack and navigation primitives
+const mockStackScreen = () => null;
+const mockStack = Object.assign(
+  ({ children }: { children?: React.ReactNode }) => children ?? null,
+  { Screen: mockStackScreen }
+);
+jest.mock('expo-router', () => ({
+  Stack: mockStack,
+  useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn() }),
+  useLocalSearchParams: () => ({}),
+  Link: ({ children }: { children?: React.ReactNode }) => children ?? null,
+}));
+
 // Lightweight, type-safe unit test mock for react-native-reanimated UI-thread primitives
 const { View: mockView } = jest.requireActual<typeof import('react-native')>('react-native');
 const mockCreateAnimatedComponent = <T>(comp: T): T => comp;
@@ -22,5 +35,6 @@ jest.mock('react-native-reanimated', () => ({
     outputRange: readonly string[]
   ): string => outputRange[1] ?? outputRange[0] ?? 'transparent',
 }));
+
 
 

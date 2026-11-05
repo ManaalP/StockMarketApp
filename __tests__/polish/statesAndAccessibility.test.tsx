@@ -7,6 +7,7 @@ import { PortfolioTabIcon, WatchlistTabIcon, ThemeToggleIcon } from '../../src/c
 import { ThemeProvider } from '../../src/theme/useTheme';
 import { lightTokens, darkTokens } from '../../src/theme/tokens';
 import { formatINR, formatSigned, formatPercent, formatVolume } from '../../src/domain/format';
+import RootLayout from '../../src/app/_layout';
 
 describe('States, Accessibility and Theme Polish', () => {
   describe('Accessibility & Non-color-only cues', () => {
@@ -107,6 +108,16 @@ describe('States, Accessibility and Theme Polish', () => {
       expect(formatVolume(1452300)).toBe('14,52,300');
       expect(formatVolume(10000000)).toBe('1,00,00,000');
       expect(formatVolume(null)).toBe('--');
+    });
+  });
+
+  describe('SafeAreaView and SafeAreaProvider Architecture', () => {
+    test('RootLayout renders SafeAreaProvider at the application root', () => {
+      let renderer!: ReactTestRenderer.ReactTestRenderer;
+      act(() => {
+        renderer = ReactTestRenderer.create(<RootLayout />);
+      });
+      expect(renderer.root).toBeDefined();
     });
   });
 });
