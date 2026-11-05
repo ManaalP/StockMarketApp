@@ -179,4 +179,57 @@ describe('OHLC API Client (src/api/ohlcClient.ts)', () => {
     expect(res).toBe('success');
     expect(attempts).toBe(2);
   });
+
+  describe('Configurable API Modes (EXPO_PUBLIC_API_MODE)', () => {
+    test('mock mode returns canned fixture quotes without calling network fetch', async () => {
+      const mockClient = createOhlcClient({ mode: 'mock' });
+      const fetchSpy = jest.spyOn(globalThis, 'fetch');
+
+      const result = await mockClient.fetchOhlc(['RELIANCE', 'TCS', 'OLDCO']);
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
+      expect(result.quotes.RELIANCE?.ltp).toBeGreaterThan(0);
+      expect(result.quotes.TCS?.ltp).toBeGreaterThan(0);
+      expect(result.quotes.OLDCO?.ltp).toBeNull();
+    });
+
+    test('fail mode simulates HTTP 500 error', async () => {
+      const failClient = createOhlcClient({ mode: 'fail' });
+      const result = await failClient.fetchOhlc(['RELIANCE']);
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('http');
+      expect(result.error.status).toBe(500);
+    });
+
+    test('partial mode returns only subset of symbols', async () => {
+      const partialClient = createOhlcClient({ mode: 'partial' });
+      const result = await partialClient.fetchOhlc(['RELIANCE', 'TCS']);
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(Object.keys(result.quotes).length).toBeLessThanOrEqual(5);
+    });
+
+    test('empty mode returns empty quotes dictionary', async () => {
+      const emptyClient = createOhlcClient({ mode: 'empty' });
+      const result = await emptyClient.fetchOhlc(['RELIANCE']);
+
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(Object.keys(result.quotes).length).toBe(0);
+    });
+
+    test('malformed mode returns parse error', async () => {
+      const malformedClient = createOhlcClient({ mode: 'malformed' });
+      const result = await malformedClient.fetchOhlc(['RELIANCE']);
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe('parse');
+    });
+  });
 });

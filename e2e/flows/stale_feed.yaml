@@ -1,0 +1,14 @@
+appId: host.exp.exponent
+---
+# Stale Feed Persona Flow: Observes paused state banner and attempts trading while paused
+- launchApp
+- tapOn:
+    id: "dev.header.button"
+- tapOn: "Force Disconnect Feed"
+- tapOn: "Done"
+- assertVisible:
+    id: "banner.paused"
+- tapOn:
+    id: "portfolio.row.RELIANCE"
+- assertVisible:
+    id: "banner.paused"

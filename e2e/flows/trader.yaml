@@ -1,0 +1,26 @@
+appId: host.exp.exponent
+---
+# Active Trader Persona Flow: Sorts, filters by TCS, sells shares, manages watchlist
+- launchApp
+- tapOn:
+    id: "portfolio.sort.value"
+- tapOn:
+    id: "portfolio.search"
+- inputText: "TCS"
+- tapOn:
+    id: "portfolio.row.TCS"
+- tapOn:
+    id: "detail.sell"
+- inputText: "1"
+- tapOn:
+    id: "order.confirm"
+- tapOn:
+    id: "detail.back"
+- tapOn: "Watchlist"
+- tapOn:
+    id: "watchlist.add"
+- inputText: "ADANIENT"
+- tapOn:
+    id: "watchlist.modal.item.ADANIENT"
+- assertVisible:
+    id: "watchlist.row.ADANIENT"

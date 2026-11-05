@@ -202,4 +202,59 @@ describe('Feed Layer: Functional createSimulatedFeed & SimulatedFeed wrapper', (
     unsub();
     feed.disconnect();
   });
+
+  describe('Deterministic Simulator via QA_SEED / seed option', () => {
+    test('two feed instances with the same seed generate an identical sequence of ticks', () => {
+      const feed1 = createSimulatedFeed(initialQuotes, { seed: 42, tickRateHz: 20 });
+      const feed2 = createSimulatedFeed(initialQuotes, { seed: 42, tickRateHz: 20 });
+
+      const ticks1: Tick[] = [];
+      const ticks2: Tick[] = [];
+
+      feed1.onTick((t) => ticks1.push(t));
+      feed2.onTick((t) => ticks2.push(t));
+
+      feed1.connect();
+      feed2.connect();
+
+      jest.advanceTimersByTime(1000); // 20 ticks
+
+      expect(ticks1.length).toBe(20);
+      expect(ticks2.length).toBe(20);
+      expect(ticks1).toEqual(ticks2);
+
+      feed1.disconnect();
+      feed2.disconnect();
+    });
+
+    test('respects process.env.QA_SEED when options.seed is omitted', () => {
+      const prevEnv = process.env.QA_SEED;
+      process.env.QA_SEED = '999';
+
+      try {
+        const feedA = createSimulatedFeed(initialQuotes, { tickRateHz: 20 });
+        const feedB = createSimulatedFeed(initialQuotes, { tickRateHz: 20 });
+
+        const ticksA: Tick[] = [];
+        const ticksB: Tick[] = [];
+
+        feedA.onTick((t) => ticksA.push(t));
+        feedB.onTick((t) => ticksB.push(t));
+
+        feedA.connect();
+        feedB.connect();
+
+        jest.advanceTimersByTime(500); // 10 ticks
+
+        expect(ticksA.length).toBe(10);
+        expect(ticksB.length).toBe(10);
+        expect(ticksA).toEqual(ticksB);
+
+        feedA.disconnect();
+        feedB.disconnect();
+      } finally {
+        process.env.QA_SEED = prevEnv;
+      }
+    });
+  });
 });

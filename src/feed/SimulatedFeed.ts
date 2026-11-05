@@ -2,11 +2,48 @@ import type { PriceFeed, Tick, TickHandler, FeedStatus, FeedStatusHandler } from
 import type { Quote } from '../domain/types';
 import type { Paise } from '../domain/money';
 
+/**
+ * Fast, deterministic 32-bit PRNG (Mulberry32).
+ */
+export function createMulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    let t = (a += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function parseSeed(val: unknown): number | null {
+  if (typeof val === 'number' && Number.isFinite(val)) {
+    return Math.floor(val);
+  }
+  if (typeof val === 'string' && val.trim().length > 0) {
+    const parsed = Number(val);
+    if (Number.isFinite(parsed)) {
+      return Math.floor(parsed);
+    }
+    let h = 0;
+    for (let i = 0; i < val.length; i++) {
+      h = (Math.imul(31, h) + val.charCodeAt(i)) | 0;
+    }
+    return h;
+  }
+  return null;
+}
+
 export interface SimulatedFeedOptions {
   /**
-   * Seedable or mockable random number generator returning [0, 1). Default: Math.random.
+   * Seedable or mockable random number generator returning [0, 1).
+   * Default: Mulberry32 if seed or QA_SEED is set, else Math.random.
    */
   rng?: () => number;
+
+  /**
+   * Deterministic seed for PRNG. If omitted, falls back to process.env.QA_SEED.
+   */
+  seed?: number | string;
 
   /**
    * Ticks emitted per second across all symbols. Default: 20 Hz (~50 ms interval).
@@ -38,13 +75,16 @@ export interface SimulatedFeedOptions {
  * - Per-symbol sequence tracking (`seq`).
  * - Out-of-order/late ticks (~2%).
  * - Silence window (5 seconds every minute) to test "paused" UI state.
+ * - Deterministic runs via QA_SEED or options.seed.
  * - Zero prototype lookup overhead; immune to `this` binding loss in React Native.
  */
 export function createSimulatedFeed(
   initialQuotes: Record<string, Quote>,
   options: SimulatedFeedOptions = {}
 ): PriceFeed {
-  const rng = options.rng ?? Math.random;
+  const rawSeed = options.seed ?? (typeof process !== 'undefined' ? process.env.QA_SEED : undefined);
+  const parsedSeed = parseSeed(rawSeed);
+  const rng = options.rng ?? (parsedSeed !== null ? createMulberry32(parsedSeed) : Math.random);
   let rateHz = options.tickRateHz ?? 20;
   let tickIntervalMs = Math.max(1, Math.round(1000 / rateHz));
   const silenceIntervalMs = options.silenceIntervalMs ?? 60_000;

@@ -1,0 +1,23 @@
+appId: host.exp.exponent
+---
+# Newbie Persona Flow: Opens app, reads summary, views RELIANCE, buys 10 shares
+- launchApp
+- assertVisible:
+    id: "portfolio.summary.card"
+- assertVisible:
+    id: "portfolio.summary.currentValue"
+- assertVisible:
+    id: "portfolio.row.OLDCO"
+- tapOn:
+    id: "portfolio.row.RELIANCE"
+- assertVisible:
+    id: "detail.buy"
+- tapOn:
+    id: "detail.buy"
+- assertVisible:
+    id: "order.qty"
+- inputText: "10"
+- tapOn:
+    id: "order.confirm"
+- assertVisible:
+    id: "detail.position"
