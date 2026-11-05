@@ -1,11 +1,11 @@
-import { priceStore } from '../stores/priceStore';
-import { portfolioStore } from '../stores/portfolioStore';
-import { createSimulatedFeed } from '../feed/SimulatedFeed';
-import { createResilientFeed } from '../feed/resilientFeed';
-import { ohlcClient } from '../api/ohlcClient';
-import { INITIAL_FETCH_SYMBOLS } from '../data/constants';
-import type { PriceFeed } from '../feed/types';
-import type { Quote } from '../domain/types';
+import { priceStore } from './stores/priceStore';
+import { portfolioStore } from './stores/portfolioStore';
+import { createSimulatedFeed } from './feed/SimulatedFeed';
+import { createResilientFeed } from './feed/resilientFeed';
+import { ohlcClient } from './api/ohlcClient';
+import { INITIAL_FETCH_SYMBOLS } from './data/constants';
+import type { PriceFeed } from './feed/types';
+import type { Quote } from './domain/types';
 
 export interface BootstrapResult {
   readonly priceStore: typeof priceStore;
