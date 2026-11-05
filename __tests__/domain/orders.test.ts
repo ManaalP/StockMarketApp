@@ -16,6 +16,37 @@ describe('Domain: Order Validation & Previews (src/domain/orders.ts)', () => {
       expect(res.qty).toBe(10);
     });
 
+    test('validates maximum allowed quantity (1,00,000)', () => {
+      const res = validateOrder('BUY', '100000', 0, 250000, false);
+      expect(res.isValid).toBe(true);
+      expect(res.error).toBeNull();
+      expect(res.qty).toBe(100000);
+    });
+
+    test('rejects quantity exceeding 1,00,000 shares', () => {
+      const res100001 = validateOrder('BUY', '100001', 0, 250000, false);
+      expect(res100001.isValid).toBe(false);
+      expect(res100001.error).toBe('Maximum quantity per order is 1,00,000');
+
+      const res1e15 = validateOrder('BUY', '1000000000000000', 0, 250000, false);
+      expect(res1e15.isValid).toBe(false);
+      expect(res1e15.error).toBe('Maximum quantity per order is 1,00,000');
+
+      const resUnsafe = validateOrder('BUY', '9007199254740993', 0, 250000, false);
+      expect(resUnsafe.isValid).toBe(false);
+      expect(resUnsafe.error).toBe('Maximum quantity per order is 1,00,000');
+    });
+
+    test('rejects leading zeros and whitespace-only inputs', () => {
+      const res007 = validateOrder('BUY', '007', 0, 250000, false);
+      expect(res007.isValid).toBe(false);
+      expect(res007.error).toBe('Enter a whole number above 0');
+
+      const resSpaces = validateOrder('BUY', '   ', 0, 250000, false);
+      expect(resSpaces.isValid).toBe(false);
+      expect(resSpaces.error).toBe('Enter a whole number above 0');
+    });
+
     test('rejects orders when market is closed', () => {
       const res = validateOrder('BUY', '10', 0, 250000, false, false);
       expect(res.isValid).toBe(false);

@@ -3,6 +3,9 @@ import { formatINR } from './format';
 import type { Holding, Order } from './types';
 import { applyOrder } from './calcs';
 
+export const MAX_ORDER_QUANTITY = 100_000;
+export const MAX_SAFE_VALUE_PAISE = Number.MAX_SAFE_INTEGER;
+
 export interface OrderValidationResult {
   readonly isValid: boolean;
   readonly error: string | null;
@@ -13,7 +16,9 @@ export interface OrderValidationResult {
  * Pure function to validate order input parameters before order placement.
  *
  * Rules:
- * - Must be an integer > 0. Error: "Enter a whole number above 0".
+ * - Must be an integer > 0 with no leading zeros or non-numeric characters. Error: "Enter a whole number above 0".
+ * - Must not exceed MAX_ORDER_QUANTITY (1,00,000). Error: "Maximum quantity per order is 1,00,000".
+ * - Must be a safe integer and (qty * ltp) must stay <= Number.MAX_SAFE_INTEGER.
  * - If SELL:
  *   - heldQty <= 0: "You do not hold shares of this stock. You cannot sell."
  *   - qty > heldQty: "You hold {heldQty} shares. You can't sell {qty}."
@@ -37,9 +42,10 @@ export function validateOrder(
   }
 
   const trimmed = qtyStr.trim();
-  const isPositiveInteger = /^[1-9]\d*$/.test(trimmed);
+  // Strictly positive integer with no leading zeroes (e.g. "007" rejected)
+  const isStrictPositiveInteger = /^[1-9]\d*$/.test(trimmed);
 
-  if (!isPositiveInteger) {
+  if (!isStrictPositiveInteger) {
     return {
       isValid: false,
       error: 'Enter a whole number above 0',
@@ -47,7 +53,16 @@ export function validateOrder(
     };
   }
 
-  const qty = parseInt(trimmed, 10);
+  const parsedNumber = Number(trimmed);
+  if (!Number.isSafeInteger(parsedNumber) || parsedNumber > MAX_ORDER_QUANTITY) {
+    return {
+      isValid: false,
+      error: 'Maximum quantity per order is 1,00,000',
+      qty: 0,
+    };
+  }
+
+  const qty = parsedNumber;
 
   if (ltp === null) {
     return {
@@ -61,6 +76,16 @@ export function validateOrder(
     return {
       isValid: false,
       error: 'Prices are paused. Orders cannot be placed.',
+      qty,
+    };
+  }
+
+  // Check order value does not exceed safe integer range
+  const orderValue = qty * ltp;
+  if (!Number.isSafeInteger(orderValue) || orderValue > MAX_SAFE_VALUE_PAISE) {
+    return {
+      isValid: false,
+      error: 'Order value exceeds maximum allowed transaction limit',
       qty,
     };
   }

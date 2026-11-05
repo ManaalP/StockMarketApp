@@ -355,6 +355,47 @@ describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
           fillPaise: 100,
         })
       ).toThrow(OrderValidationError);
+
+      expect(() =>
+        applyOrder(initialHoldings, {
+          side: 'BUY',
+          symbol: 'INFY',
+          qty: 100001,
+          fillPaise: 100,
+        })
+      ).toThrow('Maximum quantity per order is 1,00,000');
+
+      expect(() =>
+        applyOrder(initialHoldings, {
+          side: 'BUY',
+          symbol: 'INFY',
+          qty: 1e15,
+          fillPaise: 100,
+        })
+      ).toThrow('Maximum quantity per order is 1,00,000');
+
+      expect(() =>
+        applyOrder(initialHoldings, {
+          side: 'BUY',
+          symbol: 'INFY',
+          qty: Number.MAX_SAFE_INTEGER + 1,
+          fillPaise: 100,
+        })
+      ).toThrow('Order quantity must be a positive whole number');
+    });
+
+    it('successfully applies a BUY at the maximum 1,00,000 on an existing holding with safe arithmetic', () => {
+      const result = applyOrder(initialHoldings, {
+        side: 'BUY',
+        symbol: 'RELIANCE',
+        qty: 100000,
+        fillPaise: 250000,
+      });
+
+      const updated = result.find((h) => h.symbol === 'RELIANCE');
+      expect(updated).toBeDefined();
+      expect(updated?.qty).toBe(100010);
+      expect(Number.isSafeInteger(updated!.qty * updated!.avgPaise)).toBe(true);
     });
   });
 

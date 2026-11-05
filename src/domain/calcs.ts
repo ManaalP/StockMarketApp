@@ -8,6 +8,7 @@ import {
 } from './types';
 import { mulQty, safePercent, type Paise } from './money';
 import { COMPANY_NAMES } from '../data/constants';
+import { MAX_ORDER_QUANTITY, MAX_SAFE_VALUE_PAISE } from './orders';
 
 /**
  * Typed domain error for invalid order requests.
@@ -131,11 +132,26 @@ export function summarize(rows: RowMetrics[]): PortfolioSummary {
  *   - BUY: New average price = round((oldQty * oldAvg + qty * fill) / newQty) in paise.
  *   - SELL: Leaves average price unchanged.
  *   - SELL ALL: Completely removes the holding.
- *   - Validation: Throws OrderValidationError if qty <= 0, fractional, or sell > held.
+ *   - Validation: Throws OrderValidationError if qty <= 0, fractional, exceeds MAX_ORDER_QUANTITY,
+ *     or exceeds Number.MAX_SAFE_INTEGER in value arithmetic.
  */
 export function applyOrder(holdings: Holding[], order: Order): Holding[] {
-  if (typeof order.qty !== 'number' || order.qty <= 0 || !Number.isInteger(order.qty)) {
+  if (
+    typeof order.qty !== 'number' ||
+    order.qty <= 0 ||
+    !Number.isInteger(order.qty) ||
+    !Number.isSafeInteger(order.qty)
+  ) {
     throw new OrderValidationError('Order quantity must be a positive whole number');
+  }
+
+  if (order.qty > MAX_ORDER_QUANTITY) {
+    throw new OrderValidationError('Maximum quantity per order is 1,00,000');
+  }
+
+  const orderValue = order.qty * order.fillPaise;
+  if (!Number.isSafeInteger(orderValue) || orderValue > MAX_SAFE_VALUE_PAISE) {
+    throw new OrderValidationError('Order value exceeds maximum safe arithmetic limit');
   }
 
   const existingIndex = holdings.findIndex((h) => h.symbol === order.symbol);
@@ -147,8 +163,21 @@ export function applyOrder(holdings: Holding[], order: Order): Holding[] {
     }
 
     const newQty = existing.qty + order.qty;
-    const totalCost = existing.qty * existing.avgPaise + order.qty * order.fillPaise;
-    const newAvg = Math.round(totalCost / newQty);
+    if (!Number.isSafeInteger(newQty)) {
+      throw new OrderValidationError('Holding quantity exceeds maximum safe arithmetic limit');
+    }
+
+    const existingCost = existing.qty * existing.avgPaise;
+    if (!Number.isSafeInteger(existingCost)) {
+      throw new OrderValidationError('Holding value exceeds maximum safe arithmetic limit');
+    }
+
+    const totalCost = existingCost + orderValue;
+    if (!Number.isSafeInteger(totalCost)) {
+      throw new OrderValidationError('Total holding investment exceeds maximum safe arithmetic limit');
+    }
+
+    const newAvg = Math.round(totalCost / newQty) as Paise;
 
     const updated = [...holdings];
     updated[existingIndex] = {

@@ -733,6 +733,19 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Strictly conforms to feed contract specifications. If a store mistakenly accepted a late tick, prices would visibly regress to the stale quote, proving the validity of sequence checks.
 
+---
+
+### ADR 047: Order Quantity Bounds & Integer Arithmetic Safety
+- **Context**:
+  - Unbounded inputs like `1e20` or `1e15` were accepted by `validateOrder` or `applyOrder`, risking floating-point precision loss beyond `Number.MAX_SAFE_INTEGER` (`9,007,199,254,740,991`).
+- **Decision**:
+  - Cap order quantity at 1,00,000 shares (`MAX_ORDER_QUANTITY = 100_000`) in `validateOrder` and `applyOrder`.
+  - Reject non-safe integers, inputs with leading zeros (`"007"`), and whitespace.
+  - Assert that order value (`qty * fillPaise`) and resulting holding cost (`newQty * newAvg`) strictly stay `<= Number.MAX_SAFE_INTEGER`.
+- **Rationale**:
+  - Eliminates potential IEEE-754 precision loss during monetary arithmetic while enforcing standard retail trading bounds.
+
+
 
 
 
