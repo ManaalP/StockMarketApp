@@ -179,3 +179,76 @@ export function applyOrder(holdings: Holding[], order: Order): Holding[] {
   };
   return updated;
 }
+
+export type SortField = 'name' | 'value' | 'pnl';
+export type SortDirection = 'asc' | 'desc';
+
+export interface SortFilterOptions {
+  readonly searchQuery?: string;
+  readonly sortBy?: SortField;
+  readonly direction?: SortDirection;
+}
+
+/**
+ * Pure function to filter and sort holdings, returning an array of symbol strings.
+ *
+ * Rules:
+ *   - Search query: case-insensitive substring match on symbol name.
+ *   - Sort by 'name': alphabetical order.
+ *   - Sort by 'value': current total holding value (qty * ltp). Unpriced holdings placed last in descending order.
+ *   - Sort by 'pnl': total rupee P&L. Unpriced holdings placed last in descending order.
+ */
+export function getSortedHoldingSymbols(
+  holdings: readonly Holding[],
+  quotes: Record<string, (Quote & { seq?: number }) | null | undefined>,
+  options: SortFilterOptions = {}
+): string[] {
+  const searchQuery = options.searchQuery?.trim().toUpperCase();
+  const sortBy = options.sortBy ?? 'name';
+  const direction = options.direction ?? 'asc';
+
+  let filtered = holdings;
+  if (searchQuery && searchQuery.length > 0) {
+    filtered = holdings.filter((h) => h.symbol.toUpperCase().includes(searchQuery));
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'name') {
+      const comp = a.symbol.localeCompare(b.symbol);
+      return direction === 'asc' ? comp : -comp;
+    }
+
+    const quoteA = quotes[a.symbol];
+    const quoteB = quotes[b.symbol];
+
+    if (sortBy === 'value') {
+      const ltpA = quoteA?.ltp ?? null;
+      const ltpB = quoteB?.ltp ?? null;
+
+      // Handle unpriced rows: unpriced rows are placed last in descending order
+      if (ltpA === null && ltpB === null) return 0;
+      if (ltpA === null) return direction === 'asc' ? -1 : 1;
+      if (ltpB === null) return direction === 'asc' ? 1 : -1;
+
+      const valA = a.qty * ltpA;
+      const valB = b.qty * ltpB;
+      const diff = valA - valB;
+      return direction === 'asc' ? diff : -diff;
+    }
+
+    // sortBy === 'pnl'
+    const ltpA = quoteA?.ltp ?? null;
+    const ltpB = quoteB?.ltp ?? null;
+
+    if (ltpA === null && ltpB === null) return 0;
+    if (ltpA === null) return direction === 'asc' ? -1 : 1;
+    if (ltpB === null) return direction === 'asc' ? 1 : -1;
+
+    const pnlA = a.qty * ltpA - a.qty * a.avgPaise;
+    const pnlB = b.qty * ltpB - b.qty * b.avgPaise;
+    const diff = pnlA - pnlB;
+    return direction === 'asc' ? diff : -diff;
+  });
+
+  return sorted.map((h) => h.symbol);
+}
