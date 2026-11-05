@@ -59,6 +59,8 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
   const [direction, setDirection] = useState<SortDirection>('asc');
   const [refreshing, setRefreshing] = useState(false);
   const [sortTick, setSortTick] = useState(0);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const flatListRef = React.useRef<FlatList<string>>(null);
 
   // Slow interval (2s) for Value and P&L sorts so rows do not jump on every 20 Hz tick
   useEffect(() => {
@@ -341,12 +343,19 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
 
       {/* High-performance virtualized list */}
       <FlatList
+        testID="portfolio.list"
+        ref={flatListRef}
         data={orderedSymbols}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         getItemLayout={getItemLayout}
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={ListEmpty}
+        onScroll={(e) => {
+          const y = e.nativeEvent.contentOffset.y;
+          setShowBackToTop(y > 240);
+        }}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -360,6 +369,19 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
         maxToRenderPerBatch={25}
         windowSize={7}
       />
+
+      {/* Floating Back to Top Button */}
+      {showBackToTop ? (
+        <Pressable
+          testID="portfolio.backToTop"
+          accessibilityRole="button"
+          accessibilityLabel="Back to top"
+          onPress={() => flatListRef.current?.scrollToOffset({ offset: 0, animated: true })}
+          style={[styles.backToTopBtn, { backgroundColor: tokens.primary }]}
+        >
+          <Text style={styles.backToTopText}>↑</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -467,5 +489,27 @@ const styles = StyleSheet.create({
   },
   emptyView: {
     marginTop: 40,
+  },
+  backToTopBtn: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 5,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    zIndex: 99,
+  },
+  backToTopText: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '700',
+    lineHeight: 24,
   },
 });

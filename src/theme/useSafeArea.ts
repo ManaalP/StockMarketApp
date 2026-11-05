@@ -42,10 +42,9 @@ export function computeSafeAreaMetrics(
   // On Android devices with physical or software buttons, provide breathing room
   const bottomPadding = Math.max(insets.bottom, platformOS === 'android' ? 8 : 4);
 
-  // Standard tab bar base height (56px) + bottom inset
-  // When system buttons exist (e.g. 24-48px on Android, 34px on iOS), tab bar expands upward
-  const tabHeight = 56 + (hasBottomButtons ? insets.bottom : 8);
-  const tabPaddingBottom = hasBottomButtons ? insets.bottom + 2 : 8;
+  // Elevated tab bar base height + bottom inset with comfortable clearance
+  const tabHeight = 60 + (hasBottomButtons ? insets.bottom : 8);
+  const tabPaddingBottom = hasBottomButtons ? insets.bottom + 6 : 12;
 
   return {
     insets,

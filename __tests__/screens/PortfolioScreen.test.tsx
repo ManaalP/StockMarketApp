@@ -118,6 +118,46 @@ describe('PortfolioScreen', () => {
     texts = getAllText(renderer.root).join(' ');
     expect(texts).toContain('RELIANCE');
     expect(texts).toContain('TCS');
+
+    // Filter by registered company name (e.g., 'Consultancy' for TCS)
+    act(() => {
+      searchInput.props.onChangeText('Consultancy');
+    });
+
+    texts = getAllText(renderer.root).join(' ');
+    expect(texts).toContain('TCS');
+    expect(texts).not.toContain('RELIANCE');
+  });
+
+  test('displays back to top button when scrolled and scrolls up when tapped', () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <ThemeProvider initialMode="light">
+          <PortfolioScreen />
+        </ThemeProvider>
+      );
+    });
+
+    const flatList = renderer.root.findByProps({ testID: 'portfolio.list' });
+    expect(renderer.root.findAllByProps({ testID: 'portfolio.backToTop' })).toHaveLength(0);
+
+    // Scroll down past 240px threshold
+    act(() => {
+      flatList.props.onScroll({
+        nativeEvent: {
+          contentOffset: { y: 350 },
+        },
+      });
+    });
+
+    const backToTopBtn = renderer.root.findByProps({ testID: 'portfolio.backToTop' });
+    expect(backToTopBtn).toBeDefined();
+
+    act(() => {
+      backToTopBtn.props.onPress();
+    });
   });
 
   test('toggles sort field and direction on sort button press', () => {

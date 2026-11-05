@@ -100,12 +100,77 @@ describe('OrderSheet component', () => {
       confirmBtn.props.onPress();
     });
 
-    expect(executeSpy).toHaveBeenCalledWith({
-      symbol: 'RELIANCE',
-      side: 'BUY',
-      qty: 10,
-      fillPaise: 260000,
+    expect(executeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        symbol: 'RELIANCE',
+        side: 'BUY',
+        qty: 10,
+        fillPaise: 260000,
+        type: 'MARKET',
+      })
+    );
+
+    // Displays success confirmation screen
+    expect(renderer.root.findByProps({ testID: 'order.sheet.screen.success' })).toBeDefined();
+
+    executeSpy.mockRestore();
+  });
+
+  test('places SELL limit order with target price and displays in-progress confirmation', () => {
+    const executeSpy = jest.spyOn(portfolioStore, 'executeOrder');
+    const onClose = jest.fn();
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <ThemeProvider initialMode="light">
+          <OrderSheet visible symbol="RELIANCE" initialSide="SELL" onClose={onClose} />
+        </ThemeProvider>
+      );
     });
+
+    // Switch to Target Price (Limit) order
+    const limitTab = renderer.root.findByProps({ testID: 'order.sheet.mode.limit' });
+    act(() => {
+      limitTab.props.onPress();
+    });
+
+    // Enter target price higher than current LTP
+    const targetPriceInput = renderer.root.findByProps({ testID: 'order.sheet.targetPrice.input' });
+    act(() => {
+      targetPriceInput.props.onChangeText('2700');
+    });
+
+    const qtyInput = renderer.root.findByProps({ testID: 'order.sheet.qty.input' });
+    act(() => {
+      qtyInput.props.onChangeText('5');
+    });
+
+    const confirmBtn = renderer.root.findByProps({ testID: 'order.sheet.confirm.button' });
+    act(() => {
+      confirmBtn.props.onPress();
+    });
+
+    expect(executeSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        symbol: 'RELIANCE',
+        side: 'SELL',
+        qty: 5,
+        type: 'LIMIT',
+        targetPaise: 270000,
+        status: 'PENDING',
+      })
+    );
+
+    // Displays in-progress confirmation screen
+    expect(renderer.root.findByProps({ testID: 'order.sheet.screen.progress' })).toBeDefined();
+
+    // Dismissing via Done button calls onClose
+    const doneBtn = renderer.root.findByProps({ testID: 'order.sheet.done' });
+    act(() => {
+      doneBtn.props.onPress();
+    });
+    expect(onClose).toHaveBeenCalled();
 
     executeSpy.mockRestore();
   });

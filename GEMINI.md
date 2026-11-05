@@ -29,6 +29,7 @@ detail, and a Buy/Sell sheet. Orders are local only.
 - Feed ticks are partial updates `{ symbol, seq, ltp?, high?, low?, volume? }`. Ignore a tick whose
   `seq <= lastSeq[symbol]`.
 - Do not add features beyond the spec until the core is done.
+- If manual changes are made by the user, update the test cases to match the manual changes rather than reverting the user's changes.
 
 ## Data contract
 The exact API request/response, the 25 symbols, the starting holdings CSV (21 holdings, OLDCO unpriced),

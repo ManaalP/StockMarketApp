@@ -22,14 +22,23 @@ export interface Holding {
   avgPaise: Paise;
 }
 
+export type OrderType = 'MARKET' | 'LIMIT';
+export type OrderStatus = 'EXECUTED' | 'PENDING' | 'CANCELLED';
+
 /**
  * Order payload for local order execution.
  */
 export interface Order {
-  side: 'BUY' | 'SELL';
-  symbol: string;
-  qty: number;
-  fillPaise: Paise;
+  readonly id?: string;
+  readonly side: 'BUY' | 'SELL';
+  readonly symbol: string;
+  readonly qty: number;
+  readonly fillPaise: Paise;
+  readonly targetPaise?: Paise;
+  readonly type?: OrderType;
+  readonly status?: OrderStatus;
+  readonly createdAt?: number;
+  readonly executedAt?: number;
 }
 
 /**

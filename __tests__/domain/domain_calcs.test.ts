@@ -373,9 +373,11 @@ describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
       OLDCO: { ltp: null, open: 0, high: 0, low: 0, prevClose: 0, volume: 0, seq: 0 },
     };
 
-    it('filters symbols by case-insensitive substring', () => {
+    it('filters symbols and company names by case-insensitive substring', () => {
       expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: 'rel' })).toEqual(['RELIANCE']);
-      expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: 'co' })).toEqual(['OLDCO']);
+      expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: 'old' })).toEqual(['OLDCO']);
+      expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: 'consultancy' })).toEqual(['TCS']);
+      expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: 'co' })).toEqual(['OLDCO', 'TCS']);
       expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: 'tc' })).toEqual(['TCS']);
       expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: '   ' })).toEqual([
         'INFY',

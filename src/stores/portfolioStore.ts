@@ -2,6 +2,7 @@ import { useSyncExternalStore, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Holding, Order } from '../domain/types';
 import { applyOrder } from '../domain/calcs';
+import { checkOrderTrigger, executePendingOrder } from '../domain/orders';
 import { parseHoldingsCsv } from '../data/holdingsParser';
 import { STARTING_HOLDINGS_CSV } from '../data/rawHoldings';
 import { INITIAL_FETCH_SYMBOLS } from '../data/constants';
@@ -46,6 +47,7 @@ export interface PortfolioStore {
   subscribeStatus(callback: () => void): () => void;
   subscribeHydration(callback: () => void): () => void;
   executeOrder(order: Order): Promise<void>;
+  evaluatePendingOrders(customQuotes?: Record<string, { ltp: number | null } | null | undefined>): Promise<number>;
   hydrate(): Promise<void>;
   resetPortfolio(): Promise<void>;
   bootstrap(): Promise<void>;
@@ -196,10 +198,16 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
           }));
           orders = Array.isArray(parsed.orders)
             ? parsed.orders.map((o: Record<string, unknown>) => ({
+                id: o.id ? String(o.id) : undefined,
                 side: o.side === 'SELL' ? 'SELL' : 'BUY',
                 symbol: String(o.symbol),
                 qty: Number(o.qty),
                 fillPaise: Number(o.fillPaise),
+                targetPaise: typeof o.targetPaise === 'number' ? o.targetPaise : undefined,
+                type: o.type === 'LIMIT' ? 'LIMIT' : 'MARKET',
+                status: o.status === 'PENDING' ? 'PENDING' : 'EXECUTED',
+                createdAt: typeof o.createdAt === 'number' ? o.createdAt : Date.now(),
+                executedAt: typeof o.executedAt === 'number' ? o.executedAt : undefined,
               }))
             : [];
         } else {
@@ -234,15 +242,67 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
   };
 
   const executeOrder = async (order: Order): Promise<void> => {
-    holdings = applyOrder(holdings, order);
-    orders = [order, ...orders];
-    notifyHoldings();
-    void orderStore.recordOrder(order);
+    const isPending = order.status === 'PENDING';
+    const normalizedOrder: Order = {
+      ...order,
+      id: order.id ?? `ord-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      createdAt: order.createdAt ?? Date.now(),
+      status: order.status ?? 'EXECUTED',
+      type: order.type ?? 'MARKET',
+    };
+
+    if (!isPending) {
+      holdings = applyOrder(holdings, normalizedOrder);
+      notifyHoldings();
+    }
+
+    orders = [normalizedOrder, ...orders];
+    void orderStore.recordOrder(normalizedOrder);
     await enqueuePersist({
       version: 1,
       holdings,
       orders,
     });
+  };
+
+  const evaluatePendingOrders = async (
+    customQuotes?: Record<string, { ltp: number | null } | null | undefined>
+  ): Promise<number> => {
+    const quotes = customQuotes ?? priceStore.getQuotes();
+    let executedCount = 0;
+    let nextHoldings = [...holdings];
+    const nextOrders = [...orders];
+    let hasChanges = false;
+
+    for (let i = 0; i < nextOrders.length; i++) {
+      const ord = nextOrders[i];
+      if (!ord || ord.status !== 'PENDING') continue;
+
+      const q = quotes[ord.symbol];
+      const currentLtp = q?.ltp ?? null;
+      if (checkOrderTrigger(ord, currentLtp)) {
+        const fillPaise = currentLtp!;
+        const result = executePendingOrder(nextHoldings, ord, fillPaise);
+        nextHoldings = result.holdings;
+        nextOrders[i] = result.order;
+        void orderStore.recordOrder(result.order);
+        hasChanges = true;
+        executedCount++;
+      }
+    }
+
+    if (hasChanges) {
+      holdings = nextHoldings;
+      orders = nextOrders;
+      notifyHoldings();
+      await enqueuePersist({
+        version: 1,
+        holdings,
+        orders,
+      });
+    }
+
+    return executedCount;
   };
 
   const resetPortfolio = async (): Promise<void> => {
@@ -294,8 +354,14 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
     if (result.ok) {
       // Re-seeding priceStore retains existing per-symbol seq numbers so ticks remain monotonic
       priceStore.seed(result.quotes);
+      await evaluatePendingOrders();
     }
   };
+
+  // Evaluate pending limit orders whenever price ticks arrive
+  priceStore.subscribeAll(() => {
+    void evaluatePendingOrders();
+  });
 
   const retry = async (): Promise<void> => {
     await bootstrap();
@@ -316,6 +382,7 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
     subscribeStatus,
     subscribeHydration,
     executeOrder,
+    evaluatePendingOrders,
     hydrate,
     resetPortfolio,
     bootstrap,

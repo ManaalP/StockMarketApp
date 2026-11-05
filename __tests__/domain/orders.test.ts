@@ -1,4 +1,11 @@
-import { validateOrder, computeOrderPreview } from '../../src/domain/orders';
+import {
+  validateOrder,
+  computeOrderPreview,
+  validateTargetPrice,
+  checkOrderTrigger,
+  executePendingOrder,
+} from '../../src/domain/orders';
+import type { Holding, Order } from '../../src/domain/types';
 
 describe('Domain: Order Validation & Previews (src/domain/orders.ts)', () => {
   describe('validateOrder', () => {
@@ -107,6 +114,105 @@ describe('Domain: Order Validation & Previews (src/domain/orders.ts)', () => {
       const preview = computeOrderPreview('SELL', 25, 25, 240000, 260000);
       expect(preview.estimatedTotalPaise).toBe(6500000);
       expect(preview.previewText).toBe('Position will be closed');
+    });
+  });
+
+  describe('validateTargetPrice', () => {
+    test('validates valid price in rupees and converts to whole paise', () => {
+      const res = validateTargetPrice('2500.50');
+      expect(res.isValid).toBe(true);
+      expect(res.error).toBeNull();
+      expect(res.targetPaise).toBe(250050);
+    });
+
+    test('rejects negative, 0, or invalid number strings', () => {
+      expect(validateTargetPrice('0').isValid).toBe(false);
+      expect(validateTargetPrice('-150').isValid).toBe(false);
+      expect(validateTargetPrice('abc').isValid).toBe(false);
+    });
+  });
+
+  describe('checkOrderTrigger', () => {
+    test('triggers SELL LIMIT when live LTP meets or exceeds target price', () => {
+      const order: Order = {
+        id: 'ord-1',
+        symbol: 'RELIANCE',
+        side: 'SELL',
+        type: 'LIMIT',
+        qty: 5,
+        fillPaise: 260000,
+        targetPaise: 260000,
+        status: 'PENDING',
+        createdAt: 1000,
+      };
+
+      // Below target: does not trigger
+      expect(checkOrderTrigger(order, 259000)).toBe(false);
+      // Equal to target: triggers
+      expect(checkOrderTrigger(order, 260000)).toBe(true);
+      // Higher than target: triggers
+      expect(checkOrderTrigger(order, 261000)).toBe(true);
+    });
+
+    test('triggers BUY LIMIT when live LTP meets or drops below target price', () => {
+      const order: Order = {
+        id: 'ord-2',
+        symbol: 'TCS',
+        side: 'BUY',
+        type: 'LIMIT',
+        qty: 10,
+        fillPaise: 300000,
+        targetPaise: 300000,
+        status: 'PENDING',
+        createdAt: 1000,
+      };
+
+      // Above target: does not trigger
+      expect(checkOrderTrigger(order, 301000)).toBe(false);
+      // Equal to target: triggers
+      expect(checkOrderTrigger(order, 300000)).toBe(true);
+      // Below target: triggers
+      expect(checkOrderTrigger(order, 299000)).toBe(true);
+    });
+
+    test('returns false if order status is not PENDING or LTP is null', () => {
+      const executedOrder: Order = {
+        id: 'ord-3',
+        symbol: 'INFY',
+        side: 'SELL',
+        type: 'LIMIT',
+        qty: 5,
+        fillPaise: 150000,
+        targetPaise: 150000,
+        status: 'EXECUTED',
+        createdAt: 1000,
+      };
+      expect(checkOrderTrigger(executedOrder, 155000)).toBe(false);
+      expect(checkOrderTrigger({ ...executedOrder, status: 'PENDING' }, null)).toBe(false);
+    });
+  });
+
+  describe('executePendingOrder', () => {
+    test('updates holdings and marks order EXECUTED with fill price and timestamp', () => {
+      const holdings: Holding[] = [{ symbol: 'RELIANCE', qty: 15, avgPaise: 240000 }];
+      const pendingOrder: Order = {
+        id: 'ord-10',
+        symbol: 'RELIANCE',
+        side: 'SELL',
+        type: 'LIMIT',
+        qty: 5,
+        fillPaise: 260000,
+        targetPaise: 260000,
+        status: 'PENDING',
+        createdAt: 1000,
+      };
+
+      const result = executePendingOrder(holdings, pendingOrder, 261500, 2000);
+      expect(result.holdings).toHaveLength(1);
+      expect(result.holdings[0]?.qty).toBe(10);
+      expect(result.order.status).toBe('EXECUTED');
+      expect(result.order.fillPaise).toBe(261500);
+      expect(result.order.executedAt).toBe(2000);
     });
   });
 });

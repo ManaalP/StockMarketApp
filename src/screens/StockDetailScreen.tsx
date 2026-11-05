@@ -207,7 +207,7 @@ export const StockDetailScreen = memo(function StockDetailScreen({
           {
             backgroundColor: tokens.surface,
             borderTopColor: tokens.border,
-            paddingBottom: Math.max(20, bottomPadding + 12),
+            paddingBottom: Math.max(12, bottomPadding),
           },
         ]}
       >

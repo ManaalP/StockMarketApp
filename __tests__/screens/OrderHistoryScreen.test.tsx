@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 import { OrderHistoryScreen } from '../../src/screens/OrderHistoryScreen';
 import { ThemeProvider } from '../../src/theme/useTheme';
 import { orderStore } from '../../src/stores/orderStore';
+import { portfolioStore } from '../../src/stores/portfolioStore';
 import { toPaise } from '../../src/domain/money';
 
 describe('OrderHistoryScreen', () => {
@@ -117,5 +118,49 @@ describe('OrderHistoryScreen', () => {
     });
 
     expect(tree!.root.findByProps({ testID: 'order.history.empty' })).toBeDefined();
+  });
+
+  it('renders IN PROGRESS badge for pending orders and refreshes pending orders on refresh button press', async () => {
+    const evalSpy = jest.spyOn(portfolioStore, 'evaluatePendingOrders').mockResolvedValue(0);
+
+    await act(async () => {
+      await orderStore.recordOrder(
+        {
+          symbol: 'INFY',
+          side: 'SELL',
+          qty: 15,
+          fillPaise: toPaise(1800),
+          targetPaise: toPaise(1800),
+          type: 'LIMIT',
+          status: 'PENDING',
+        },
+        'ord-test-pending'
+      );
+    });
+
+    let tree: renderer.ReactTestRenderer | undefined;
+    act(() => {
+      tree = renderer.create(
+        <ThemeProvider>
+          <OrderHistoryScreen />
+        </ThemeProvider>
+      );
+    });
+
+    const pendingRow = tree!.root.findByProps({ testID: 'order.row.ord-test-pending' });
+    expect(pendingRow).toBeDefined();
+
+    const texts = pendingRow.findAllByType(Text).map((t) => t.props.children);
+    expect(texts).toContain('IN PROGRESS');
+    expect(texts.some((txt) => typeof txt === 'string' && txt.includes('Target ₹1,800.00'))).toBe(true);
+
+    // Press header refresh button
+    const refreshBtn = tree!.root.findByProps({ testID: 'order.history.refresh' });
+    await act(async () => {
+      refreshBtn.props.onPress();
+    });
+
+    expect(evalSpy).toHaveBeenCalled();
+    evalSpy.mockRestore();
   });
 });
