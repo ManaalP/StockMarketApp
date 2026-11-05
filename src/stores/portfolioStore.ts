@@ -7,6 +7,7 @@ import { INITIAL_FETCH_SYMBOLS } from '../data/constants';
 import { priceStore as defaultPriceStore, type PriceStore } from './priceStore';
 import { ohlcClient as defaultOhlcClient, type OhlcClient, type OhlcError } from '../api/ohlcClient';
 import type { PriceFeed } from '../feed/types';
+import { orderStore as defaultOrderStore, type OrderStore } from './orderStore';
 
 export type AppStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -15,6 +16,7 @@ export interface PortfolioStoreOptions {
   readonly priceStore?: PriceStore;
   readonly apiClient?: OhlcClient;
   readonly feed?: PriceFeed;
+  readonly orderStore?: OrderStore;
 }
 
 export interface PortfolioStore {
@@ -44,6 +46,7 @@ export interface PortfolioStore {
 export function createPortfolioStore(options: PortfolioStoreOptions = {}): PortfolioStore {
   const priceStore = options.priceStore ?? defaultPriceStore;
   const apiClient = options.apiClient ?? defaultOhlcClient;
+  const orderStore = options.orderStore ?? defaultOrderStore;
   const feed = options.feed;
 
   let holdings: Holding[] = options.initialHoldings ?? parseHoldingsCsv(STARTING_HOLDINGS_CSV);
@@ -107,6 +110,7 @@ export function createPortfolioStore(options: PortfolioStoreOptions = {}): Portf
   const executeOrder = (order: Order): void => {
     holdings = applyOrder(holdings, order);
     notifyHoldings();
+    void orderStore.recordOrder(order);
   };
 
   const bootstrap = async (): Promise<void> => {
