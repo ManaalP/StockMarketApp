@@ -10,7 +10,7 @@ A high-performance, real-time stock portfolio tracker built with **React Native 
    - **Zero Floating-Point Money**: Money values are strictly modeled as integer `Paise` in the domain layer. Conversions from API floats occur exactly once at system boundaries via `Math.round(x * 100)`.
    - **Custom Indian Numbering**: Custom `formatINR` formatter supporting Indian grouping (e.g. `₹12,34,567.89`) without relying on Hermes ICU / `Intl.NumberFormat`.
    - **Reconciliation Invariant**: Each holding's current value and P&L is rounded to nearest paise first, then summed to compute portfolio summaries. Displayed portfolio totals match the sum of displayed rows to the exact paise.
-   - **Missing Data Handling**: Unpriced stocks are represented as `null` in domain and rendered strictly as `"--"`. They are excluded from value and P&L totals rather than being coerced to zero.
+   - **Missing Data Handling (Missing-Price Rule)**: Unpriced stocks (such as `OLDCO` or unlisted equities) are represented strictly as `null` in the domain and rendered as `"--"`. They are NEVER coerced to 0 or guessed. Unpriced holdings are omitted from current value, total P&L, today's P&L, and portfolio P&L% calculations. Their presence and invested capital are reported via an informative footnote in the portfolio summary card: `"1 holding has no price and is left out of these totals (₹12,375.00 invested)."`. If all holdings in the portfolio are unpriced, all aggregate metrics render as `"--"`.
 
 2. **Decoupled High-Frequency State**
    - **Per-Symbol Subscriptions**: Built on an external price store outside React, integrated via `useSyncExternalStore`.

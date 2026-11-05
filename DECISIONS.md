@@ -145,6 +145,23 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Guarantees WCAG 2.1 compliance for color-blind users (deuteranopia / protanopia).
   - Maintains rock-solid layout alignment at 60 FPS under continuous market ticking.
 
+---
+
+### ADR 014: Throttled Derived Portfolio Summary and Missing-Price Rule
+- **Context**: Portfolio totals (current value, total invested, total P&L, today's P&L) derive from the aggregation of all holding rows. At ~20 market ticks per second, recalculating totals and re-rendering the summary card on every tick or batch flush causes unnecessary CPU thrash and battery drain. Furthermore, unpriced holdings (such as `OLDCO` or suspended stocks) must never corrupt totals with assumed prices or ₹0 values.
+- **Decision**:
+  - Implement a dedicated external summary store via functional factory `createSummaryStore()` in `src/stores/summaryStore.ts`.
+  - Throttle market price updates to ~4 Hz (250 ms) via a trailing timer. User-initiated portfolio actions (orders, initial load) recompute immediately.
+  - Enforce strict reference stability (`areSummariesEqual`): if incoming ticks do not alter total portfolio figures, the snapshot reference is preserved, allowing `useSyncExternalStore` to bail out of re-rendering.
+  - **Missing-Price Domain Rule**:
+    - Unpriced holdings (`ltp === null`) are strictly excluded from portfolio current value, total P&L, today's P&L, and from the denominator of portfolio P&L percentage.
+    - Unpriced holdings are tracked distinctly (`unpricedCount`, `unpricedInvestedPaise`) and presented in an informative footnote: `"1 holding has no price and is left out of these totals (₹12,375.00 invested)."`
+    - If no holding is priced, all summary totals evaluate to `null`, rendering `"--"` across all financial metrics while displaying `"0 priced"`.
+- **Rationale**:
+  - Caps summary re-renders at ~4 Hz, maintaining a smooth 60 FPS mobile UI while prices tick rapidly.
+  - Guarantees exact arithmetic reconciliation: summary totals match the exact sum of displayed priced rows to the paise.
+  - Adheres to trading standards: never estimates, fakes, or assumes 0 for missing scrip prices.
+
 
 
 

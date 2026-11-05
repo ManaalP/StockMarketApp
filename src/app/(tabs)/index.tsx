@@ -1,10 +1,23 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View, ScrollView } from 'react-native';
+import { useTheme } from '../../theme/useTheme';
+import { SummaryCard } from '../../components/SummaryCard';
+import { PausedBanner } from '../../components/PausedBanner';
+import { portfolioStore } from '../../stores/portfolioStore';
 
 export default function PortfolioScreen() {
+  const { tokens } = useTheme();
+
+  useEffect(() => {
+    void portfolioStore.bootstrap();
+  }, []);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Portfolio Placeholder</Text>
+    <View style={[styles.container, { backgroundColor: tokens.background }]}>
+      <PausedBanner />
+      <ScrollView contentContainerStyle={styles.content}>
+        <SummaryCard />
+      </ScrollView>
     </View>
   );
 }
@@ -12,10 +25,8 @@ export default function PortfolioScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  text: {
-    fontSize: 16,
+  content: {
+    padding: 16,
   },
 });
