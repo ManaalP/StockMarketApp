@@ -174,3 +174,50 @@ export const FilterIcon = memo(function FilterIcon({
     </Svg>
   );
 });
+
+export const MoreVerticalIcon = memo(function MoreVerticalIcon({
+  color = '#64748b',
+  size = 20,
+}: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="5" r="1.75" fill={color} />
+      <Circle cx="12" cy="12" r="1.75" fill={color} />
+      <Circle cx="12" cy="19" r="1.75" fill={color} />
+    </Svg>
+  );
+});
+
+export const ChevronDownIcon = memo(function ChevronDownIcon({
+  color = '#64748b',
+  size = 14,
+}: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M6 9l6 6 6-6"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+});
+
+export const SortAscDescIcon = memo(function SortAscDescIcon({
+  color = '#64748b',
+  size = 16,
+}: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 17h6M4 12h10M4 7h14M18 13v8M18 21l3-3M18 21l-3-3"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+});

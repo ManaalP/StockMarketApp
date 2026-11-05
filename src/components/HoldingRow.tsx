@@ -10,6 +10,7 @@ import {
 import { useTheme } from '../theme/useTheme';
 import { usePrice } from '../stores/priceStore';
 import { useHolding } from '../stores/portfolioStore';
+import { COMPANY_NAMES } from '../data/constants';
 import { rowMetrics } from '../domain/calcs';
 import { formatINR } from '../domain/format';
 import { PriceText } from './PriceText';
@@ -36,6 +37,7 @@ export interface HoldingRowProps {
  * - Fixed height of 72px for O(1) FlatList getItemLayout indexing.
  * - Missing price / unpriced holdings (like OLDCO) cleanly render "--".
  * - Never does floating-point money calculations.
+ * - Minimal, clean financial hierarchy (Groww / Zerodha style).
  */
 export const HoldingRow = memo(function HoldingRow({
   symbol,
@@ -51,6 +53,7 @@ export const HoldingRow = memo(function HoldingRow({
   const showPerf = usePerfOverlay();
 
   const metrics = holding ? rowMetrics(holding, quote) : null;
+  const companyName = COMPANY_NAMES[symbol] ?? symbol;
 
   const handlePress = useCallback(() => {
     onPress?.(symbol);
@@ -61,20 +64,23 @@ export const HoldingRow = memo(function HoldingRow({
       testID={testID ?? `holding.row.${symbol}`}
       onPress={handlePress}
       accessibilityRole="button"
-      accessibilityLabel={`${symbol}, ${holding ? holding.qty : 0} shares`}
+      accessibilityLabel={`${symbol}, ${companyName}, ${holding ? holding.qty : 0} shares`}
       style={({ pressed }) => [
         styles.row,
         {
-          backgroundColor: pressed ? tokens.surfaceContainer : tokens.surface,
+          backgroundColor: pressed ? tokens.surfaceAlt : tokens.surface,
           borderBottomColor: tokens.border,
         },
         style,
       ]}
     >
-      {/* Left Column: Symbol Name, EQ Badge, Quantity and Average Price */}
+      {/* Left Column: Stock Symbol, Badge, Company Name, Quantity, Avg, LTP */}
       <View style={styles.leftCol}>
         <View style={styles.symbolRow}>
-          <Text style={[styles.symbolText, { color: tokens.textPrimary }]}>
+          <Text
+            style={[styles.symbolText, { color: tokens.textPrimary }]}
+            numberOfLines={1}
+          >
             {symbol}
           </Text>
           <View style={[styles.badge, { backgroundColor: tokens.surfaceContainer }]}>
@@ -90,7 +96,19 @@ export const HoldingRow = memo(function HoldingRow({
             </View>
           ) : null}
         </View>
-        <Text style={[styles.sharesText, { color: tokens.textMuted }]}>
+
+        <Text
+          style={[styles.companyText, { color: tokens.textMuted }]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {companyName}
+        </Text>
+
+        <Text
+          style={[styles.sharesText, { color: tokens.textMuted }]}
+          numberOfLines={1}
+        >
           {holding
             ? `${holding.qty} shares • Avg ${formatINR(holding.avgPaise)} • LTP ${formatINR(quote?.ltp ?? null)}`
             : '--'}
@@ -103,7 +121,7 @@ export const HoldingRow = memo(function HoldingRow({
           <PriceText
             paise={metrics?.valuePaise ?? null}
             testID={`holding.value.${symbol}`}
-            style={styles.ltpText}
+            style={[styles.holdingValueText, { color: tokens.textPrimary }]}
           />
         </PriceFlash>
         <PnLText
@@ -134,6 +152,7 @@ const styles = StyleSheet.create({
   leftCol: {
     flex: 1,
     justifyContent: 'center',
+    paddingRight: 12,
   },
   symbolRow: {
     flexDirection: 'row',
@@ -141,20 +160,20 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   symbolText: {
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: '600',
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '700',
     letterSpacing: -0.2,
   },
   badge: {
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
     paddingVertical: 1,
-    borderRadius: 4,
+    borderRadius: 3,
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   perfBadge: {
     paddingHorizontal: 4,
@@ -162,29 +181,35 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   perfText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
+  companyText: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 1,
+  },
   sharesText: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 2,
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 1,
     fontVariant: ['tabular-nums'],
   },
   rightCol: {
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
-  ltpText: {
+  holdingValueText: {
     fontSize: 15,
     lineHeight: 20,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   pnlText: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
     marginTop: 2,
+    fontWeight: '500',
   },
   hiddenLtp: {
     display: 'none',

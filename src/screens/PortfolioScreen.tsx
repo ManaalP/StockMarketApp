@@ -26,11 +26,18 @@ import { SummaryCard } from '../components/SummaryCard';
 import { PausedBanner } from '../components/PausedBanner';
 import { StateView } from '../components/StateView';
 import { usePerfOverlay, togglePerfOverlay } from '../utils/perfOverlay';
+import { SearchIcon, FilterIcon } from '../components/icons';
 
 export interface PortfolioScreenProps {
   readonly onSelectStock?: (symbol: string) => void;
   readonly testID?: string;
 }
+
+const PRIMARY_SORT_OPTIONS: readonly { key: SortField; label: string }[] = [
+  { key: 'name', label: 'Name' },
+  { key: 'value', label: 'Value' },
+  { key: 'pnl', label: 'P&L' },
+];
 
 /**
  * Functional Live Portfolio Dashboard screen.
@@ -140,57 +147,35 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
     [handleRowPress]
   );
 
-  // Header component with SummaryCard, SearchBar, and Sort Controls
+  // Active filter chip removable handler
+  const handleRemoveCategoryFilter = useCallback(() => {
+    filterStore.setCategoryFilter('all');
+  }, []);
+
+  // Header component with SummaryCard, SearchBar, and Compact Sort & Filter Controls
   const ListHeader = useMemo(() => {
-    const renderSortButton = (field: SortField, label: string) => {
-      const isActive = sortBy === field;
-      const arrow = isActive ? (direction === 'asc' ? ' ↑' : ' ↓') : '';
-      return (
-        <Pressable
-          testID={`sort.btn.${field}`}
-          onPress={() => handleSortPress(field)}
-          style={[
-            styles.sortPill,
-            {
-              backgroundColor: isActive
-                ? tokens.primary
-                : tokens.surfaceContainer,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              styles.sortPillText,
-              { color: isActive ? tokens.surface : tokens.textSecondary },
-            ]}
-          >
-            {label}
-            {arrow}
-          </Text>
-        </Pressable>
-      );
-    };
+    const isCustomFilterActive = filter !== 'all';
 
     return (
       <View style={styles.headerContainer}>
-        {/* Real-time Portfolio Summary */}
+        {/* Real-time Portfolio Summary Card */}
         <SummaryCard />
 
-        {/* Controls: Filter & Sort */}
+        {/* Controls: Search, Sort Selector & Filter */}
         <View style={styles.controlsSection}>
-          {/* Search Input */}
+          {/* Minimal Search Input */}
           <View
             style={[
               styles.searchBar,
               {
-                backgroundColor: tokens.surfaceAlt,
+                backgroundColor: tokens.surface,
                 borderColor: tokens.border,
               },
             ]}
           >
-            <Text style={[styles.searchIcon, { color: tokens.textMuted }]}>
-              🔍
-            </Text>
+            <View style={styles.searchIconWrap}>
+              <SearchIcon color={tokens.textMuted} size={16} />
+            </View>
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -206,6 +191,7 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
                 onPress={() => setSearchQuery('')}
                 hitSlop={8}
                 style={styles.clearBtn}
+                accessibilityLabel="Clear search input"
               >
                 <Text style={[styles.clearText, { color: tokens.textMuted }]}>
                   ✕
@@ -214,79 +200,123 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
             ) : null}
           </View>
 
-          {/* Sort Buttons Bar */}
-          <View style={styles.sortBar}>
-            <Text style={[styles.sortLabel, { color: tokens.textMuted }]}>
-              Sort:
-            </Text>
-            <View style={styles.sortButtonsRow}>
-              {renderSortButton('name', 'Name')}
-              {renderSortButton('value', 'Value')}
-              {renderSortButton('pnl', 'P&L')}
-              <Pressable
-                testID="portfolio.filter.open"
-                accessibilityRole="button"
-                accessibilityLabel="Open filter and sort menu"
-                onPress={filterStore.openModal}
-                style={[
-                  styles.sortPill,
-                  {
-                    backgroundColor: filter !== 'all' ? tokens.primary : tokens.surfaceContainer,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.sortPillText,
-                    { color: filter !== 'all' ? '#FFFFFF' : tokens.textSecondary },
-                  ]}
-                >
-                  {filter !== 'all' ? `Filter: ${filter}` : 'Filter'}
-                </Text>
-              </Pressable>
-              {__DEV__ ? (
-                <Pressable
-                  testID="perf.toggle.btn"
-                  onPress={togglePerfOverlay}
-                  style={[
-                    styles.perfTogglePill,
-                    {
-                      backgroundColor: showPerf
-                        ? tokens.warningBg
-                        : tokens.surfaceContainer,
-                    },
-                  ]}
-                >
-                  <Text
+          {/* Compact Sort Segmented Selector + Filter Button */}
+          <View style={styles.filterSortRow}>
+            {/* Sort Segment Container */}
+            <View
+              style={[
+                styles.sortSegmentContainer,
+                { backgroundColor: tokens.surfaceAlt, borderColor: tokens.border },
+              ]}
+            >
+              {PRIMARY_SORT_OPTIONS.map((opt) => {
+                const isActive = sortBy === opt.key;
+                const arrow = isActive ? (direction === 'asc' ? ' ↑' : ' ↓') : '';
+                return (
+                  <Pressable
+                    key={opt.key}
+                    testID={`sort.btn.${opt.key}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Sort by ${opt.label} ${isActive ? (direction === 'asc' ? 'ascending' : 'descending') : ''}`}
+                    onPress={() => handleSortPress(opt.key)}
                     style={[
-                      styles.perfTogglePillText,
-                      { color: showPerf ? tokens.warning : tokens.textMuted },
+                      styles.sortSegmentButton,
+                      isActive && [
+                        styles.sortSegmentActive,
+                        {
+                          backgroundColor: tokens.surface,
+                          shadowColor: '#000000',
+                          borderColor: tokens.border,
+                        },
+                      ],
                     ]}
                   >
-                    {showPerf ? '⚡ ON' : '⚡ Perf'}
+                    <Text
+                      style={[
+                        styles.sortSegmentText,
+                        {
+                          color: isActive ? tokens.primary : tokens.textSecondary,
+                          fontWeight: isActive ? '700' : '500',
+                        },
+                      ]}
+                    >
+                      {opt.label}
+                      {arrow}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Filter Bottom Sheet / Modal Trigger Button */}
+            <Pressable
+              testID="portfolio.filter.open"
+              accessibilityRole="button"
+              accessibilityLabel="Open filter and sort menu"
+              onPress={filterStore.openModal}
+              style={[
+                styles.filterButton,
+                {
+                  backgroundColor: isCustomFilterActive ? tokens.surfaceContainer : tokens.surface,
+                  borderColor: isCustomFilterActive ? tokens.primary : tokens.border,
+                },
+              ]}
+            >
+              <FilterIcon
+                color={isCustomFilterActive ? tokens.primary : tokens.textSecondary}
+                size={14}
+              />
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  { color: isCustomFilterActive ? tokens.primary : tokens.textSecondary },
+                ]}
+              >
+                {isCustomFilterActive ? `Filter: ${filter}` : 'Filter'}
+              </Text>
+            </Pressable>
+
+    
+          </View>
+
+          {/* Active Filter Chips (removable) */}
+          {isCustomFilterActive ? (
+            <View style={styles.activeChipsRow}>
+              <View
+                style={[
+                  styles.chip,
+                  { backgroundColor: tokens.surfaceContainer, borderColor: tokens.border },
+                ]}
+              >
+                <Text style={[styles.chipText, { color: tokens.textPrimary }]}>
+                  {`Filter: ${filter.toUpperCase()}`}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove filter"
+                  onPress={handleRemoveCategoryFilter}
+                  hitSlop={6}
+                  style={styles.chipCloseBtn}
+                >
+                  <Text style={[styles.chipCloseText, { color: tokens.textMuted }]}>
+                    ✕
                   </Text>
                 </Pressable>
-              ) : null}
+              </View>
             </View>
-          </View>
+          ) : null}
         </View>
 
-        {/* Section Header: Holdings Count */}
+        {/* Section Header: Clean Holdings Count and Total Records */}
         <View style={[styles.sectionHeader, { borderBottomColor: tokens.border }]}>
           <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
             Holdings
           </Text>
-          <Text
-            style={[
-              styles.sectionBadge,
-              {
-                backgroundColor: tokens.surfaceContainer,
-                color: tokens.textSecondary,
-              },
-            ]}
-          >
-            {orderedSymbols.length}
-          </Text>
+          <View style={styles.sectionRightInfo}>
+            <Text style={[styles.sectionCountText, { color: tokens.textMuted }]}>
+              {`${orderedSymbols.length} ${orderedSymbols.length === 1 ? 'stock' : 'stocks'}`}
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -298,6 +328,7 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
     searchQuery,
     orderedSymbols.length,
     handleSortPress,
+    handleRemoveCategoryFilter,
     showPerf,
   ]);
 
@@ -411,7 +442,7 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 12,
   },
   controlsSection: {
     marginTop: 14,
@@ -420,61 +451,80 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 44,
+    paddingHorizontal: 10,
+    height: 40,
     borderRadius: 8,
     borderWidth: 1,
   },
-  searchIcon: {
-    fontSize: 14,
-    marginRight: 8,
+  searchIconWrap: {
+    marginRight: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     paddingVertical: 0,
     height: '100%',
   },
   clearBtn: {
-    padding: 8,
-    minHeight: 44,
-    minWidth: 44,
+    padding: 6,
+    minHeight: 36,
+    minWidth: 36,
     justifyContent: 'center',
     alignItems: 'center',
   },
   clearText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
-  sortBar: {
+  filterSortRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sortLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  sortButtonsRow: {
-    flexDirection: 'row',
     gap: 8,
-    alignItems: 'center',
   },
-  sortPill: {
-    paddingHorizontal: 12,
-    height: 38,
-    borderRadius: 6,
+  sortSegmentContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    borderRadius: 8,
+    padding: 2,
+    borderWidth: 1,
+    height: 36,
+  },
+  sortSegmentButton: {
+    flex: 1,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 6,
   },
-  sortPillText: {
+  sortSegmentActive: {
+    borderWidth: StyleSheet.hairlineWidth,
+    elevation: 1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+  },
+  sortSegmentText: {
+    fontSize: 12,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 36,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  filterButtonText: {
     fontSize: 12,
     fontWeight: '600',
   },
   perfTogglePill: {
-    paddingHorizontal: 10,
-    height: 38,
-    borderRadius: 6,
+    height: 36,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -482,8 +532,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  activeChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 10,
+    paddingRight: 6,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+  },
+  chipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  chipCloseBtn: {
+    padding: 2,
+  },
+  chipCloseText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   sectionHeader: {
-    marginTop: 14,
+    marginTop: 16,
     paddingBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
@@ -491,17 +568,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   sectionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     letterSpacing: -0.2,
   },
-  sectionBadge: {
+  sectionRightInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionCountText: {
     fontSize: 12,
-    fontWeight: '600',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    overflow: 'hidden',
+    fontWeight: '500',
   },
   emptyView: {
     marginTop: 40,
@@ -518,7 +595,7 @@ const styles = StyleSheet.create({
     elevation: 5,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     zIndex: 99,
   },

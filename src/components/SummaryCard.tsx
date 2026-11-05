@@ -46,98 +46,101 @@ export const SummaryCard = memo(function SummaryCard({
       style={[
         styles.card,
         {
-          backgroundColor: tokens.surfaceAlt,
+          backgroundColor: tokens.surface,
           borderColor: tokens.border,
         },
         style,
       ]}
     >
-      {/* Current Portfolio Value */}
-      <View style={styles.header}>
-        <View style={styles.headerTitleRow}>
-          <Text style={[styles.label, { color: tokens.textMuted }]}>
-            Current value
+      {/* Top Section: Primary Metric (Current value + Total return pill) */}
+      <View style={styles.primaryRow}>
+        <View style={styles.primaryLeft}>
+          <View style={styles.labelRow}>
+            <Text style={[styles.primaryLabel, { color: tokens.textMuted }]}>
+              Current value
+            </Text>
+            {showPerf ? (
+              <View style={[styles.perfBadge, { backgroundColor: tokens.warningBg }]}>
+                <Text testID="perf.badge.summary" style={[styles.perfBadgeText, { color: tokens.warning }]}>
+                  {`R: ${renderCount}`}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          <PriceText
+            paise={totals?.currentValuePaise ?? null}
+            testID="summary.currentValue"
+            style={[styles.currentValueText, { color: tokens.textPrimary }]}
+          />
+        </View>
+
+        <View style={styles.primaryRight}>
+          <Text style={[styles.secondaryLabelRight, { color: tokens.textMuted }]}>
+            Total P&L
           </Text>
-          {showPerf ? (
-            <View style={[styles.perfBadge, { backgroundColor: tokens.warningBg }]}>
-              <Text testID="perf.badge.summary" style={[styles.perfBadgeText, { color: tokens.warning }]}>
-                {`R: ${renderCount}`}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-        <PriceText
-          paise={totals?.currentValuePaise ?? null}
-          testID="summary.currentValue"
-          style={[styles.currentValueText, { color: tokens.textPrimary }]}
-        />
-      </View>
-
-      {/* 2x2 Details Grid */}
-      <View style={[styles.grid, { borderTopColor: tokens.border }]}>
-        <View style={styles.gridRow}>
-          {/* Total Invested */}
-          <View style={styles.gridCol}>
-            <Text style={[styles.label, { color: tokens.textMuted }]}>
-              Total invested
-            </Text>
-            <PriceText
-              paise={totals?.totalInvestedPaise ?? null}
-              testID="summary.totalInvested"
-              style={[styles.metricValue, { color: tokens.textSecondary }]}
-            />
-          </View>
-
-          {/* Total P&L */}
-          <View style={styles.gridCol}>
-            <Text style={[styles.label, { color: tokens.textMuted }]}>
-              Total P&L
-            </Text>
-            <PnLText
-              pnlPaise={totals?.totalPnlPaise ?? null}
-              pnlPct={totals?.totalPnlPct ?? null}
-              testID="summary.totalPnl"
-              style={styles.metricValue}
-            />
-          </View>
-        </View>
-
-        <View style={[styles.gridRow, { marginTop: 12 }]}>
-          {/* Today's P&L */}
-          <View style={styles.gridCol}>
-            <Text style={[styles.label, { color: tokens.textMuted }]}>
-              Today's P&L
-            </Text>
-            <PnLText
-              pnlPaise={totals?.todayPnlPaise ?? null}
-              pnlPct={totals?.todayPnlPct ?? null}
-              testID="summary.todayPnl"
-              style={styles.metricValue}
-            />
-          </View>
-
-          {/* Holdings Count */}
-          <View style={styles.gridCol}>
-            <Text style={[styles.label, { color: tokens.textMuted }]}>
-              Holdings
-            </Text>
-            <Text
-              testID="summary.holdingsCount"
-              style={[
-                styles.metricValue,
-                { color: tokens.textSecondary, fontVariant: ['tabular-nums'] },
-              ]}
-            >
-              {`${summary.pricedCount} priced`}
-            </Text>
-          </View>
+          <PnLText
+            pnlPaise={totals?.totalPnlPaise ?? null}
+            pnlPct={totals?.totalPnlPct ?? null}
+            testID="summary.totalPnl"
+            style={styles.totalPnlText}
+          />
         </View>
       </View>
 
-      {/* Unpriced Notice (e.g. OLDCO) */}
+      {/* Secondary Metrics: Space-efficient 3-column / 2-column strip */}
+      <View style={[styles.metricsStrip, { borderTopColor: tokens.border }]}>
+        {/* Total Invested */}
+        <View style={styles.metricItem}>
+          <Text style={[styles.subLabel, { color: tokens.textMuted }]}>
+            Total invested
+          </Text>
+          <PriceText
+            paise={totals?.totalInvestedPaise ?? null}
+            testID="summary.totalInvested"
+            style={[styles.metricValue, { color: tokens.textSecondary }]}
+          />
+        </View>
+
+        {/* Divider */}
+        <View style={[styles.verticalDivider, { backgroundColor: tokens.border }]} />
+
+        {/* 1D Today's P&L */}
+        <View style={styles.metricItem}>
+          <Text style={[styles.subLabel, { color: tokens.textMuted }]}>
+            Today's P&L
+          </Text>
+          <PnLText
+            pnlPaise={totals?.todayPnlPaise ?? null}
+            pnlPct={totals?.todayPnlPct ?? null}
+            testID="summary.todayPnl"
+            style={styles.metricValue}
+          />
+        </View>
+
+        {/* Divider */}
+        <View style={[styles.verticalDivider, { backgroundColor: tokens.border }]} />
+
+        {/* Holdings count */}
+        <View style={styles.metricItemRight}>
+          <Text style={[styles.subLabel, { color: tokens.textMuted }]}>
+            Holdings
+          </Text>
+          <Text
+            testID="summary.holdingsCount"
+            style={[
+              styles.metricValue,
+              { color: tokens.textSecondary, fontVariant: ['tabular-nums'] },
+            ]}
+          >
+            {`${summary.pricedCount} priced`}
+          </Text>
+        </View>
+      </View>
+
+      {/* Subtle unpriced holdings informational note */}
       {unpricedCount > 0 ? (
-        <View style={[styles.unpricedNotice, { borderTopColor: tokens.border }]}>
-          <Text style={[styles.infoIcon, { color: tokens.textMuted }]}>ⓘ</Text>
+        <View style={[styles.unpricedNotice, { backgroundColor: tokens.surfaceAlt }]}>
+          <Text style={[styles.infoIcon, { color: tokens.textMuted }]}>ℹ</Text>
           <Text
             testID="summary.unpricedNote"
             style={[styles.unpricedText, { color: tokens.textMuted }]}
@@ -158,17 +161,57 @@ export const SummaryCard = memo(function SummaryCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
+    elevation: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
   },
-  header: {
-    flexDirection: 'column',
+  primaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  headerTitleRow: {
+  primaryLeft: {
+    flex: 1,
+  },
+  primaryRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingTop: 2,
+  },
+  labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 8,
+  },
+  primaryLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  secondaryLabelRight: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 4,
+  },
+  currentValueText: {
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
+    marginTop: 4,
+    letterSpacing: -0.5,
+  },
+  totalPnlText: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '600',
   },
   perfBadge: {
     paddingHorizontal: 6,
@@ -180,49 +223,53 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
-  label: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  currentValueText: {
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  grid: {
+  metricsStrip: {
     marginTop: 14,
     paddingTop: 12,
-    borderTopWidth: 1,
-  },
-  gridRow: {
+    borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  gridCol: {
+  metricItem: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  metricItemRight: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingLeft: 4,
+  },
+  verticalDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 24,
+    marginHorizontal: 8,
+  },
+  subLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginBottom: 2,
   },
   metricValue: {
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: '500',
-    marginTop: 2,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
   },
   unpricedNotice: {
     marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    gap: 6,
   },
   infoIcon: {
     fontSize: 12,
-    lineHeight: 16,
-    marginRight: 6,
-    marginTop: 1,
   },
   unpricedText: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 15,
     flex: 1,
   },
 });

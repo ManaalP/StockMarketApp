@@ -93,11 +93,13 @@ export function createSimulatedFeed(
 
   // Closure-encapsulated quotes: strictly private and inaccessible outside
   const quotes: Record<string, Quote> = {};
+  const anchorLtp: Record<string, Paise> = {};
   const pricedSymbols: string[] = [];
   for (const [sym, quote] of Object.entries(initialQuotes)) {
     quotes[sym] = { ...quote };
     if (quote.ltp !== null) {
       pricedSymbols.push(sym);
+      anchorLtp[sym] = quote.ltp;
     }
   }
 
@@ -152,8 +154,11 @@ export function createSimulatedFeed(
       tickSeq = currentSeq + 1;
       seqMap.set(symbol, tickSeq);
 
-      // Random price walk within ±0.2%
-      const deltaPct = rng() * 0.004 - 0.002;
+      // Symmetric random price walk within ±0.2% per tick with subtle mean reversion toward anchor
+      const anchor = anchorLtp[symbol] ?? current.ltp;
+      const drift = anchor > 0 ? -0.05 * ((current.ltp - anchor) / anchor) : 0;
+      const rawDeltaPct = (rng() * 0.004 - 0.002) + drift * 0.001;
+      const deltaPct = Math.max(-0.002, Math.min(0.002, rawDeltaPct));
       let deltaPaise = Math.round(current.ltp * deltaPct);
       if (deltaPaise === 0) {
         deltaPaise = rng() >= 0.5 ? 1 : -1;
