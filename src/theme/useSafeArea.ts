@@ -1,8 +1,16 @@
 import { useSafeAreaInsets, type EdgeInsets } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 
 export interface SafeAreaMetrics {
   readonly insets: EdgeInsets;
+  /**
+   * Top safe-area inset taking into account camera punch hole, notch, and Android status bar.
+   */
+  readonly topPadding: number;
+  /**
+   * Dedicated top padding for floating toasts, guaranteeing clearance from notification bar and dynamic islands.
+   */
+  readonly toastTopPadding: number;
   /**
    * True if device has a top notch, punch-hole camera, or dynamic island.
    */
@@ -36,6 +44,15 @@ export function computeSafeAreaMetrics(
   // On iOS, notch typically has top > 20. On Android, punch-hole/notch has top > 28.
   const hasNotch = insets.top > (platformOS === 'android' ? 28 : 20);
 
+  const statusBarHeight = platformOS === 'android' ? (StatusBar.currentHeight ?? 24) : 0;
+  const topPadding = Math.max(insets.top, statusBarHeight);
+
+  // Clearance for floating toasts: ensures they never touch status/notification bar
+  const toastTopPadding = Math.max(
+    topPadding + (platformOS === 'android' ? 36 : 16),
+    platformOS === 'android' ? 84 : 56
+  );
+
   // Soft system navigation bar (Android 3-button or gesture bar) or iOS Home Indicator
   const hasBottomButtons = insets.bottom > 0;
 
@@ -43,11 +60,19 @@ export function computeSafeAreaMetrics(
   const bottomPadding = Math.max(insets.bottom, platformOS === 'android' ? 8 : 4);
 
   // Elevated tab bar base height + bottom inset with comfortable clearance
-  const tabHeight = 60 + (hasBottomButtons ? insets.bottom : 8);
-  const tabPaddingBottom = hasBottomButtons ? insets.bottom + 6 : 12;
+  const tabPaddingBottom = Math.max(
+    hasBottomButtons ? insets.bottom + 6 : 12,
+    platformOS === 'android' ? 14 : 10
+  );
+  const tabHeight = Math.max(
+    60 + (hasBottomButtons ? insets.bottom : 8),
+    platformOS === 'android' ? 66 : 58
+  );
 
   return {
     insets,
+    topPadding,
+    toastTopPadding,
     hasNotch,
     hasBottomButtons,
     bottomPadding,

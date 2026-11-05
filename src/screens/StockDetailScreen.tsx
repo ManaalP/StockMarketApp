@@ -94,6 +94,7 @@ export const StockDetailScreen = memo(function StockDetailScreen({
   return (
     <SafeAreaView
       testID={testID ?? `stock.detail.${symbol}`}
+      edges={['top']}
       style={[styles.safeArea, { backgroundColor: tokens.background }]}
     >
       <PausedBanner />
