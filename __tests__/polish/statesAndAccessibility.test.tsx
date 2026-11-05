@@ -9,6 +9,7 @@ import { lightTokens, darkTokens } from '../../src/theme/tokens';
 import { formatINR, formatSigned, formatPercent, formatVolume } from '../../src/domain/format';
 import { Stack } from 'expo-router';
 import RootLayout, { RootNavigation } from '../../src/app/_layout';
+import { StockDetailScreen } from '../../src/screens/StockDetailScreen';
 
 describe('States, Accessibility and Theme Polish', () => {
   describe('Accessibility & Non-color-only cues', () => {
@@ -156,6 +157,24 @@ describe('States, Accessibility and Theme Polish', () => {
       const detailScreen = screens.find((s) => s.props.name === 'stock/[symbol]');
       expect(detailScreen?.props.options.headerShown).toBe(false);
       expect(detailScreen?.props.options.title).toBe('Stock Detail');
+    });
+
+    test('verifies 360px viewport responsiveness and accessibility properties on stock action buttons', () => {
+      let renderer!: ReactTestRenderer.ReactTestRenderer;
+      act(() => {
+        renderer = ReactTestRenderer.create(
+          <ThemeProvider initialMode="light">
+            <StockDetailScreen symbol="RELIANCE" />
+          </ThemeProvider>
+        );
+      });
+
+      const buyBtn = renderer.root.findByProps({ testID: 'stock.detail.buy.button' });
+      const sellBtn = renderer.root.findByProps({ testID: 'stock.detail.sell.button' });
+      expect(buyBtn.props.accessibilityRole).toBe('button');
+      expect(buyBtn.props.accessibilityLabel).toBe('Buy stock');
+      expect(sellBtn.props.accessibilityRole).toBe('button');
+      expect(sellBtn.props.accessibilityLabel).toBe('Sell stock');
     });
   });
 });
