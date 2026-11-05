@@ -72,10 +72,8 @@ export const OrderSheet = memo(function OrderSheet({
   const isPaused = usePaused();
 
   const isSimulatedClosed = marketStore.isSimulatedClosed();
-  const marketHours = marketStore.getMarketStatus();
   const isMarketOpen =
-    isMarketOpenOverride ??
-    (isSimulatedClosed ? false : process.env.NODE_ENV === 'test' ? true : marketHours.isOpen);
+    isMarketOpenOverride ?? !isSimulatedClosed;
 
   const [side, setSide] = useState<'BUY' | 'SELL'>(initialSide);
   const [orderType, setOrderType] = useState<OrderType>('MARKET');
