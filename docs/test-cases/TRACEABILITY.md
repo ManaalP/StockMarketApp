@@ -33,6 +33,8 @@ This matrix maps every core and stretch specification requirement to its test ca
 | **Light & Dark mode semantic theme toggle** | `THEME` | `THEME-001` .. `THEME-003` | Unit + Component | `__tests__/theme/theme.test.ts`, `__tests__/polish/statesAndAccessibility.test.tsx` |
 | **Accessibility (WCAG 2.1 AA cues & labels)** | `A11Y` | `A11Y-001` .. `A11Y-004` | Component | `__tests__/polish/statesAndAccessibility.test.tsx` |
 | **Safe area context & root SafeAreaProvider** | `LIFE` | `LIFE-001` | Integration | `__tests__/polish/statesAndAccessibility.test.tsx` |
+| **Android button compensation & notch detection** | `LIFE`, `THEME` | `LIFE-002`, `THEME-004` | Unit + Integration | `__tests__/theme/safeAreaAndSwipe.test.tsx` |
+| **Swipe motion between Portfolio and Watchlist** | `PORT`, `WL` | `PORT-005`, `WL-005` | Component + Gesture | `__tests__/theme/safeAreaAndSwipe.test.tsx` |
 | **Stretch: UI-thread price flash animation** | `PERF` | `PERF-004` | Component | `__tests__/components/PriceFlash.test.tsx` |
 | **Stretch: Resilient reconnect & backoff** | `FEED` | `FEED-007`, `FEED-008` | Unit + Integration | `__tests__/domain/backoff.test.ts`, `__tests__/feed/resilientFeed.test.ts` |
 | **Stretch: Persisted order history ledger** | `ORD`, `PERS` | `ORD-007`, `PERS-002` | Integration + Component | `__tests__/stores/orderStore.test.ts`, `__tests__/screens/OrderHistoryScreen.test.tsx` |

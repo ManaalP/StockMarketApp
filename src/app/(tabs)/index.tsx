@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { PortfolioScreen } from '../../screens/PortfolioScreen';
+import { SwipeTabWrapper } from '../../components/SwipeTabWrapper';
 
 export default function PortfolioTab() {
   const router = useRouter();
@@ -12,5 +13,13 @@ export default function PortfolioTab() {
     [router]
   );
 
-  return <PortfolioScreen onSelectStock={handleSelectStock} />;
+  const handleSwipeToWatchlist = useCallback(() => {
+    router.replace('/(tabs)/watchlist');
+  }, [router]);
+
+  return (
+    <SwipeTabWrapper onSwipeLeft={handleSwipeToWatchlist} testID="swipe.wrapper.portfolio">
+      <PortfolioScreen onSelectStock={handleSelectStock} />
+    </SwipeTabWrapper>
+  );
 }

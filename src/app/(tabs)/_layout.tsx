@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Tabs, useRouter } from 'expo-router';
 import { useTheme } from '../../theme/useTheme';
+import { useAppSafeArea } from '../../theme/useSafeArea';
 import {
   PortfolioTabIcon,
   WatchlistTabIcon,
@@ -13,6 +14,7 @@ import {
 export default function TabLayout() {
   const router = useRouter();
   const { tokens, toggleTheme, isDark } = useTheme();
+  const { tabHeight, tabPaddingBottom } = useAppSafeArea();
 
   return (
     <Tabs
@@ -62,8 +64,8 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: tokens.surface,
           borderTopColor: tokens.border,
-          height: 60,
-          paddingBottom: 8,
+          height: tabHeight,
+          paddingBottom: tabPaddingBottom,
           paddingTop: 6,
         },
         tabBarActiveTintColor: tokens.primary,
