@@ -552,6 +552,39 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Delivers complete spec compliance, realistic long-term market price behavior, deterministic reset, and 60 FPS scrolling performance.
 
+---
+
+## ADR 038: Premium UI Redesign (Groww / Zerodha inspired minimal portfolio)
+
+- **Context**:
+  - The previous UI suffered from visual clutter: an oversized summary card consuming vertical space, too many competing action icons in the navigation header, six large buttons fighting for attention in sorting/filtering, and heavy box containers with inconsistent background colors.
+  - The objective was to redesign the portfolio experience into a clean, minimal, information-dense, and highly legible financial product inspired by top trading applications (Groww, Zerodha Kite, INDmoney, Apple Stocks).
+- **Decision**:
+  1. **Color System & Modern Tokens (`src/theme/tokens.ts`)**:
+     - Shifted from purple/indigo tinted surfaces to slate neutrals (`#f8fafc` background in light, `#090d12` in dark; `#111720` surfaces).
+     - Reserved high-contrast green (`#16a34a` / `#22c55e`) and red (`#dc2626` / `#ef4444`) exclusively for monetary gains and losses.
+     - Interactive elements use a single crisp primary blue (`#2563eb` / `#3b82f6`).
+  2. **Simplified Navigation Header (`src/app/(tabs)/_layout.tsx`)**:
+     - Reduced visible action icons to the essential primary actions: Filter and Order History.
+     - Grouped secondary actions (Theme toggle, Developer diagnostics) into a sleek overflow menu triggered by a 3-dots icon (`MoreVerticalIcon`).
+  3. **Compact Summary Card (`src/components/SummaryCard.tsx`)**:
+     - Reduced vertical footprint by ~40%.
+     - Established clear hierarchy: Current Portfolio Value (primary 28px bold tabular number) paired directly with Total Return (absolute ₹ + %).
+     - Formatted secondary metrics (Invested, Today's Return, and Priced Holdings) into an elegant 3-column horizontal strip with subtle vertical dividers.
+     - Styled unpriced holding notices (e.g. OLDCO) into a subtle inline informational badge instead of a heavy box.
+  4. **Clean Sort & Filter Controls (`src/screens/PortfolioScreen.tsx`)**:
+     - Replaced the cluttered row of 5-6 bulky buttons with a segmented control for the 3 primary sort criteria (`Name`, `Value`, `P&L`) with directional indicators.
+     - Placed advanced category filtering inside the dedicated filter modal with an active indicator badge.
+     - Rendered active filters as subtle removable chips (`✕`).
+     - Added SVG `SearchIcon` and optimized mobile touch targets (40px/36px).
+  5. **Stock Holding Rows Hierarchy (`src/components/HoldingRow.tsx`)**:
+     - Left column: Bold symbol, subtle EQ badge, registered company name (`COMPANY_NAMES`), and secondary metadata (`shares • Avg • LTP`).
+     - Right column: Position current market value (`qty * ltp`) in primary bold, followed by absolute P&L and percentage in color-coded tabular figures.
+     - Clean subtle dividers between rows, replacing heavy card borders.
+- **Rationale**:
+  - Delivers instantaneous 2-second portfolio comprehension, reduces cognitive load, eliminates horizontal overflow on mobile screens, and preserves 100% of the underlying high-performance, strictly typed integer-paise architecture and test suite.
+
+
 
 
 
