@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
@@ -154,14 +154,14 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     marginRight: 8,
   },
   text: {
     fontSize: 12,
     fontWeight: '600',
-    flex: 1,
+    letterSpacing: 0.1,
   },
 });

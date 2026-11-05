@@ -144,20 +144,35 @@ export const StockDetailScreen = memo(function StockDetailScreen({
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Main Price Block */}
         <View style={styles.priceBlock}>
-          <PriceFlash ltp={metrics.ltp} testID="stock.detail.flash" style={styles.flashCenter}>
-            <PriceText
-              paise={metrics.ltp}
-              testID="stock.detail.ltp"
-              style={styles.priceText}
-            />
-          </PriceFlash>
-          <View style={styles.dayChangeRow}>
-            <PnLText
-              pnlPaise={metrics.dayChangePaise}
-              pnlPct={metrics.dayChangePct}
-              testID="stock.detail.dayChange"
-              style={styles.pnlText}
-            />
+          <View style={styles.priceAndPillRow}>
+            <PriceFlash ltp={metrics.ltp} testID="stock.detail.flash" style={styles.flashCenter}>
+              <PriceText
+                paise={metrics.ltp}
+                testID="stock.detail.ltp"
+                style={styles.priceText}
+              />
+            </PriceFlash>
+
+            <View
+              style={[
+                styles.dayChangePill,
+                {
+                  backgroundColor:
+                    (metrics.dayChangePaise ?? 0) > 0
+                      ? tokens.gainBg
+                      : (metrics.dayChangePaise ?? 0) < 0
+                      ? tokens.lossBg
+                      : tokens.surfaceAlt,
+                },
+              ]}
+            >
+              <PnLText
+                pnlPaise={metrics.dayChangePaise}
+                pnlPct={metrics.dayChangePct}
+                testID="stock.detail.dayChange"
+                style={styles.pnlText}
+              />
+            </View>
           </View>
         </View>
 
@@ -334,22 +349,31 @@ const styles = StyleSheet.create({
   priceBlock: {
     marginVertical: 10,
   },
+  priceAndPillRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
   flashCenter: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
   },
   priceText: {
-    fontSize: 38,
+    fontSize: 36,
     lineHeight: 44,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
-    letterSpacing: -0.8,
+    letterSpacing: -0.6,
   },
-  dayChangeRow: {
-    marginTop: 4,
+  dayChangePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    alignSelf: 'center',
   },
   pnlText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   noticeBanner: {
