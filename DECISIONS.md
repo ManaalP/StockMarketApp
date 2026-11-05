@@ -276,19 +276,20 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 
 ---
 
-### ADR 022: Global Accessibility Standards, SVG Tab Icons, and Theme Polishing
-- **Context**: Institutional financial applications require rigorous accessibility (WCAG 2.1 AA touch targets >= 44x44px, screen-reader cues, color-blind gain/loss cues) and visual polish across both Light and Dark modes without reliance on external font files.
+### ADR 023: UI-Thread Price Flash Animations via Reanimated Shared Values
+- **Context**: In a high-frequency trading application ticking ~20 times/sec, visually signaling price movements (green on upticks, red on downticks) provides critical market cues. However, performing background color transitions via standard React state or JavaScript timers causes layout thrashing, component re-renders, and frame drops on the JS thread.
 - **Decision**:
-  - Create native-vector SVG icons in `src/components/icons/index.tsx` (`PortfolioTabIcon`, `WatchlistTabIcon`, `ThemeToggleIcon`, `SearchIcon`, `BackIcon`), removing third-party icon font overhead.
-  - Integrate interactive theme toggle (☀️/🌙) into the main tab layout header, wired to `useTheme().toggleTheme()` and `useTheme().isDark`.
-  - Enforce touch target accessibility: all interactive touch areas (sort pills, clear buttons, watchlist add/done buttons, star toggle, back button, order chips, confirm button) meet or exceed the 44px minimum touch target standard.
-  - Multi-cue financial indicators: `PnLText` attaches `accessibilityRole="text"` and `accessibilityLabel` with explicit text cues ("Gain: +₹..." vs "Loss: -₹..."), preventing reliance on color alone.
-  - Alert announcements: `PausedBanner` is enhanced with `accessibilityRole="alert"` and `accessibilityLiveRegion="polite"`.
-  - Automated verification test suite in `__tests__/polish/statesAndAccessibility.test.tsx` testing token completeness, touch targets, and Indian formatting.
+  - Implement pure domain direction function `priceFlashDirection(prevLtp, nextLtp)` in `src/domain/calcs.ts`. Initial seed/loads (`prevLtp === null`), unpriced scrips, and identical quotes evaluate to `'none'`.
+  - Create `PriceFlash` in `src/components/PriceFlash.tsx` leveraging `react-native-reanimated` shared values (`useSharedValue(0)`).
+  - On uptick (`direction === 'up'`), set shared value to 1 and decay back to 0 via `withTiming(0, { duration: 600 })` using `interpolateColor` to transparent.
+  - On downtick (`direction === 'down'`), set shared value to -1 and decay back to 0.
+  - Wrap price elements in `HoldingRow`, `WatchRow`, and `StockDetailScreen`.
+  - Provide a zero-dependency, type-safe unit test mock in `jest.setup.ts`.
 - **Rationale**:
-  - Delivers a polished, accessible, institutional-grade experience.
-  - Protects against color-blind misinterpretation of critical financial gains and losses.
-  - Ensures seamless responsiveness across light, dark, and system themes.
+  - Animations run 100% on the UI thread (via Reanimated worklets), keeping the JS thread completely free to ingest the 20 Hz tick feed.
+  - Zero React re-renders are triggered during the 600 ms decay animation.
+  - Pure domain separation ensures tests verify direction rules deterministically without native animation harnesses.
+
 
 
 

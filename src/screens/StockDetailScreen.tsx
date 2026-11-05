@@ -19,6 +19,7 @@ import { StockStatsGrid } from '../components/StockStatsGrid';
 import { LiveLineChart } from '../components/LiveLineChart';
 import { PositionCard } from '../components/PositionCard';
 import { OrderSheet } from '../components/OrderSheet';
+import { PriceFlash } from '../components/PriceFlash';
 
 export interface StockDetailScreenProps {
   readonly symbol: string;
@@ -139,11 +140,13 @@ export const StockDetailScreen = memo(function StockDetailScreen({
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Main Price Block */}
         <View style={styles.priceBlock}>
-          <PriceText
-            paise={metrics.ltp}
-            testID="stock.detail.ltp"
-            style={styles.priceText}
-          />
+          <PriceFlash ltp={metrics.ltp} testID="stock.detail.flash" style={styles.flashCenter}>
+            <PriceText
+              paise={metrics.ltp}
+              testID="stock.detail.ltp"
+              style={styles.priceText}
+            />
+          </PriceFlash>
           <View style={styles.dayChangeRow}>
             <PnLText
               pnlPaise={metrics.dayChangePaise}
@@ -324,6 +327,9 @@ const styles = StyleSheet.create({
   },
   priceBlock: {
     marginVertical: 12,
+  },
+  flashCenter: {
+    alignSelf: 'flex-start',
   },
   priceText: {
     fontSize: 32,
