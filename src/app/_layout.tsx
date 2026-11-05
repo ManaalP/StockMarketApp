@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider, useTheme } from '../theme/useTheme';
+import { ToastContainer } from '../components/ToastContainer';
 import { portfolioStore } from '../stores/portfolioStore';
 import { watchlistStore } from '../stores/watchlistStore';
 
@@ -52,6 +53,7 @@ export function RootNavigation() {
           }}
         />
       </Stack>
+      <ToastContainer />
     </>
   );
 }

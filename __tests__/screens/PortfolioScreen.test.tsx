@@ -5,6 +5,7 @@ import { PortfolioScreen } from '../../src/screens/PortfolioScreen';
 import { ThemeProvider } from '../../src/theme/useTheme';
 import { priceStore } from '../../src/stores/priceStore';
 import { portfolioStore } from '../../src/stores/portfolioStore';
+import { filterStore } from '../../src/stores/filterStore';
 
 describe('PortfolioScreen', () => {
   let bootstrapSpy: jest.SpyInstance;
@@ -74,7 +75,7 @@ describe('PortfolioScreen', () => {
 
     // Search bar present
     const searchInput = renderer.root.findByType(TextInput);
-    expect(searchInput.props.placeholder).toBe('Filter by symbol');
+    expect(searchInput.props.placeholder).toBe('Filter by symbol or company');
 
     // Sort buttons present
     expect(texts).toContain('Name');
@@ -212,5 +213,41 @@ describe('PortfolioScreen', () => {
 
     expect(refreshSpy).toHaveBeenCalled();
     refreshSpy.mockRestore();
+  });
+
+  test('opens filter modal and filters holdings by category', () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <ThemeProvider initialMode="light">
+          <PortfolioScreen />
+        </ThemeProvider>
+      );
+    });
+
+    const filterOpenBtn = renderer.root.findByProps({ testID: 'portfolio.filter.open' });
+    act(() => {
+      filterOpenBtn.props.onPress();
+    });
+
+    expect(filterStore.getState().isModalOpen).toBe(true);
+
+    // Apply Gainers filter
+    act(() => {
+      filterStore.setCategoryFilter('gainers');
+    });
+
+    const texts = getAllText(renderer.root).join(' ');
+    expect(texts).toContain('Filter: gainers');
+    // Gainers like INFY and RELIANCE are shown, losers or unpriced are excluded
+    expect(texts).toContain('INFY');
+    expect(texts).toContain('RELIANCE');
+    expect(texts).not.toContain('OLDCO');
+
+    act(() => {
+      filterStore.reset();
+      renderer.unmount();
+    });
   });
 });

@@ -183,11 +183,13 @@ export function applyOrder(holdings: Holding[], order: Order): Holding[] {
 
 export type SortField = 'name' | 'value' | 'pnl';
 export type SortDirection = 'asc' | 'desc';
+export type HoldingCategoryFilter = 'all' | 'gainers' | 'losers' | 'unpriced';
 
 export interface SortFilterOptions {
   readonly searchQuery?: string;
   readonly sortBy?: SortField;
   readonly direction?: SortDirection;
+  readonly filter?: HoldingCategoryFilter;
 }
 
 /**
@@ -209,6 +211,21 @@ export function getSortedHoldingSymbols(
   const direction = options.direction ?? 'asc';
 
   let filtered = holdings;
+  const categoryFilter = options.filter ?? 'all';
+  if (categoryFilter !== 'all') {
+    filtered = filtered.filter((h) => {
+      const q = quotes[h.symbol];
+      if (categoryFilter === 'unpriced') {
+        return !q || q.ltp === null;
+      }
+      if (!q || q.ltp === null) return false;
+      const pnl = q.ltp - h.avgPaise;
+      if (categoryFilter === 'gainers') return pnl > 0;
+      if (categoryFilter === 'losers') return pnl < 0;
+      return true;
+    });
+  }
+
   if (searchQuery && searchQuery.length > 0) {
     filtered = holdings.filter((h) => {
       const symMatch = h.symbol.toUpperCase().includes(searchQuery);

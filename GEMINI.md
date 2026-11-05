@@ -30,6 +30,8 @@ detail, and a Buy/Sell sheet. Orders are local only.
   `seq <= lastSeq[symbol]`.
 - Do not add features beyond the spec until the core is done.
 - If manual changes are made by the user, update the test cases to match the manual changes rather than reverting the user's changes.
+- Price feed warning: if ticks stall (>2s), indicate paused; when ticks resume/become active, also indicate active/live state.
+- Network simulation: support toggling internet connectivity (online/offline). When offline, pause price ticks, show offline error on refresh, and toast state transitions; when connection is restored, resume ticks and show toast.
 
 ## Data contract
 The exact API request/response, the 25 symbols, the starting holdings CSV (21 holdings, OLDCO unpriced),

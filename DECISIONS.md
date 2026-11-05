@@ -474,6 +474,37 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Delivers a high-performance, responsive trading experience adhering to strict domain purity, integer paise arithmetic, and non-blocking state updates.
 
+## ADR 036: Network Simulation, Toast Overlay, Safe-Area Clearance, Authentic Daily Candlestick, and Header Filter Modal
+
+- **Context**:
+  - User experienced toast messages overlapping the top system notification/status bar.
+  - Multi-timeframe historical candles (1W/1M/1Y) violated the core domain invariant by synthesizing unverified data when only daily exchange OHLC is provided by the API.
+  - App required offline simulation (data/Wi-Fi toggle) with tick pause, refresh error handling, and state transition toasts.
+  - Required clear indication when ticks become active/live, not just when paused.
+  - User requested a dedicated Filter & Sort modal opened via the top header filter icon.
+
+- **Decision**:
+  1. **Strictly Authentic Daily Candlestick (`src/domain/candles.ts`)**:
+     - Removed all synthetic/hallucinated multi-timeframe candles.
+     - Anchored candlestick strictly to authentic exchange OHLC (`open`, `high`, `low`, `ltp`, `prevClose`) and authentic live session tick chunks when ticks accumulate.
+  2. **Safe-Area Top Inset & Toast System (`useSafeArea.ts`, `ToastContainer.tsx`, `toastStore.ts`)**:
+     - Introduced `toastTopPadding` in `computeSafeAreaMetrics`, setting top clearance to `Math.max(topPadding + 32, 84)` on Android (56 on iOS), ensuring toasts never creep upwards into the notification bar, status bar, or camera punch hole.
+     - Added toast deduplication in `toastStore.ts`: duplicate toast messages refresh the active dismiss timer rather than stacking redundant cards.
+     - Removed automatic floating toasts on periodic tick feed pauses/resumes in `priceStore.ts`, keeping toasts reserved for real network events and user actions while `PausedBanner` handles continuous feed state.
+     - Refined tab bar bottom clearance on Android (`tabPaddingBottom: 14`, `tabHeight: 68`) and restricted `StockDetailScreen` `SafeAreaView` to `edges={['top']}` to eliminate double bottom inset and prevent floating action buttons from sitting too high.
+  3. **Network Simulation & Reactive Tick Pausing (`networkStore.ts`, `priceStore.ts`)**:
+     - Added `networkStore` to toggle online/offline simulation with developer controls in `DevMenuScreen`.
+     - Offline state pauses incoming ticks, prevents pulls-to-refresh with an informative error toast, and displays offline banners.
+     - When internet or price feed resumes, displays positive confirmation banner and toast (`Prices live • Feed active`).
+  4. **Header Filter & Sort Modal (`filterStore.ts`, `FilterModal.tsx`)**:
+     - Created `filterStore` managing `filter` (All, Gainers, Losers, Unpriced), `sortBy` (`name`, `value`, `pnl`), and `direction`.
+     - Added `header.filter.button` in tab header with active filter dot indicator.
+     - Pure category filtering implemented in `getSortedHoldingSymbols`.
+
+- **Rationale**:
+  - Eliminates data hallucinations while providing a professional, authentic trading UI with robust network edge case handling and safe-area ergonomics.
+
+
 
 
 

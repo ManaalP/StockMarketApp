@@ -387,6 +387,18 @@ describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
       ]);
     });
 
+    it('filters holdings by category: gainers, losers, unpriced', () => {
+      expect(getSortedHoldingSymbols(holdings, quotes, { filter: 'gainers' })).toEqual(['INFY', 'RELIANCE']);
+      expect(getSortedHoldingSymbols(holdings, quotes, { filter: 'losers' })).toEqual(['TCS']);
+      expect(getSortedHoldingSymbols(holdings, quotes, { filter: 'unpriced' })).toEqual(['OLDCO']);
+      expect(getSortedHoldingSymbols(holdings, quotes, { filter: 'all' })).toEqual([
+        'INFY',
+        'OLDCO',
+        'RELIANCE',
+        'TCS',
+      ]);
+    });
+
     it('sorts by name ascending and descending', () => {
       const asc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'name', direction: 'asc' });
       expect(asc).toEqual(['INFY', 'OLDCO', 'RELIANCE', 'TCS']);
