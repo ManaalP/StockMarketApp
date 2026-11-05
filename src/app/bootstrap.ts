@@ -1,6 +1,9 @@
 import { priceStore } from '../stores/priceStore';
 import { portfolioStore } from '../stores/portfolioStore';
 import { createSimulatedFeed } from '../feed/SimulatedFeed';
+import { createResilientFeed } from '../feed/resilientFeed';
+import { ohlcClient } from '../api/ohlcClient';
+import { INITIAL_FETCH_SYMBOLS } from '../data/constants';
 import type { PriceFeed } from '../feed/types';
 import type { Quote } from '../domain/types';
 
@@ -25,7 +28,20 @@ export function bootstrapApp(
     priceStore.seed(initialQuotes);
   }
 
-  const feed = customFeed ?? createSimulatedFeed(initialQuotes);
+  const rawFeed = customFeed ?? createSimulatedFeed(initialQuotes);
+  // Custom feeds supplied in tests are used directly; simulated feeds are wrapped with resiliency
+  const feed = customFeed
+    ? customFeed
+    : createResilientFeed(rawFeed, {
+        catchUpFetch: async () => {
+          const res = await ohlcClient.fetchOhlc([...INITIAL_FETCH_SYMBOLS]);
+          return res.ok ? res.quotes : {};
+        },
+        onCatchUp: (quotes) => {
+          priceStore.seed(quotes);
+        },
+      });
+
   const disconnect = priceStore.connectFeed(feed);
 
   return {
