@@ -69,10 +69,29 @@ export const SummaryCard = memo(function SummaryCard({
           </View>
         </View>
 
-          <View style={styles.pnlHeaderContainer}>
-            <Text style={[styles.secondaryLabelRight, { color: tokens.textMuted }]}>
-              Total P&L:
-            </Text>
+        <PriceText
+          paise={totals?.currentValuePaise ?? null}
+          testID="summary.currentValue"
+          style={[styles.currentValueText, { color: tokens.textPrimary }]}
+        />
+
+        <View style={styles.pnlSubRow}>
+          <Text style={[styles.pnlSubLabel, { color: tokens.textMuted }]}>
+            Total P&L
+          </Text>
+          <View
+            style={[
+              styles.pnlBadge,
+              {
+                backgroundColor:
+                  (totals?.totalPnlPaise ?? 0) > 0
+                    ? tokens.gainBg
+                    : (totals?.totalPnlPaise ?? 0) < 0
+                    ? tokens.lossBg
+                    : tokens.surfaceAlt,
+              },
+            ]}
+          >
             <PnLText
               pnlPaise={totals?.totalPnlPaise ?? null}
               pnlPct={totals?.totalPnlPct ?? null}
