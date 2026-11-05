@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/useTheme';
+import { useAppSafeArea } from '../theme/useSafeArea';
 import { usePrice, usePaused } from '../stores/priceStore';
 import { useIsInWatchlist, watchlistStore } from '../stores/watchlistStore';
 import { quoteDayMetrics } from '../domain/calcs';
@@ -48,6 +49,7 @@ export const StockDetailScreen = memo(function StockDetailScreen({
   testID,
 }: StockDetailScreenProps) {
   const { tokens } = useTheme();
+  const { bottomPadding } = useAppSafeArea();
   const quote = usePrice(symbol);
   const isPaused = usePaused();
   const inWatchlist = useIsInWatchlist(symbol);
@@ -205,6 +207,7 @@ export const StockDetailScreen = memo(function StockDetailScreen({
           {
             backgroundColor: tokens.surface,
             borderTopColor: tokens.border,
+            paddingBottom: Math.max(20, bottomPadding + 12),
           },
         ]}
       >

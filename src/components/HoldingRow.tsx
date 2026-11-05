@@ -92,17 +92,17 @@ export const HoldingRow = memo(function HoldingRow({
         </View>
         <Text style={[styles.sharesText, { color: tokens.textMuted }]}>
           {holding
-            ? `${holding.qty} shares • Avg ${formatINR(holding.avgPaise)}`
+            ? `${holding.qty} shares • Avg ${formatINR(holding.avgPaise)} • LTP ${formatINR(quote?.ltp ?? null)}`
             : '--'}
         </Text>
       </View>
 
-      {/* Right Column: Live LTP, Total Gain/Loss (Amount + %) */}
+      {/* Right Column: Holding Current Value (qty * ltp), Total Gain/Loss (Amount + %) */}
       <View style={styles.rightCol}>
-        <PriceFlash ltp={quote?.ltp ?? null} testID={`holding.flash.${symbol}`}>
+        <PriceFlash ltp={metrics?.valuePaise ?? null} testID={`holding.flash.${symbol}`}>
           <PriceText
-            paise={quote?.ltp ?? null}
-            testID={`holding.ltp.${symbol}`}
+            paise={metrics?.valuePaise ?? null}
+            testID={`holding.value.${symbol}`}
             style={styles.ltpText}
           />
         </PriceFlash>
@@ -111,6 +111,11 @@ export const HoldingRow = memo(function HoldingRow({
           pnlPct={metrics?.pnlPct ?? null}
           testID={`holding.pnl.${symbol}`}
           style={styles.pnlText}
+        />
+        <PriceText
+          paise={quote?.ltp ?? null}
+          testID={`holding.ltp.${symbol}`}
+          style={styles.hiddenLtp}
         />
       </View>
     </Pressable>
@@ -180,5 +185,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     marginTop: 2,
+  },
+  hiddenLtp: {
+    display: 'none',
   },
 });

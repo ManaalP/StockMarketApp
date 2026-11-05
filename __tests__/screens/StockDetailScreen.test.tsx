@@ -7,6 +7,8 @@ import { priceStore } from '../../src/stores/priceStore';
 import { watchlistStore } from '../../src/stores/watchlistStore';
 
 describe('StockDetailScreen', () => {
+  let renderer: ReactTestRenderer.ReactTestRenderer | null = null;
+
   beforeEach(async () => {
     await act(async () => {
       await watchlistStore.setSymbols(['RELIANCE']);
@@ -23,6 +25,15 @@ describe('StockDetailScreen', () => {
     });
   });
 
+  afterEach(() => {
+    if (renderer) {
+      act(() => {
+        renderer?.unmount();
+      });
+      renderer = null;
+    }
+  });
+
   function getAllText(root: ReactTestRenderer.ReactTestInstance): string[] {
     return root.findAllByType(Text).map((t) => {
       const ch = t.props.children;
@@ -31,8 +42,6 @@ describe('StockDetailScreen', () => {
   }
 
   test('renders stock detail header, live price, and stats', () => {
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
-
     act(() => {
       renderer = ReactTestRenderer.create(
         <ThemeProvider initialMode="light">
@@ -41,18 +50,23 @@ describe('StockDetailScreen', () => {
       );
     });
 
-    const texts = getAllText(renderer.root).join(' ');
+    const texts = getAllText(renderer!.root).join(' ');
     expect(texts).toContain('RELIANCE');
     expect(texts).toContain('₹2,600.00');
     expect(texts).toContain('+₹100.00');
     expect(texts).toContain('Market Statistics');
     expect(texts).toContain('Your Position');
-    expect(renderer.root.findByProps({ testID: 'live.chart.container' })).toBeDefined();
+    expect(renderer!.root.findByProps({ testID: 'live.chart.container' })).toBeDefined();
+
+    // Verify Buy and Sell action buttons are present and interactive
+    const buyBtn = renderer!.root.findByProps({ testID: 'stock.detail.buy.button' });
+    const sellBtn = renderer!.root.findByProps({ testID: 'stock.detail.sell.button' });
+    expect(buyBtn.props.disabled).toBe(false);
+    expect(sellBtn.props.disabled).toBe(false);
   });
 
   test('calls onBack when back button is pressed', () => {
     const onBack = jest.fn();
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
 
     act(() => {
       renderer = ReactTestRenderer.create(
@@ -62,7 +76,7 @@ describe('StockDetailScreen', () => {
       );
     });
 
-    const backBtn = renderer.root.findByProps({ testID: 'stock.detail.back' });
+    const backBtn = renderer!.root.findByProps({ testID: 'stock.detail.back' });
     act(() => {
       backBtn.props.onPress();
     });
@@ -70,8 +84,6 @@ describe('StockDetailScreen', () => {
   });
 
   test('toggles watchlist star status', async () => {
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
-
     act(() => {
       renderer = ReactTestRenderer.create(
         <ThemeProvider initialMode="light">
@@ -80,7 +92,7 @@ describe('StockDetailScreen', () => {
       );
     });
 
-    const starBtn = renderer.root.findByProps({ testID: 'stock.detail.watchlist.star' });
+    const starBtn = renderer!.root.findByProps({ testID: 'stock.detail.watchlist.star' });
     // RELIANCE is currently in watchlist -> '★'
     expect(getAllText(starBtn).join('')).toContain('★');
 
@@ -93,8 +105,6 @@ describe('StockDetailScreen', () => {
   });
 
   test('renders price unavailable state and disables trading when unpriced', () => {
-    let renderer!: ReactTestRenderer.ReactTestRenderer;
-
     act(() => {
       renderer = ReactTestRenderer.create(
         <ThemeProvider initialMode="light">
@@ -103,17 +113,17 @@ describe('StockDetailScreen', () => {
       );
     });
 
-    const texts = getAllText(renderer.root).join(' ');
+    const texts = getAllText(renderer!.root).join(' ');
     expect(texts).toContain('OLDCO');
     expect(texts).toContain('--');
     expect(texts).toContain('Price Unavailable');
 
-    const buyBtn = renderer.root.findByProps({ testID: 'stock.detail.buy.button' });
+    const buyBtn = renderer!.root.findByProps({ testID: 'stock.detail.buy.button' });
     expect(buyBtn.props.disabled).toBe(true);
 
-    const sellBtn = renderer.root.findByProps({ testID: 'stock.detail.sell.button' });
+    const sellBtn = renderer!.root.findByProps({ testID: 'stock.detail.sell.button' });
     expect(sellBtn.props.disabled).toBe(true);
 
-    expect(renderer.root.findByProps({ testID: 'stock.detail.disabled.reason' })).toBeDefined();
+    expect(renderer!.root.findByProps({ testID: 'stock.detail.disabled.reason' })).toBeDefined();
   });
 });
