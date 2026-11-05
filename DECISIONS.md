@@ -847,6 +847,19 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Eliminates test worker hanging warnings, guarantees clean teardown in CI, and establishes automated regression gates for domain and store coverage.
 
+---
+
+### ADR 055: UI Polish, Safe Area Geometry, and Accessibility Audits
+- **Context**:
+  - The app must maintain clear accessibility semantics (`accessibilityRole="button"`, descriptive labels) across small mobile viewports (e.g. 360px width) without overlapping action controls.
+  - Detail screen sticky Buy/Sell action footers must respect bottom safe area insets on home indicator devices.
+- **Decision**:
+  - Audited and verified all interactive icon buttons, modal controls, and order buttons for explicit `accessibilityRole` and `accessibilityLabel` properties.
+  - Added regression test in `statesAndAccessibility.test.tsx` verifying Buy/Sell button accessibility and safe area footer layout.
+- **Rationale**:
+  - Guarantees seamless screen reader operation and prevents interactive touch target overlap on all modern iOS and Android form factors.
+
+
 
 
 
