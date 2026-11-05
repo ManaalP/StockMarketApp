@@ -10,11 +10,34 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFilterStore, filterStore } from '../stores/filterStore';
 import { useTheme } from '../theme/useTheme';
-import type { HoldingCategoryFilter, SortField, SortDirection } from '../domain/calcs';
+import type { HoldingCategoryFilter, SortField } from '../domain/calcs';
 
 export interface FilterModalProps {
   readonly testID?: string;
 }
+
+interface SortOptionConfig {
+  readonly key: SortField;
+  readonly badge: string;
+  readonly label: string;
+  readonly defaultDir: 'asc' | 'desc';
+}
+
+const SORT_OPTIONS: readonly SortOptionConfig[] = [
+  { key: 'name', badge: 'A-Z', label: 'Alphabetically', defaultDir: 'asc' },
+  { key: 'change', badge: '%', label: 'Change', defaultDir: 'desc' },
+  { key: 'ltp', badge: 'LTP', label: 'Last Traded Price', defaultDir: 'desc' },
+  { key: 'pnl', badge: 'P&L', label: 'Profit & Loss Absolute', defaultDir: 'desc' },
+  { key: 'pnlPct', badge: '%', label: 'Profit & Loss Percent', defaultDir: 'desc' },
+  { key: 'invested', badge: '₹', label: 'Invested', defaultDir: 'desc' },
+];
+
+const FILTER_PILLS: readonly { key: HoldingCategoryFilter; label: string }[] = [
+  { key: 'all', label: 'ALL' },
+  { key: 'gainers', label: 'GAINERS' },
+  { key: 'losers', label: 'LOSERS' },
+  { key: 'unpriced', label: 'UNPRICED' },
+];
 
 export const FilterModal = memo(function FilterModal({
   testID = 'filter.modal',
@@ -26,18 +49,14 @@ export const FilterModal = memo(function FilterModal({
     return null;
   }
 
-  const CATEGORIES: { key: HoldingCategoryFilter; label: string; desc: string }[] = [
-    { key: 'all', label: 'All Holdings', desc: 'Display all stocks in your portfolio' },
-    { key: 'gainers', label: 'Gainers Only', desc: 'Positions currently in positive P&L' },
-    { key: 'losers', label: 'Losers Only', desc: 'Positions currently in negative P&L' },
-    { key: 'unpriced', label: 'Unpriced Only', desc: 'Holdings without live price quotes' },
-  ];
-
-  const SORT_FIELDS: { key: SortField; label: string }[] = [
-    { key: 'name', label: 'Stock Symbol / Name' },
-    { key: 'value', label: 'Current Holding Value' },
-    { key: 'pnl', label: 'Total P&L Amount' },
-  ];
+  const handleSelectSort = (option: SortOptionConfig) => {
+    if (sortBy === option.key) {
+      // Toggle direction if already active
+      filterStore.setSort(option.key, direction === 'asc' ? 'desc' : 'asc');
+    } else {
+      filterStore.setSort(option.key, option.defaultDir);
+    }
+  };
 
   return (
     <Modal
@@ -48,173 +67,138 @@ export const FilterModal = memo(function FilterModal({
     >
       <SafeAreaView
         testID={testID}
+        edges={['top', 'bottom']}
         style={[styles.container, { backgroundColor: tokens.background }]}
       >
-        {/* Modal Header */}
+        {/* Top Header matching Zerodha Kite: Filter on left, CLEAR on right */}
         <View style={[styles.header, { borderBottomColor: tokens.border }]}>
+          <Text style={[styles.title, { color: tokens.textPrimary }]}>Filter</Text>
+
           <Pressable
             testID="filter.reset"
             accessibilityRole="button"
-            accessibilityLabel="Reset all filters"
+            accessibilityLabel="Clear all filters and sort settings"
             onPress={filterStore.reset}
-            hitSlop={8}
-            style={styles.headerBtn}
+            hitSlop={{ top: 12, bottom: 12, left: 16, right: 16 }}
+            style={styles.clearBtn}
           >
-            <Text style={[styles.resetText, { color: tokens.textMuted }]}>Reset</Text>
-          </Pressable>
-
-          <Text style={[styles.title, { color: tokens.textPrimary }]}>Filter & Sort</Text>
-
-          <Pressable
-            testID="filter.close"
-            accessibilityRole="button"
-            accessibilityLabel="Done"
-            onPress={filterStore.closeModal}
-            hitSlop={8}
-            style={styles.headerBtn}
-          >
-            <Text style={[styles.doneText, { color: tokens.primary }]}>Done</Text>
+            <Text style={[styles.clearText, { color: tokens.primary }]}>CLEAR</Text>
           </Pressable>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Section: Category Filter */}
-          <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
-            Holdings Filter
-          </Text>
-          <View style={styles.optionsList}>
-            {CATEGORIES.map((cat) => {
-              const isSelected = filter === cat.key;
+          {/* Section 1: Horizontal Filter Pills Row */}
+          <View style={styles.pillsRow}>
+            {FILTER_PILLS.map((pill) => {
+              const isSelected = filter === pill.key;
               return (
                 <Pressable
-                  key={cat.key}
-                  testID={`filter.option.${cat.key}`}
-                  accessibilityRole="radio"
+                  key={pill.key}
+                  testID={`filter.option.${pill.key}`}
+                  accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
-                  onPress={() => filterStore.setCategoryFilter(cat.key)}
+                  onPress={() => filterStore.setCategoryFilter(pill.key)}
                   style={[
-                    styles.optionRow,
+                    styles.pill,
                     {
-                      backgroundColor: tokens.surface,
                       borderColor: isSelected ? tokens.primary : tokens.border,
-                    },
-                  ]}
-                >
-                  <View style={styles.optionTextContainer}>
-                    <Text
-                      style={[
-                        styles.optionLabel,
-                        { color: isSelected ? tokens.primary : tokens.textPrimary },
-                      ]}
-                    >
-                      {cat.label}
-                    </Text>
-                    <Text style={[styles.optionDesc, { color: tokens.textMuted }]}>
-                      {cat.desc}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      {
-                        borderColor: isSelected ? tokens.primary : tokens.border,
-                        backgroundColor: isSelected ? tokens.primary : 'transparent',
-                      },
-                    ]}
-                  />
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Section: Sort Field */}
-          <Text style={[styles.sectionTitle, { color: tokens.textPrimary, marginTop: 20 }]}>
-            Sort By
-          </Text>
-          <View style={styles.optionsList}>
-            {SORT_FIELDS.map((sf) => {
-              const isSelected = sortBy === sf.key;
-              return (
-                <Pressable
-                  key={sf.key}
-                  testID={`filter.sort.${sf.key}`}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: isSelected }}
-                  onPress={() => filterStore.setSort(sf.key, direction)}
-                  style={[
-                    styles.optionRow,
-                    {
-                      backgroundColor: tokens.surface,
-                      borderColor: isSelected ? tokens.primary : tokens.border,
+                      backgroundColor: isSelected ? tokens.surfaceContainer : 'transparent',
                     },
                   ]}
                 >
                   <Text
                     style={[
-                      styles.optionLabel,
+                      styles.pillText,
                       { color: isSelected ? tokens.primary : tokens.textPrimary },
                     ]}
                   >
-                    {sf.label}
+                    {pill.label}
                   </Text>
-                  <View
-                    style={[
-                      styles.radioCircle,
-                      {
-                        borderColor: isSelected ? tokens.primary : tokens.border,
-                        backgroundColor: isSelected ? tokens.primary : 'transparent',
-                      },
-                    ]}
-                  />
                 </Pressable>
               );
             })}
           </View>
 
-          {/* Section: Sort Direction */}
-          <Text style={[styles.sectionTitle, { color: tokens.textPrimary, marginTop: 20 }]}>
-            Order Direction
+          {/* Section Divider */}
+          <View style={[styles.divider, { backgroundColor: tokens.border }]} />
+
+          {/* Section 2: Sort */}
+          <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
+            Sort
           </Text>
-          <View style={styles.dirRow}>
-            {(['asc', 'desc'] as SortDirection[]).map((dir) => {
-              const isSelected = direction === dir;
-              const label = dir === 'asc' ? 'Ascending (↑)' : 'Descending (↓)';
+
+          <View style={styles.sortList}>
+            {SORT_OPTIONS.map((opt) => {
+              const isSelected = sortBy === opt.key;
+              const dirSymbol = isSelected ? (direction === 'asc' ? ' ↑' : ' ↓') : '';
+
               return (
                 <Pressable
-                  key={dir}
-                  testID={`filter.dir.${dir}`}
-                  accessibilityRole="button"
-                  onPress={() => filterStore.setSort(sortBy, dir)}
+                  key={opt.key}
+                  testID={`filter.sort.${opt.key}`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                  onPress={() => handleSelectSort(opt)}
                   style={[
-                    styles.dirBtn,
+                    styles.sortRow,
                     {
-                      backgroundColor: isSelected ? tokens.primary : tokens.surfaceContainer,
-                      borderColor: isSelected ? tokens.primary : tokens.border,
+                      borderBottomColor: tokens.border,
+                      backgroundColor: isSelected ? tokens.surfaceContainer : 'transparent',
                     },
                   ]}
                 >
-                  <Text
+                  {/* Left Badge */}
+                  <View
                     style={[
-                      styles.dirBtnText,
-                      { color: isSelected ? '#FFFFFF' : tokens.textPrimary },
+                      styles.badgeContainer,
+                      {
+                        backgroundColor: isSelected ? tokens.primary : tokens.surfaceContainer,
+                      },
                     ]}
                   >
-                    {label}
+                    <Text
+                      style={[
+                        styles.badgeText,
+                        { color: isSelected ? '#FFFFFF' : tokens.textSecondary },
+                      ]}
+                    >
+                      {opt.badge}
+                    </Text>
+                  </View>
+
+                  {/* Label */}
+                  <Text
+                    style={[
+                      styles.sortLabel,
+                      {
+                        color: isSelected ? tokens.primary : tokens.textPrimary,
+                        fontWeight: isSelected ? '700' : '500',
+                      },
+                    ]}
+                  >
+                    {`${opt.label}${dirSymbol}`}
                   </Text>
+
+                  {/* Active Radio Indicator */}
+                  {isSelected ? (
+                    <View style={styles.activeIndicator}>
+                      <Text style={[styles.checkText, { color: tokens.primary }]}>✓</Text>
+                    </View>
+                  ) : null}
                 </Pressable>
               );
             })}
           </View>
 
-          {/* Apply Button */}
+          {/* Done CTA Button */}
           <Pressable
-            testID="filter.apply"
+            testID="filter.close"
             accessibilityRole="button"
-            accessibilityLabel="Apply filters"
+            accessibilityLabel="Apply filters and close modal"
             onPress={filterStore.closeModal}
-            style={[styles.applyButton, { backgroundColor: tokens.primary }]}
+            style={[styles.doneButton, { backgroundColor: tokens.primary }]}
           >
-            <Text style={styles.applyButtonText}>Apply Filters</Text>
+            <Text style={styles.doneButtonText}>Done</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -230,92 +214,103 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  resetText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
   title: {
-    fontSize: 16,
+    fontSize: 22,
     fontWeight: '700',
+    letterSpacing: -0.3,
   },
-  doneText: {
+  clearBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  clearText: {
     fontSize: 14,
     fontWeight: '700',
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 10,
-    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  optionsList: {
-    gap: 8,
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
   },
-  optionRow: {
+  pillsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 8,
+  },
+  pill: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 6,
     borderWidth: 1,
-  },
-  optionTextContainer: {
-    flex: 1,
-    marginRight: 10,
-  },
-  optionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  optionDesc: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  radioCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-  },
-  dirRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  dirBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    minWidth: 70,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dirBtnText: {
+  pillText: {
     fontSize: 13,
     fontWeight: '700',
+    letterSpacing: 0.4,
   },
-  applyButton: {
-    marginTop: 28,
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  sortList: {
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  badgeContainer: {
+    width: 44,
+    height: 32,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  badgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  sortLabel: {
+    flex: 1,
+    fontSize: 15,
+  },
+  activeIndicator: {
+    marginLeft: 8,
+  },
+  checkText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  doneButton: {
+    marginTop: 32,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  applyButtonText: {
+  doneButtonText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 });

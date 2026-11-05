@@ -48,15 +48,12 @@ describe('toastStore', () => {
 
   test('manually dismisses toast by id', () => {
     const id1 = toastStore.show({ type: 'info', message: 'Toast 1' });
-    const id2 = toastStore.show({ type: 'warning', message: 'Toast 2' });
-
-    expect(toastStore.getToasts()).toHaveLength(2);
+    expect(toastStore.getToasts()).toHaveLength(1);
 
     toastStore.dismiss(id1);
 
     const toasts = toastStore.getToasts();
-    expect(toasts).toHaveLength(1);
-    expect(toasts[0]?.id).toBe(id2);
+    expect(toasts).toHaveLength(0);
   });
 
   test('deduplicates identical toast messages and refreshes timer without duplicating', () => {
@@ -75,14 +72,13 @@ describe('toastStore', () => {
     expect(toastStore.getToasts()).toHaveLength(0);
   });
 
-  test('caps active toasts at 2 to avoid cluttering screen', () => {
+  test('caps active toasts at 1 to completely prevent stacking popups', () => {
     toastStore.show({ type: 'info', message: 'Message 1' });
-    toastStore.show({ type: 'info', message: 'Message 2' });
-    expect(toastStore.getToasts()).toHaveLength(2);
+    expect(toastStore.getToasts()).toHaveLength(1);
 
-    toastStore.show({ type: 'info', message: 'Message 3' });
+    toastStore.show({ type: 'info', message: 'Message 2' });
     const toasts = toastStore.getToasts();
-    expect(toasts).toHaveLength(2);
-    expect(toasts.map((t) => t.message)).toEqual(['Message 2', 'Message 3']);
+    expect(toasts).toHaveLength(1);
+    expect(toasts[0]?.message).toBe('Message 2');
   });
 });

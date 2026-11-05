@@ -27,6 +27,7 @@ const OrderRow = memo(function OrderRow({
   const { tokens } = useTheme();
   const isBuy = order.side === 'BUY';
   const isPending = order.status === 'PENDING';
+  const isFailed = order.status === 'FAILED';
 
   return (
     <View
@@ -62,23 +63,40 @@ const OrderRow = memo(function OrderRow({
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: isPending ? tokens.warningBg : tokens.gainBg },
+              {
+                backgroundColor: isFailed
+                  ? tokens.lossBg
+                  : isPending
+                  ? tokens.warningBg
+                  : tokens.gainBg,
+              },
             ]}
           >
             <Text
               testID={`order.status.${order.id}`}
               style={[
                 styles.statusText,
-                { color: isPending ? tokens.warning : tokens.gain },
+                {
+                  color: isFailed
+                    ? tokens.loss
+                    : isPending
+                    ? tokens.warning
+                    : tokens.gain,
+                },
               ]}
             >
-              {isPending ? 'IN PROGRESS' : 'EXECUTED'}
+              {isFailed ? 'FAILED' : isPending ? 'IN PROGRESS' : 'EXECUTED'}
             </Text>
           </View>
         </View>
         <Text style={[styles.metaText, { color: tokens.textMuted }]}>
           {formatOrderTimestamp(order.timestamp)}
         </Text>
+        {isFailed && order.failureReason ? (
+          <Text style={[styles.failureText, { color: tokens.loss }]}>
+            {order.failureReason}
+          </Text>
+        ) : null}
       </View>
 
       <View style={styles.rightCol}>
@@ -307,6 +325,11 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     marginTop: 4,
+  },
+  failureText: {
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '500',
   },
   rightCol: {
     alignItems: 'flex-end',

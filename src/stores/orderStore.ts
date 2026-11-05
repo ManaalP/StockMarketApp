@@ -14,7 +14,8 @@ export interface ExecutedOrder {
   readonly pricePaise: Paise;
   readonly targetPaise?: Paise;
   readonly type?: 'MARKET' | 'LIMIT';
-  readonly status?: 'EXECUTED' | 'PENDING' | 'CANCELLED';
+  readonly status?: 'EXECUTED' | 'PENDING' | 'CANCELLED' | 'FAILED';
+  readonly failureReason?: string;
   readonly totalPaise: Paise;
   readonly timestamp: number;
 }
@@ -94,7 +95,13 @@ export function createOrderStore(options: OrderStoreOptions = {}): OrderStore {
                 pricePaise: Number(obj.pricePaise),
                 targetPaise: typeof obj.targetPaise === 'number' ? obj.targetPaise : undefined,
                 type: obj.type === 'LIMIT' ? 'LIMIT' : 'MARKET',
-                status: obj.status === 'PENDING' ? 'PENDING' : 'EXECUTED',
+                status:
+                  obj.status === 'PENDING'
+                    ? 'PENDING'
+                    : obj.status === 'FAILED'
+                    ? 'FAILED'
+                    : 'EXECUTED',
+                failureReason: typeof obj.failureReason === 'string' ? obj.failureReason : undefined,
                 totalPaise: Number(obj.totalPaise),
                 timestamp: Number(obj.timestamp),
               });
@@ -131,6 +138,7 @@ export function createOrderStore(options: OrderStoreOptions = {}): OrderStore {
       targetPaise: order.targetPaise,
       type: order.type ?? 'MARKET',
       status: order.status ?? 'EXECUTED',
+      failureReason: order.failureReason,
       totalPaise: mulQty(order.targetPaise ?? order.fillPaise, order.qty),
       timestamp: timestamp ?? order.createdAt ?? Date.now(),
     };

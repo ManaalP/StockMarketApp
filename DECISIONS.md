@@ -504,6 +504,36 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Eliminates data hallucinations while providing a professional, authentic trading UI with robust network edge case handling and safe-area ergonomics.
 
+## ADR 037: Zerodha Kite-Style Filter Modal, Coordinated Single-Row Swipe, Instant Sell Triggers, 10-Min Expiry, Simulated Order Failure, and Toast Deduping
+
+- **Context**:
+  - Multiple toasts were stacking on screen and overlapping the Android status bar.
+  - Watchlist swipe actions allowed multiple rows to remain open simultaneously, breaking horizontal alignment.
+  - Filter modal did not match the user's Zerodha Kite specification (pills, CLEAR action, and 6 discrete sort fields).
+  - Sell limit orders at or below current price needed immediate trigger rather than pending status.
+  - Pending orders required 10-minute timeout expiration and network-disconnect failure with zero stock deduction.
+  - A 1-in-20 random order failure was required for test resiliency verification.
+
+- **Decision**:
+  1. **Strict Toast Uniqueness & Safe Clearance**:
+     - `toastStore` maintains at most 1 active toast at any time, instantly dismissing previous toasts before showing new ones.
+     - Top clearance set to `Math.max(topPadding + 44, 96)` on Android, ensuring toasts float cleanly below the header bar without touching the notification bar.
+  2. **Zerodha Kite Filter & Sort UI (`FilterModal.tsx`)**:
+     - Built modal with `Filter` title and `CLEAR` reset button.
+     - Added bordered horizontal pills (`ALL`, `GAINERS`, `LOSERS`, `UNPRICED`).
+     - Added 6 sort rows matching the screenshot (`A-Z Alphabetically`, `% Change`, `LTP Last Traded Price`, `P&L Profit & Loss Absolute`, `% Profit & Loss Percent`, `₹ Invested`).
+  3. **Coordinated Swipeable Rows (`WatchRow.tsx`, `WatchlistScreen.tsx`)**:
+     - Set `overshootRight={false}` to prevent horizontal layout breakdown.
+     - Managed `openSwipeableRef` in `WatchlistScreen`: opening any row automatically closes any previously open row.
+  4. **Order Execution Enhancements (`OrderSheet.tsx`, `portfolioStore.ts`, `orders.ts`)**:
+     - Instant sell: When target price on SELL is `<= currentLtp`, order executes immediately with success screen.
+     - 10-minute timeout: In `evaluatePendingOrders`, pending orders older than 10 minutes are marked `FAILED` with zero stock deduction.
+     - 1 in 20 test failure: Randomly fails 5% of orders with clear failure screen notice and zero stock deduction.
+     - Network disconnect fails all pending orders and disconnects feed; network reconnection re-links feed.
+
+- **Rationale**:
+  - Guarantees seamless UX, zero toast clutter, exact design fidelity to trading apps, and realistic exchange order lifecycle handling.
+
 
 
 

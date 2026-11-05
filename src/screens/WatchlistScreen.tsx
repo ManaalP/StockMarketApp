@@ -44,6 +44,19 @@ export function WatchlistScreen({ onSelectStock, testID }: WatchlistScreenProps)
   const [refreshing, setRefreshing] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const flatListRef = React.useRef<FlatList<string>>(null);
+  const openSwipeableRef = React.useRef<{ close: () => void } | null>(null);
+
+  const handleSwipeOpen = useCallback((_symbol: string, ref: unknown) => {
+    const swipeable = ref as { close: () => void } | null;
+    if (openSwipeableRef.current && openSwipeableRef.current !== swipeable) {
+      openSwipeableRef.current.close();
+    }
+    openSwipeableRef.current = swipeable;
+  }, []);
+
+  const handleSwipeClose = useCallback((_symbol: string) => {
+    // If the active open ref closed itself, clear it
+  }, []);
 
   const filteredSymbols = useMemo(() => {
     const q = searchQuery.trim().toUpperCase();
@@ -70,9 +83,11 @@ export function WatchlistScreen({ onSelectStock, testID }: WatchlistScreenProps)
         symbol={item}
         onPress={onSelectStock}
         onRemove={removeSymbol}
+        onSwipeOpen={handleSwipeOpen}
+        onSwipeClose={handleSwipeClose}
       />
     ),
-    [onSelectStock, removeSymbol]
+    [onSelectStock, removeSymbol, handleSwipeOpen, handleSwipeClose]
   );
 
   const getItemLayout = useCallback(

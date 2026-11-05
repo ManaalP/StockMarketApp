@@ -36,6 +36,9 @@ interface ConfirmationState {
   readonly qty: number;
   readonly fillPaise: Paise;
   readonly targetPaise?: Paise;
+  readonly isInstant: boolean;
+  readonly isFailed: boolean;
+  readonly failureReason?: string;
 }
 
 /**
@@ -124,7 +127,27 @@ export const OrderSheet = memo(function OrderSheet({
     const currentQuote = priceStore.getQuote(symbol);
     const currentLtp = currentQuote?.ltp ?? ltp;
     const targetPaise = orderType === 'LIMIT' ? targetValidation.targetPaise : undefined;
-    const fillPaise = orderType === 'LIMIT' ? targetValidation.targetPaise : currentLtp;
+
+    // Determine if order executes immediately:
+    // - Market order: always executes immediately.
+    // - Limit Sell: if target price is same or lower than current market price, triggers instantly!
+    // - Limit Buy: if target price is same or higher than current market price, triggers instantly!
+    let isInstant = orderType === 'MARKET';
+    if (orderType === 'LIMIT' && targetPaise !== undefined && currentLtp !== null) {
+      if (side === 'SELL' && targetPaise <= currentLtp) {
+        isInstant = true;
+      } else if (side === 'BUY' && targetPaise >= currentLtp) {
+        isInstant = true;
+      }
+    }
+
+    const fillPaise = isInstant ? currentLtp : (targetPaise ?? currentLtp);
+
+    // Randomly fail 1 in 20 orders (5% failure for testing)
+    const isRandomFailure = Math.random() < 0.05;
+    const failureReason = isRandomFailure
+      ? 'Order failed for testing (1 in 20 random failure). No stock deducted.'
+      : undefined;
 
     const orderId = `ord-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const newOrder: Order = {
@@ -135,17 +158,19 @@ export const OrderSheet = memo(function OrderSheet({
       fillPaise,
       targetPaise,
       type: orderType,
-      status: orderType === 'LIMIT' ? 'PENDING' : 'EXECUTED',
+      status: isRandomFailure ? 'FAILED' : isInstant ? 'EXECUTED' : 'PENDING',
+      failureReason,
       createdAt: Date.now(),
     };
 
     void portfolioStore.executeOrder(newOrder);
 
     const actionPast = side === 'BUY' ? 'Bought' : 'Sold';
-    const msg =
-      orderType === 'MARKET'
-        ? `${actionPast} ${validation.qty} shares of ${symbol} at ${formatINR(fillPaise)}`
-        : `Limit order placed to ${side.toLowerCase()} ${validation.qty} shares of ${symbol} at ${formatINR(fillPaise)}`;
+    const msg = isRandomFailure
+      ? `Order failed for testing (1 in 20 failure). No stock deducted.`
+      : isInstant
+      ? `${actionPast} ${validation.qty} shares of ${symbol} at ${formatINR(fillPaise)}`
+      : `Limit order placed to ${side.toLowerCase()} ${validation.qty} shares of ${symbol} at ${formatINR(fillPaise)}`;
 
     onSuccess?.(msg);
     setConfirmation({
@@ -154,6 +179,9 @@ export const OrderSheet = memo(function OrderSheet({
       qty: validation.qty,
       fillPaise,
       targetPaise,
+      isInstant,
+      isFailed: isRandomFailure,
+      failureReason,
     });
   }, [
     validation.isValid,
@@ -169,9 +197,11 @@ export const OrderSheet = memo(function OrderSheet({
 
   const activeColor = side === 'BUY' ? tokens.gain : tokens.loss;
 
-  // Confirmation view (Success for Market, In Progress for Limit)
+  // Confirmation view (Success for Instant, In Progress for Limit, Failed for Simulated Error)
   if (confirmation) {
-    const isMarket = confirmation.type === 'MARKET';
+    const isSuccess = !confirmation.isFailed && confirmation.isInstant;
+    const isProgress = !confirmation.isFailed && !confirmation.isInstant;
+    const isFailed = confirmation.isFailed;
     const isSell = confirmation.side === 'SELL';
     const totalOrderPaise = confirmation.qty * confirmation.fillPaise;
 
@@ -188,35 +218,59 @@ export const OrderSheet = memo(function OrderSheet({
         >
           <View
             style={styles.confirmationContent}
-            testID={isMarket ? 'order.sheet.screen.success' : 'order.sheet.screen.progress'}
+            testID={
+              isFailed
+                ? 'order.sheet.screen.failed'
+                : isSuccess
+                ? 'order.sheet.screen.success'
+                : 'order.sheet.screen.progress'
+            }
           >
             {/* Status Icon */}
             <View
               style={[
                 styles.iconCircle,
-                { backgroundColor: isMarket ? tokens.gainBg : tokens.warningBg },
+                {
+                  backgroundColor: isFailed
+                    ? tokens.lossBg
+                    : isSuccess
+                    ? tokens.gainBg
+                    : tokens.warningBg,
+                },
               ]}
             >
               <Text
                 style={[
                   styles.iconText,
-                  { color: isMarket ? tokens.gain : tokens.warning },
+                  {
+                    color: isFailed
+                      ? tokens.loss
+                      : isSuccess
+                      ? tokens.gain
+                      : tokens.warning,
+                  },
                 ]}
               >
-                {isMarket ? '✓' : '⏳'}
+                {isFailed ? '✕' : isSuccess ? '✓' : '⏳'}
               </Text>
             </View>
 
             {/* Title */}
             <Text style={[styles.confirmTitle, { color: tokens.textPrimary }]}>
-              {isMarket ? 'Order Executed Successfully!' : 'Order Placed & In Progress'}
+              {isFailed
+                ? 'Order Failed (Testing Simulation)'
+                : isSuccess
+                ? 'Order Executed Successfully!'
+                : 'Order Placed & In Progress'}
             </Text>
 
             {/* Subtitle */}
             <Text style={[styles.confirmSubtitle, { color: tokens.textSecondary }]}>
-              {isMarket
+              {isFailed
+                ? 'Random test failure (1 in 20 orders fail for test verification). Stock was NOT deducted.'
+                : isSuccess
                 ? `${isSell ? 'Sold' : 'Bought'} ${confirmation.qty} shares of ${symbol} at ${formatINR(confirmation.fillPaise)}`
-                : `Your order to ${confirmation.side.toLowerCase()} ${confirmation.qty} shares of ${symbol} is active.`}
+                : `Your order to ${confirmation.side.toLowerCase()} ${confirmation.qty} shares of ${symbol} is waiting for market price.`}
             </Text>
 
             {/* Details Card */}
@@ -231,7 +285,7 @@ export const OrderSheet = memo(function OrderSheet({
                   Order Type
                 </Text>
                 <Text style={[styles.confirmVal, { color: tokens.textPrimary }]}>
-                  {isMarket ? 'Market (Immediate)' : 'Target Price (Limit)'}
+                  {confirmation.type === 'MARKET' ? 'Market (Immediate)' : 'Target Price (Limit)'}
                 </Text>
               </View>
 
@@ -246,15 +300,23 @@ export const OrderSheet = memo(function OrderSheet({
 
               <View style={styles.confirmRow}>
                 <Text style={[styles.confirmLabel, { color: tokens.textMuted }]}>
-                  {isMarket ? 'Executed Price' : 'Target Trigger Price'}
+                  {isFailed ? 'Status' : isSuccess ? 'Executed Price' : 'Target Trigger Price'}
                 </Text>
                 <Text
                   style={[
                     styles.confirmVal,
-                    { color: isMarket ? tokens.gain : tokens.warning },
+                    {
+                      color: isFailed
+                        ? tokens.loss
+                        : isSuccess
+                        ? tokens.gain
+                        : tokens.warning,
+                    },
                   ]}
                 >
-                  {formatINR(confirmation.fillPaise)}
+                  {isFailed
+                    ? 'FAILED (No stock deducted)'
+                    : formatINR(confirmation.fillPaise)}
                 </Text>
               </View>
 
@@ -274,7 +336,7 @@ export const OrderSheet = memo(function OrderSheet({
             </View>
 
             {/* Information Notice for Pending Orders */}
-            {!isMarket ? (
+            {isProgress ? (
               <View
                 style={[
                   styles.infoBanner,
@@ -285,6 +347,30 @@ export const OrderSheet = memo(function OrderSheet({
                   style={[styles.infoBannerText, { color: tokens.textSecondary }]}
                 >
                   ℹ️ This order is held in progress and will automatically execute when {symbol} reaches {formatINR(confirmation.fillPaise)}. You can monitor and refresh its live status on the Order History page.
+                </Text>
+                <Text
+                  style={[
+                    styles.infoBannerText,
+                    { color: tokens.warning, marginTop: 6, fontWeight: '600' },
+                  ]}
+                >
+                  ⏳ 10-Minute Expiry: Orders have a 10-minute waiting window. If the target price is not reached within 10 minutes, the order will automatically expire and fail.
+                </Text>
+              </View>
+            ) : null}
+
+            {/* Failure notice */}
+            {isFailed ? (
+              <View
+                style={[
+                  styles.infoBanner,
+                  { backgroundColor: tokens.lossBg },
+                ]}
+              >
+                <Text
+                  style={[styles.infoBannerText, { color: tokens.loss }]}
+                >
+                  ⚠️ Simulated test failure: 1 in 20 orders randomly fail to verify error handling. Your portfolio holdings and cash balance were not changed.
                 </Text>
               </View>
             ) : null}

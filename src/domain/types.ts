@@ -23,7 +23,7 @@ export interface Holding {
 }
 
 export type OrderType = 'MARKET' | 'LIMIT';
-export type OrderStatus = 'EXECUTED' | 'PENDING' | 'CANCELLED';
+export type OrderStatus = 'EXECUTED' | 'PENDING' | 'CANCELLED' | 'FAILED';
 
 /**
  * Order payload for local order execution.
@@ -37,6 +37,7 @@ export interface Order {
   readonly targetPaise?: Paise;
   readonly type?: OrderType;
   readonly status?: OrderStatus;
+  readonly failureReason?: string;
   readonly createdAt?: number;
   readonly executedAt?: number;
 }

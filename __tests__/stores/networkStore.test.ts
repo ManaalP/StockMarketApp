@@ -28,7 +28,7 @@ describe('networkStore', () => {
     const toasts = toastStore.getToasts();
     expect(toasts.length).toBeGreaterThan(0);
     expect(toasts[0]?.type).toBe('error');
-    expect(toasts[0]?.message).toContain('No internet connection');
+    expect(toasts[0]?.message).toContain('Network disconnected');
 
     unsub();
   });
@@ -48,7 +48,7 @@ describe('networkStore', () => {
     const toasts = toastStore.getToasts();
     expect(toasts.length).toBeGreaterThan(0);
     expect(toasts[0]?.type).toBe('success');
-    expect(toasts[0]?.message).toContain('Internet connection restored');
+    expect(toasts[0]?.message).toContain('Network restored');
 
     unsub();
   });
