@@ -70,6 +70,10 @@ describe('OrderHistoryScreen', () => {
     expect(texts).toContain('RELIANCE');
     expect(texts).toContain('BUY');
     expect(texts.some((txt) => typeof txt === 'string' && txt.includes('25 shares @ ₹2,500.00'))).toBe(true);
+    // RELIANCE is held in initial portfolio: verifies Holding Avg is displayed
+    const holdingAvgNode = row.findByProps({ testID: 'order.holdingAvg.ord-test-1' });
+    expect(holdingAvgNode).toBeDefined();
+    expect(typeof holdingAvgNode.props.children === 'string' && holdingAvgNode.props.children.includes('Holding Avg')).toBe(true);
   });
 
   it('renders buying price, live tick value, and profit/loss pill based on ticks', async () => {
