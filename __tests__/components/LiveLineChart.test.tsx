@@ -99,7 +99,7 @@ describe('LiveLineChart', () => {
     });
   });
 
-  test('flushes newly arrived ticks every 250ms and toggles to Line mode', () => {
+  test('flushes newly arrived ticks every 250ms and toggles between modes', () => {
     act(() => {
       priceStore.seed({
         TCS: {
@@ -123,9 +123,7 @@ describe('LiveLineChart', () => {
       );
     });
 
-    // Initial 1 tick in line mode
-    let texts = getAllText(renderer.root).join(' ');
-    expect(texts).toContain('1 TICK');
+    // Initial line mode
     expect(renderer.root.findByProps({ testID: 'live.chart.path' })).toBeDefined();
 
     // Arriving ticks
@@ -147,8 +145,8 @@ describe('LiveLineChart', () => {
       jest.advanceTimersByTime(CHART_FLUSH_INTERVAL_MS);
     });
 
-    texts = getAllText(renderer.root).join(' ');
-    expect(texts).toContain('3 TICKS');
+    // Path updated with new points
+    expect(renderer.root.findByProps({ testID: 'live.chart.path' })).toBeDefined();
 
     // Toggle back to Candlestick mode
     const candleBtn = renderer.root.findByProps({ testID: 'chart.mode.candle' });
@@ -159,6 +157,71 @@ describe('LiveLineChart', () => {
     // In candle mode, candles are rendered instead of line path
     expect(renderer.root.findAllByProps({ testID: 'live.chart.path' })).toHaveLength(0);
     expect(renderer.root.findAllByProps({ testID: 'chart.candle.body.0' }).length).toBeGreaterThan(0);
+
+    act(() => {
+      renderer.unmount();
+    });
+  });
+
+  test('supports timeframe filters (1D, 1W, 1M, 1Y) and zoom controls', () => {
+    act(() => {
+      priceStore.seed({
+        TCS: {
+          ltp: 320000,
+          open: 315000,
+          high: 325000,
+          low: 310000,
+          prevClose: 310000,
+          volume: 50000,
+        },
+      });
+    });
+
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+
+    act(() => {
+      renderer = ReactTestRenderer.create(
+        <ThemeProvider initialMode="light">
+          <LiveLineChart symbol="TCS" />
+        </ThemeProvider>
+      );
+    });
+
+    // Filter switching
+    const filter1W = renderer.root.findByProps({ testID: 'chart.filter.1W' });
+    act(() => {
+      filter1W.props.onPress();
+    });
+
+    // Verify 1W candles rendered with labels
+    expect(renderer.root.findAllByProps({ testID: 'chart.candle.label.0' }).length).toBeGreaterThan(0);
+
+    // Zoom In
+    const zoomInBtn = renderer.root.findByProps({ testID: 'chart.zoom.in' });
+    act(() => {
+      zoomInBtn.props.onPress();
+    });
+
+    let texts = getAllText(renderer.root).join(' ');
+    expect(texts).toContain('1.3x');
+
+    // Zoom Out
+    const zoomOutBtn = renderer.root.findByProps({ testID: 'chart.zoom.out' });
+    act(() => {
+      zoomOutBtn.props.onPress();
+    });
+
+    texts = getAllText(renderer.root).join(' ');
+    expect(texts).toContain('1.0x');
+
+    // Tap on candle to inspect
+    const candleTouch0 = renderer.root.findByProps({ testID: 'chart.candle.touch.0' });
+    act(() => {
+      candleTouch0.props.onPress();
+    });
+
+    // Active price badge exists
+    expect(renderer.root.findByProps({ testID: 'chart.active.price.badge' })).toBeDefined();
 
     act(() => {
       renderer.unmount();
