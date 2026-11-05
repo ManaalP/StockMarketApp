@@ -25,7 +25,6 @@ import { HoldingRow, HOLDING_ROW_HEIGHT } from '../components/HoldingRow';
 import { SummaryCard } from '../components/SummaryCard';
 import { PausedBanner } from '../components/PausedBanner';
 import { StateView } from '../components/StateView';
-import { usePerfOverlay, togglePerfOverlay } from '../utils/perfOverlay';
 import { SearchIcon, FilterIcon } from '../components/icons';
 
 export interface PortfolioScreenProps {
@@ -58,7 +57,6 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
 
   const holdings = usePortfolioHoldings();
   const { status, error, hydrationStatus, refresh, retry } = useAppStatus();
-  const showPerf = usePerfOverlay();
 
   // Filter & Sort State from filterStore
   const { filter, sortBy, direction } = useFilterStore();
@@ -276,31 +274,7 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
               </Text>
             </Pressable>
 
-            {/* Dev Perf Toggle */}
-            {__DEV__ ? (
-              <Pressable
-                testID="perf.toggle.btn"
-                onPress={togglePerfOverlay}
-                style={[
-                  styles.perfTogglePill,
-                  {
-                    backgroundColor: showPerf
-                      ? tokens.warningBg
-                      : tokens.surface,
-                    borderColor: tokens.border,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.perfTogglePillText,
-                    { color: showPerf ? tokens.warning : tokens.textMuted },
-                  ]}
-                >
-                  {showPerf ? '⚡ ON' : '⚡'}
-                </Text>
-              </Pressable>
-            ) : null}
+    
           </View>
 
           {/* Active Filter Chips (removable) */}
@@ -353,7 +327,6 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
     orderedSymbols.length,
     handleSortPress,
     handleRemoveCategoryFilter,
-    showPerf,
   ]);
 
   // Empty List component

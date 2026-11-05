@@ -3,6 +3,7 @@ import type { Quote } from '../domain/types';
 import type { Tick, PriceFeed } from '../feed/types';
 import { mergeTick, type QuoteWithSeq, type QuotesState } from '../domain/tickMerge';
 import { networkStore } from './networkStore';
+import { marketStore } from './marketStore';
 
 export interface PriceStoreOptions {
   /**
@@ -135,8 +136,18 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
     }
   });
 
+  const unsubMarket = marketStore.onMarketChange((open) => {
+    if (!open) {
+      setPausedState(true);
+      connectedFeed?.disconnect();
+    } else if (networkStore.isOnline()) {
+      connectedFeed?.connect();
+      setPausedState(false);
+    }
+  });
+
   const queueTick = (tick: Tick): void => {
-    if (!networkStore.isOnline()) {
+    if (!networkStore.isOnline() || !marketStore.isMarketOpen()) {
       return;
     }
     lastTickAt = Date.now();
@@ -239,6 +250,7 @@ export function createPriceStore(options: PriceStoreOptions = {}): PriceStore {
 
   const destroy = (): void => {
     unsubNetwork();
+    unsubMarket();
     if (flushTimer !== null) {
       clearInterval(flushTimer);
       flushTimer = null;

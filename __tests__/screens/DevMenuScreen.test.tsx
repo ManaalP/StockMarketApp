@@ -145,4 +145,31 @@ describe('DevMenuScreen', () => {
     });
     resetSpy.mockRestore();
   });
+
+  it('toggles market closed simulation on and off', () => {
+    let tree: renderer.ReactTestRenderer | undefined;
+    act(() => {
+      tree = renderer.create(
+        <ThemeProvider>
+          <DevMenuScreen />
+        </ThemeProvider>
+      );
+    });
+
+    const marketStatusBadge = tree!.root.findByProps({ testID: 'dev.market.status' });
+    expect(marketStatusBadge.props.children).toBe('LIVE MARKET HOURS');
+
+    const toggleMarketBtn = tree!.root.findByProps({ testID: 'dev.market.toggle' });
+    act(() => {
+      toggleMarketBtn.props.onPress();
+    });
+
+    expect(marketStatusBadge.props.children).toBe('MARKET CLOSED (SIMULATED)');
+
+    // Toggle back off
+    act(() => {
+      toggleMarketBtn.props.onPress();
+    });
+    expect(marketStatusBadge.props.children).toBe('LIVE MARKET HOURS');
+  });
 });

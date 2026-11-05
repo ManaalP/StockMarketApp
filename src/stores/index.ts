@@ -44,3 +44,11 @@ export {
   type StorageBackend,
 } from './watchlistStore';
 
+export {
+  createMarketStore,
+  marketStore,
+  useMarketClosedSimulation,
+  useIsMarketOpen,
+  type MarketStore,
+} from './marketStore';
+

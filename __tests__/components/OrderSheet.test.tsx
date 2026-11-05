@@ -117,6 +117,7 @@ describe('OrderSheet component', () => {
   });
 
   test('places SELL limit order with target price and displays in-progress confirmation', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0.5); // Ensure not random failure
     const executeSpy = jest.spyOn(portfolioStore, 'executeOrder');
     const onClose = jest.fn();
     let renderer!: ReactTestRenderer.ReactTestRenderer;
@@ -172,6 +173,7 @@ describe('OrderSheet component', () => {
     });
     expect(onClose).toHaveBeenCalled();
 
+    (Math.random as unknown as jest.Mock).mockRestore();
     executeSpy.mockRestore();
   });
 
@@ -218,11 +220,13 @@ describe('OrderSheet component', () => {
         qty: 5,
         type: 'LIMIT',
         status: 'EXECUTED',
+        fillPaise: 260000, // Sold at better live market price (₹2,600.00), not entered limit of ₹2,400.00!
       })
     );
 
-    // Displays instant success screen
+    // Displays instant success screen and price improvement banner
     expect(renderer.root.findByProps({ testID: 'order.sheet.screen.success' })).toBeDefined();
+    expect(renderer.root.findByProps({ testID: 'order.sheet.priceImprovementNotice' })).toBeDefined();
 
     (Math.random as unknown as jest.Mock).mockRestore();
     executeSpy.mockRestore();
