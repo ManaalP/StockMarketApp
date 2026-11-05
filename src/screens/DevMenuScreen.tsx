@@ -9,6 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/useTheme';
 import { portfolioStore } from '../stores/portfolioStore';
+import { networkStore, useNetworkOnline } from '../stores/networkStore';
 import { usePerfOverlay, togglePerfOverlay } from '../utils/perfOverlay';
 import type { FeedStatus } from '../feed/types';
 
@@ -25,6 +26,7 @@ export const DevMenuScreen = memo(function DevMenuScreen({
 }: DevMenuScreenProps) {
   const { tokens } = useTheme();
   const showPerf = usePerfOverlay();
+  const isOnline = useNetworkOnline();
   const [resetSuccess, setResetSuccess] = useState(false);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -156,7 +158,60 @@ export const DevMenuScreen = memo(function DevMenuScreen({
           </Text>
         </View>
 
-        {/* Section 2: Tick Rate Controller */}
+        {/* Section 2: Internet Connectivity Simulation */}
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: tokens.surface, borderColor: tokens.border },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
+            Internet Connectivity Simulation
+          </Text>
+          <View style={styles.statusRow}>
+            <Text style={[styles.label, { color: tokens.textMuted }]}>
+              Network Connection:
+            </Text>
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: isOnline ? tokens.gainBg : tokens.lossBg,
+                },
+              ]}
+            >
+              <Text
+                testID="dev.network.status"
+                style={[
+                  styles.badgeText,
+                  { color: isOnline ? tokens.gain : tokens.loss },
+                ]}
+              >
+                {isOnline ? 'ONLINE' : 'OFFLINE'}
+              </Text>
+            </View>
+          </View>
+
+          <Pressable
+            testID="dev.network.toggle"
+            accessibilityRole="button"
+            accessibilityLabel={isOnline ? 'Disconnect internet' : 'Restore internet'}
+            onPress={() => networkStore.toggle()}
+            style={[
+              styles.actionButton,
+              { backgroundColor: isOnline ? tokens.loss : tokens.gain },
+            ]}
+          >
+            <Text style={styles.actionButtonText}>
+              {isOnline ? 'Simulate Disconnection (Go Offline)' : 'Restore Internet Connection (Go Online)'}
+            </Text>
+          </Pressable>
+          <Text style={[styles.footnote, { color: tokens.textMuted }]}>
+            Simulates device internet (data / Wi-Fi) outage. While offline, price ticks pause, pull-to-refresh displays an offline error, and toasts alert state transitions.
+          </Text>
+        </View>
+
+        {/* Section 3: Tick Rate Controller */}
         <View
           style={[
             styles.card,
