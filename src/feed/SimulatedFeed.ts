@@ -1,4 +1,4 @@
-import type { PriceFeed, Tick, TickHandler } from './types';
+import type { PriceFeed, Tick, TickHandler, FeedStatus, FeedStatusHandler } from './types';
 import type { Quote } from '../domain/types';
 import type { Paise } from '../domain/money';
 
@@ -63,11 +63,21 @@ export function createSimulatedFeed(
 
   const seqMap = new Map<string, number>();
   const listeners = new Set<TickHandler>();
+  const statusListeners = new Set<FeedStatusHandler>();
 
+  let status: FeedStatus = 'disconnected';
   let tickTimer: ReturnType<typeof setInterval> | null = null;
   let silenceIntervalTimer: ReturnType<typeof setInterval> | null = null;
   let silenceTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
   let isSilent = false;
+
+  const setStatus = (next: FeedStatus): void => {
+    if (status === next) return;
+    status = next;
+    for (const listener of statusListeners) {
+      listener(status);
+    }
+  };
 
   const triggerSilenceWindow = (): void => {
     isSilent = true;
@@ -146,6 +156,7 @@ export function createSimulatedFeed(
       return;
     }
     isSilent = false;
+    setStatus('connected');
     tickTimer = setInterval(emitNextTick, tickIntervalMs);
     silenceIntervalTimer = setInterval(triggerSilenceWindow, silenceIntervalMs);
   };
@@ -164,6 +175,11 @@ export function createSimulatedFeed(
       silenceTimeoutTimer = null;
     }
     isSilent = false;
+    setStatus('disconnected');
+  };
+
+  const simulateDisconnect = (): void => {
+    disconnect();
   };
 
   const onTick = (handler: TickHandler): (() => void) => {
@@ -173,10 +189,22 @@ export function createSimulatedFeed(
     };
   };
 
+  const onStatusChange = (handler: FeedStatusHandler): (() => void) => {
+    statusListeners.add(handler);
+    return () => {
+      statusListeners.delete(handler);
+    };
+  };
+
+  const getStatus = (): FeedStatus => status;
+
   return {
     connect,
     disconnect,
     onTick,
+    onStatusChange,
+    getStatus,
+    simulateDisconnect,
   };
 }
 
@@ -201,5 +229,17 @@ export class SimulatedFeed implements PriceFeed {
 
   public onTick = (handler: TickHandler): (() => void) => {
     return this.feed.onTick(handler);
+  };
+
+  public onStatusChange = (handler: FeedStatusHandler): (() => void) => {
+    return this.feed.onStatusChange?.(handler) ?? (() => {});
+  };
+
+  public getStatus = (): FeedStatus => {
+    return this.feed.getStatus?.() ?? 'disconnected';
+  };
+
+  public simulateDisconnect = (): void => {
+    this.feed.simulateDisconnect?.();
   };
 }
