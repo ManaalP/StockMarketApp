@@ -131,7 +131,7 @@ export const PausedBanner = memo(function PausedBanner({
 const styles = StyleSheet.create({
   overlayContainer: {
     position: 'absolute',
-    top: 10,
+    top: 8,
     left: 0,
     right: 0,
     zIndex: 900,
@@ -143,14 +143,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 20, // Modern pill shape
+    borderRadius: 8,
     borderWidth: 1,
-    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 420,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   indicator: {
     width: 6,

@@ -684,6 +684,22 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Guarantees seamless color continuity during horizontal swipe transitions between Portfolio and Watchlist in both dark and light modes, eliminating unpainted white spaces.
 
+---
+
+### ADR 044: Non-Shifting Floating Status Notice Overlay Architecture
+- **Context**:
+  - When live price ticks paused (feed stall > 2s, simulated after-market hours, or network disconnection) or resumed, `PausedBanner` was previously rendered as an in-flow flex child positioned right above the main screen lists and headers.
+  - As a result, appearing or auto-dismissing the banner physically pushed the entire layout (hero summary card, search bar, stock list) down and popped it back up by ~48px, causing jarring Cumulative Layout Shift (CLS) and disrupting user scroll positions.
+- **Decision**:
+  - Render `PausedBanner` as a floating absolute overlay container:
+    - Container uses `position: 'absolute'`, `top: 8`, `left: 0`, `right: 0`, `zIndex: 900`, `alignItems: 'center'`.
+    - Apply `pointerEvents="box-none"` to the outer overlay container so touches outside the banner pass seamlessly to underlying scroll views and controls.
+    - Card has subtle elevation (`elevation: 4`, `shadowOpacity: 0.2`) and max width matching the app's responsive layout.
+    - Retain full accessibility contract (`accessibilityRole="alert"`, `accessibilityLiveRegion="polite"`).
+- **Rationale**:
+  - Eliminates all layout shift when feed status transitions occur. The underlying UI stays completely stable and responsive while real-time feed diagnostics remain clearly visible and accessible.
+
+
 
 
 
