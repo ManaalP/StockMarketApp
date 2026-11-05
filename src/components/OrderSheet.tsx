@@ -15,7 +15,7 @@ import { usePrice, usePaused, priceStore } from '../stores/priceStore';
 import { useHolding, portfolioStore } from '../stores/portfolioStore';
 import { validateOrder, computeOrderPreview, validateTargetPrice } from '../domain/orders';
 import { formatINR } from '../domain/format';
-import { checkIndianMarketHours } from '../domain/marketHours';
+import { marketStore } from '../stores/marketStore';
 import type { OrderType, Order } from '../domain/types';
 import type { Paise } from '../domain/money';
 import { PriceText } from './PriceText';
@@ -39,6 +39,7 @@ interface ConfirmationState {
   readonly isInstant: boolean;
   readonly isFailed: boolean;
   readonly failureReason?: string;
+  readonly hadPriceImprovement?: boolean;
 }
 
 /**
@@ -70,11 +71,11 @@ export const OrderSheet = memo(function OrderSheet({
   const holding = useHolding(symbol);
   const isPaused = usePaused();
 
-  const marketHours = checkIndianMarketHours();
-  const [devBypassMarketHours, setDevBypassMarketHours] = useState(false);
+  const isSimulatedClosed = marketStore.isSimulatedClosed();
+  const marketHours = marketStore.getMarketStatus();
   const isMarketOpen =
     isMarketOpenOverride ??
-    (process.env.NODE_ENV === 'test' ? true : devBypassMarketHours ? true : marketHours.isOpen);
+    (isSimulatedClosed ? false : process.env.NODE_ENV === 'test' ? true : marketHours.isOpen);
 
   const [side, setSide] = useState<'BUY' | 'SELL'>(initialSide);
   const [orderType, setOrderType] = useState<OrderType>('MARKET');
@@ -129,15 +130,28 @@ export const OrderSheet = memo(function OrderSheet({
     const targetPaise = orderType === 'LIMIT' ? targetValidation.targetPaise : undefined;
 
     // Determine if order executes immediately:
-    // - Market order: always executes immediately.
-    // - Limit Sell: if target price is same or lower than current market price, triggers instantly!
-    // - Limit Buy: if target price is same or higher than current market price, triggers instantly!
+    // - Market order: always executes immediately at live market price.
+    // - Limit Sell:
+    //   Real-world exchange price improvement: A limit sell specifies the MINIMUM acceptable selling price.
+    //   If the entered target price is lower than or equal to the live market price (targetPaise <= currentLtp),
+    //   the order executes immediately with price improvement at the better live market price (currentLtp),
+    //   NOT discounted down to the lower entered target price.
+    // - Limit Buy:
+    //   If entered target price >= currentLtp, executes immediately with price improvement at live price (currentLtp).
     let isInstant = orderType === 'MARKET';
+    let hadPriceImprovement = false;
+
     if (orderType === 'LIMIT' && targetPaise !== undefined && currentLtp !== null) {
       if (side === 'SELL' && targetPaise <= currentLtp) {
         isInstant = true;
+        if (targetPaise < currentLtp) {
+          hadPriceImprovement = true;
+        }
       } else if (side === 'BUY' && targetPaise >= currentLtp) {
         isInstant = true;
+        if (targetPaise > currentLtp) {
+          hadPriceImprovement = true;
+        }
       }
     }
 
@@ -166,10 +180,13 @@ export const OrderSheet = memo(function OrderSheet({
     void portfolioStore.executeOrder(newOrder);
 
     const actionPast = side === 'BUY' ? 'Bought' : 'Sold';
+    const improvementNote = hadPriceImprovement
+      ? ` (Sold at live price ${formatINR(fillPaise)} with exchange price improvement above entered limit of ${formatINR(targetPaise ?? 0)})`
+      : '';
     const msg = isRandomFailure
       ? `Order failed for testing (1 in 20 failure). No stock deducted.`
       : isInstant
-      ? `${actionPast} ${validation.qty} shares of ${symbol} at ${formatINR(fillPaise)}`
+      ? `${actionPast} ${validation.qty} shares of ${symbol} at ${formatINR(fillPaise)}${improvementNote}`
       : `Limit order placed to ${side.toLowerCase()} ${validation.qty} shares of ${symbol} at ${formatINR(fillPaise)}`;
 
     onSuccess?.(msg);
@@ -182,6 +199,7 @@ export const OrderSheet = memo(function OrderSheet({
       isInstant,
       isFailed: isRandomFailure,
       failureReason,
+      hadPriceImprovement,
     });
   }, [
     validation.isValid,
@@ -298,11 +316,23 @@ export const OrderSheet = memo(function OrderSheet({
                 </Text>
               </View>
 
+              {confirmation.targetPaise !== undefined && confirmation.type === 'LIMIT' ? (
+                <View style={styles.confirmRow}>
+                  <Text style={[styles.confirmLabel, { color: tokens.textMuted }]}>
+                    Entered Limit Price
+                  </Text>
+                  <Text style={[styles.confirmVal, { color: tokens.textSecondary }]}>
+                    {formatINR(confirmation.targetPaise)}
+                  </Text>
+                </View>
+              ) : null}
+
               <View style={styles.confirmRow}>
                 <Text style={[styles.confirmLabel, { color: tokens.textMuted }]}>
                   {isFailed ? 'Status' : isSuccess ? 'Executed Price' : 'Target Trigger Price'}
                 </Text>
                 <Text
+                  testID="order.sheet.confirm.executedPrice"
                   style={[
                     styles.confirmVal,
                     {
@@ -334,6 +364,25 @@ export const OrderSheet = memo(function OrderSheet({
                 </Text>
               </View>
             </View>
+
+            {/* Price Improvement Notice for Limit Orders Executed at Better Market Price */}
+            {confirmation.hadPriceImprovement && isSuccess ? (
+              <View
+                style={[
+                  styles.infoBanner,
+                  { backgroundColor: tokens.gainBg },
+                ]}
+              >
+                <Text
+                  testID="order.sheet.priceImprovementNotice"
+                  style={[styles.infoBannerText, { color: tokens.gain, fontWeight: '600' }]}
+                >
+                  {isSell
+                    ? `🎉 Price Improvement: Your limit was ${formatINR(confirmation.targetPaise ?? 0)}, but exchange rules matched you at the higher live market price of ${formatINR(confirmation.fillPaise)}. You sold at the best available price!`
+                    : `🎉 Price Improvement: Your limit was ${formatINR(confirmation.targetPaise ?? 0)}, but exchange rules matched you at the lower live market price of ${formatINR(confirmation.fillPaise)}. You bought at the best available price!`}
+                </Text>
+              </View>
+            ) : null}
 
             {/* Information Notice for Pending Orders */}
             {isProgress ? (
@@ -605,17 +654,6 @@ export const OrderSheet = memo(function OrderSheet({
                 >
                   {validation.error}
                 </Text>
-                {__DEV__ && !isMarketOpen ? (
-                  <Pressable
-                    testID="order.dev.bypass.button"
-                    onPress={() => setDevBypassMarketHours(true)}
-                    style={styles.devBypassPill}
-                  >
-                    <Text style={styles.devBypassText}>
-                      ⚡ Dev Override: Open Market
-                    </Text>
-                  </Pressable>
-                ) : null}
               </View>
             ) : null}
           </View>

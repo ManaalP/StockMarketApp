@@ -584,6 +584,36 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Delivers instantaneous 2-second portfolio comprehension, reduces cognitive load, eliminates horizontal overflow on mobile screens, and preserves 100% of the underlying high-performance, strictly typed integer-paise architecture and test suite.
 
+---
+
+## ADR 039: Market Closed Simulation in Developer Settings & Exchange Price Improvement for Limit Orders
+
+- **Context**:
+  - The developer bypass button previously lived inside the Order Sheet UI under error states, cluttering the trade execution interface.
+  - Users needed a dedicated developer setting to simulate "Market Closed", which defaults to OFF, but when turned ON pauses incoming price ticks and prevents buy/sell trades with an informative notice.
+  - Clarification on real-life exchange mechanics: When placing a limit sell order where the entered limit is lower than the live market price (or limit buy higher than live price), does the order sell at the lower limit or at the live price?
+    - **Real-World Financial Mechanism (Price Improvement)**: A limit order establishes the *worst acceptable* execution price. If a seller enters a limit of ₹2,400 while the market is trading at ₹2,600, exchange matching engines (NSE/BSE) immediately execute at the available higher live price of ₹2,600. The seller is never penalized or discounted to their lower limit.
+    - This execution needed to be reflected on the confirmation screen with a clear "Price Improvement" notice.
+
+- **Decision**:
+  1. **Market Closed Simulation (`src/stores/marketStore.ts`, `src/screens/DevMenuScreen.tsx`)**:
+     - Created `marketStore` with reactive subscription and `isSimulatedClosed()` (default: `false`).
+     - Moved the market toggle out of `OrderSheet` into Developer Controls under "Market Closed Simulation".
+     - When turned ON: pauses `priceStore` tick processing (`queueTick` drops ticks, pauses feed) and marks `isMarketOpen()` as `false`.
+     - `OrderSheet` blocks both BUY and SELL submissions when the market is closed, displaying official NSE market hours.
+  2. **Exchange Price Improvement & Confirmation Clarity (`src/components/OrderSheet.tsx`)**:
+     - Limit orders placed at or better than live market price execute instantly at `fillPaise = currentLtp`.
+     - If `side === 'SELL'` and `targetPaise < currentLtp` (or `BUY` and `targetPaise > currentLtp`), `hadPriceImprovement` flag is recorded.
+     - Confirmation screen explicitly displays both:
+       - `Entered Limit Price` (e.g. ₹2,400.00).
+       - `Executed Price` (e.g. ₹2,600.00).
+       - An informative green Price Improvement banner: *"🎉 Price Improvement: Your limit was ₹2,400.00, but exchange rules matched you at the higher live market price of ₹2,600.00. You sold at the best available price!"*
+
+- **Rationale**:
+  - Keeps the Order Sheet clean and free of test-only buttons.
+  - Accurately models authentic exchange matching behavior (SEBI/NSE price improvement rules) rather than penalizing users with worse pricing than current market quotes.
+
+
 
 
 

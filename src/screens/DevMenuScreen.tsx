@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/useTheme';
 import { portfolioStore } from '../stores/portfolioStore';
 import { networkStore, useNetworkOnline } from '../stores/networkStore';
+import { marketStore, useMarketClosedSimulation } from '../stores/marketStore';
 import { usePerfOverlay, togglePerfOverlay } from '../utils/perfOverlay';
 import type { FeedStatus } from '../feed/types';
 
@@ -27,6 +28,7 @@ export const DevMenuScreen = memo(function DevMenuScreen({
   const { tokens } = useTheme();
   const showPerf = usePerfOverlay();
   const isOnline = useNetworkOnline();
+  const isMarketClosedSimulated = useMarketClosedSimulation();
   const [resetSuccess, setResetSuccess] = useState(false);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -235,6 +237,65 @@ export const DevMenuScreen = memo(function DevMenuScreen({
           </Pressable>
           <Text style={[styles.footnote, { color: tokens.textMuted }]}>
             Simulates device internet (data / Wi-Fi) outage. While offline, price ticks pause, pull-to-refresh displays an offline error, and toasts alert state transitions.
+          </Text>
+        </View>
+
+        {/* Section: Market Hours & Market Closed Override Simulation */}
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: tokens.surface, borderColor: tokens.border },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
+            Market Closed Simulation
+          </Text>
+          <View style={styles.statusRow}>
+            <Text style={[styles.label, { color: tokens.textMuted }]}>
+              Market State:
+            </Text>
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: isMarketClosedSimulated ? tokens.lossBg : tokens.gainBg,
+                },
+              ]}
+            >
+              <Text
+                testID="dev.market.status"
+                style={[
+                  styles.badgeText,
+                  { color: isMarketClosedSimulated ? tokens.loss : tokens.gain },
+                ]}
+              >
+                {isMarketClosedSimulated ? 'MARKET CLOSED (SIMULATED)' : 'LIVE MARKET HOURS'}
+              </Text>
+            </View>
+          </View>
+
+          <Pressable
+            testID="dev.market.toggle"
+            accessibilityRole="button"
+            accessibilityLabel={
+              isMarketClosedSimulated
+                ? 'Turn off market closed simulation'
+                : 'Turn on market closed simulation'
+            }
+            onPress={() => marketStore.toggleSimulatedClosed()}
+            style={[
+              styles.actionButton,
+              { backgroundColor: isMarketClosedSimulated ? tokens.gain : tokens.loss },
+            ]}
+          >
+            <Text style={styles.actionButtonText}>
+              {isMarketClosedSimulated
+                ? 'Turn Off Market Closed (Resume Live Market)'
+                : 'Simulate Market Closed (Pause Ticks & Block Trading)'}
+            </Text>
+          </Pressable>
+          <Text style={[styles.footnote, { color: tokens.textMuted }]}>
+            When turned on: price ticks pause immediately and you cannot buy or sell stocks in the order sheet. Default is turned off.
           </Text>
         </View>
 
