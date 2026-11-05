@@ -25,7 +25,7 @@ import { HoldingRow, HOLDING_ROW_HEIGHT } from '../components/HoldingRow';
 import { SummaryCard } from '../components/SummaryCard';
 import { PausedBanner } from '../components/PausedBanner';
 import { StateView } from '../components/StateView';
-import { SearchIcon, FilterIcon } from '../components/icons';
+import { SearchIcon } from '../components/icons';
 
 export interface PortfolioScreenProps {
   readonly onSelectStock?: (symbol: string) => void;
@@ -245,36 +245,6 @@ export function PortfolioScreen({ onSelectStock, testID }: PortfolioScreenProps)
                 );
               })}
             </View>
-
-            {/* Filter Bottom Sheet / Modal Trigger Button */}
-            <Pressable
-              testID="portfolio.filter.open"
-              accessibilityRole="button"
-              accessibilityLabel="Open filter and sort menu"
-              onPress={filterStore.openModal}
-              style={[
-                styles.filterButton,
-                {
-                  backgroundColor: isCustomFilterActive ? tokens.surfaceContainer : tokens.surface,
-                  borderColor: isCustomFilterActive ? tokens.primary : tokens.border,
-                },
-              ]}
-            >
-              <FilterIcon
-                color={isCustomFilterActive ? tokens.primary : tokens.textSecondary}
-                size={14}
-              />
-              <Text
-                style={[
-                  styles.filterButtonText,
-                  { color: isCustomFilterActive ? tokens.primary : tokens.textSecondary },
-                ]}
-              >
-                {isCustomFilterActive ? `Filter: ${filter}` : 'Filter'}
-              </Text>
-            </Pressable>
-
-    
           </View>
 
           {/* Active Filter Chips (removable) */}

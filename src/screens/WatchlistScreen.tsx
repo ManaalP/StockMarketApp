@@ -134,14 +134,11 @@ export function WatchlistScreen({ onSelectStock, testID }: WatchlistScreenProps)
     >
       <PausedBanner />
 
-      {/* Screen Header */}
+      {/* Screen Sub-header / Actions */}
       <View style={[styles.header, { borderBottomColor: tokens.border }]}>
         <View>
-          <Text style={[styles.headerTitle, { color: tokens.textPrimary }]}>
-            Watchlist
-          </Text>
           <Text style={[styles.headerSubtitle, { color: tokens.textMuted }]}>
-            {`${symbols.length} ${symbols.length === 1 ? 'symbol' : 'symbols'}`}
+            {`${symbols.length} ${symbols.length === 1 ? 'symbol' : 'symbols'} tracked`}
           </Text>
         </View>
 
