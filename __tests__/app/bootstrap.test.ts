@@ -1,9 +1,9 @@
-import { bootstrapApp } from '../../src/app/bootstrap';
+import { bootstrapApp } from '../../src/bootstrap';
 import { toPaise } from '../../src/domain/money';
 import type { Quote } from '../../src/domain/types';
 import type { PriceFeed } from '../../src/feed/types';
 
-describe('Application Composition Root (src/app/bootstrap.ts)', () => {
+describe('Application Composition Root (src/bootstrap.ts)', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });

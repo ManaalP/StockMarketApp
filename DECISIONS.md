@@ -82,7 +82,7 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Define an abstract `PriceFeed` interface (`connect`, `disconnect`, `onTick`) in `src/feed/types.ts`.
   - Implement a closure-encapsulated functional factory `createSimulatedFeed` in `src/feed/SimulatedFeed.ts` (with an optional backward-compatible `SimulatedFeed` class wrapper).
   - Internal state (interval timers, sequence maps, listener sets) is held entirely in private function closures without prototype chains or `this` context binding risks.
-  - Restrict imports of `createSimulatedFeed` exclusively to the application composition root (`src/app/bootstrap.ts`). UI screens, hooks, and stores depend solely on the `PriceFeed` contract.
+  - Restrict imports of `createSimulatedFeed` exclusively to the application composition root (`src/bootstrap.ts`). UI screens, hooks, and stores depend solely on the `PriceFeed` contract.
 - **Rationale**:
   - **Hermes Optimization**: Functional closures avoid class prototype lookups and memory indirection on Hermes.
   - **Context Safety**: Callback methods (`connect`, `disconnect`, `onTick`) can be passed directly to React Native lifecycle effects (e.g. `useEffect(() => feed.connect(), [])`) without `.bind(this)` or arrow wrapper overhead.
@@ -113,7 +113,7 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - During flush, only symbols whose quote reference actually changed notify their own subscribers. Other rows stay completely idle.
   - React rows subscribe via `usePrice(symbol)`, leveraging `useSyncExternalStore` with stable snapshot references.
   - Detect feed stalls (> 2 s without ticks) using an event-driven `setTimeout` (O(1), zero battery drain) to drive the `usePaused()` hook.
-  - Wire the feed exclusively at the composition root (`src/app/bootstrap.ts`).
+  - Wire the feed exclusively at the composition root (`src/bootstrap.ts`).
 - **Rationale**:
   - Decouples high-frequency tick ingestion from the React commit phase.
   - Guarantees that a price tick for `RELIANCE` re-renders only the `RELIANCE` row.
@@ -303,6 +303,19 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - `react-native-safe-area-context` computes hardware insets natively on both Android (gesture bar, cutout) and iOS (notch, home indicator) without layout delays or deprecation warnings.
   - Wrapping `<SafeAreaProvider>` at the root guarantees that all descendent hooks (`useSafeAreaInsets()`) and `<SafeAreaView>` instances receive accurate, zero-latency inset measurements.
+
+---
+
+### ADR 028: Relocating Application Composition Root out of Expo Router Directory
+- **Context**: Expo Router evaluates all files located directly under `src/app/` as navigation route segments unless prefixed by `_` or `+`. Placing non-screen composition files like `bootstrap.ts` inside `src/app/` produces bundler warnings (`Route "./bootstrap.ts" is missing the required default export. Ensure a React component is exported as default.`) and pollutes the routing table with an unintended `/bootstrap` URI.
+- **Decision**:
+  - Relocate `bootstrap.ts` from `src/app/bootstrap.ts` to `src/bootstrap.ts`.
+  - Keep `src/app/` strictly reserved for navigation routes (`_layout.tsx`, `(tabs)`, `stock/[symbol].tsx`, `orders.tsx`, `dev.tsx`).
+  - Update unit test imports in `__tests__/app/bootstrap.test.ts` to reference `src/bootstrap.ts`.
+- **Rationale**:
+  - Eliminates Metro/Expo Router bundler warnings during cold start and fast refresh.
+  - Enforces clean separation of concerns: `src/app/` is exclusively file-based navigation UI, while `src/bootstrap.ts` serves as the pure functional application composition root.
+
 
 
 
