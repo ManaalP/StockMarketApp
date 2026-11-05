@@ -17,6 +17,7 @@ import { WatchlistAddModal } from '../components/WatchlistAddModal';
 import { PausedBanner } from '../components/PausedBanner';
 import { StateView } from '../components/StateView';
 import { COMPANY_NAMES } from '../data/constants';
+import { SearchIcon } from '../components/icons';
 
 export interface WatchlistScreenProps {
   readonly onSelectStock?: (symbol: string) => void;
@@ -158,24 +159,35 @@ export function WatchlistScreen({ onSelectStock, testID }: WatchlistScreenProps)
       {/* Filter / Search within watchlist */}
       {symbols.length > 0 ? (
         <View style={styles.searchBarContainer}>
-          <TextInput
-            testID="watchlist.search.input"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search in watchlist..."
-            placeholderTextColor={tokens.textMuted}
-            autoCapitalize="characters"
-            autoCorrect={false}
-            clearButtonMode="while-editing"
+          <View
             style={[
-              styles.searchInput,
+              styles.searchBar,
               {
-                backgroundColor: tokens.surfaceContainer,
-                color: tokens.textPrimary,
+                backgroundColor: tokens.surface,
                 borderColor: tokens.border,
               },
             ]}
-          />
+          >
+            <View style={styles.searchIconWrap}>
+              <SearchIcon color={tokens.textMuted} size={16} />
+            </View>
+            <TextInput
+              testID="watchlist.search.input"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search in watchlist..."
+              placeholderTextColor={tokens.textMuted}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+              style={[
+                styles.searchInput,
+                {
+                  color: tokens.textPrimary,
+                },
+              ]}
+            />
+          </View>
         </View>
       ) : null}
 
@@ -283,15 +295,27 @@ const styles = StyleSheet.create({
   },
   searchBarContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 12,
+    paddingBottom: 6,
   },
-  searchInput: {
-    height: 44,
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    height: 42,
     borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    fontVariant: ['tabular-nums'],
+  },
+  searchIconWrap: {
+    marginRight: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    paddingVertical: 0,
+    fontSize: 13,
   },
   listContent: {
     paddingBottom: 24,

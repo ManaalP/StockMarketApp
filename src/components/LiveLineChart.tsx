@@ -550,8 +550,8 @@ export const CandlestickChart = LiveLineChart;
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 14,
+    borderWidth: 1,
     overflow: 'hidden',
     marginVertical: 12,
   },
@@ -568,10 +568,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 6,
+    gap: 8,
   },
   topBarLeft: {
     flexDirection: 'row',
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
   chartBadge: {
     fontSize: 10,
     fontWeight: '700',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   zoomRow: {
@@ -589,42 +589,44 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   zoomBtn: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
   zoomBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    lineHeight: 14,
+    lineHeight: 16,
   },
   zoomText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '600',
-    minWidth: 22,
+    minWidth: 26,
     textAlign: 'center',
   },
   modeToggleRow: {
     flexDirection: 'row',
-    borderRadius: 5,
+    borderRadius: 6,
     padding: 2,
+    borderWidth: 1,
   },
   modeBtn: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
   modeBtnText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
   },
   ohlcStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   ohlcItem: {
     fontSize: 11,

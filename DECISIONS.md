@@ -613,6 +613,35 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Keeps the Order Sheet clean and free of test-only buttons.
   - Accurately models authentic exchange matching behavior (SEBI/NSE price improvement rules) rather than penalizing users with worse pricing than current market quotes.
 
+---
+
+## ADR 040: Premium Fintech UI/UX Redesign Across All Three Screens
+
+- **Context**:
+  - The application required a cohesive, premium financial appearance across Portfolio, Watchlist, and Stock Details inspired by modern trading apps (Zerodha, Groww, TradingView).
+  - Visual clutter, inconsistent spacing, unaligned figures, and basic component styling needed elevation while preserving 100% of the underlying business logic, state isolation, integer-paise financial accuracy, and test invariants.
+
+- **Decision**:
+  1. **Refined Premium Fintech Palette (`src/theme/tokens.ts`)**:
+     - Light mode: Crisp neutral background (`#f4f6fa`), clean white cards (`#ffffff`), border (`#e1e7ef`), accent blue (`#2563eb`), vibrant emerald green (`#16a34a`), and crimson red (`#e11d48`).
+     - Dark mode: Authentic deep charcoal/navy background (`#080D14`), surface (`#101824`), secondary surface (`#172231`), elevated card container (`#1B2737`), crisp text (`#F5F7FB`), secondary text (`#8996AA`), divider/border (`#202B3A`), and accent blue (`#4285F4`).
+  2. **Screen 1 – Stock Details (`StockDetailScreen.tsx`, `PositionCard.tsx`, `LiveLineChart.tsx`)**:
+     - Header: Rebalanced navigation bar with aligned back button, bold symbol with registered company name subtext, and consistent watchlist toggle star.
+     - Price Hero: Enlarged primary stock price (38px bold tabular numbers) paired with daily change amount and percentage.
+     - Chart Card: Modern trading container with enhanced Candlestick/Line selector, pill badges, right Y-axis price rail, and clean OHLC strip.
+     - Position Card: Redesigned with a dedicated hero strip for Current Value & Total P&L, plus a 3-column structured grid for Avg Price, Invested, and Today's P&L.
+     - Action Buttons: Modern, equally sized Buy (`#22C875`) and Sell (`#F0444F`) buttons with 12px corner radii, respecting Android bottom safe-area insets.
+  3. **Screen 2 – Watchlist (`WatchlistScreen.tsx`, `WatchRow.tsx`)**:
+     - Header: Prominent 24px title with live stock count and sleek `+ Add` button.
+     - Search Bar: Refined rounded search container with embedded SVG SearchIcon and clear action.
+     - Watchlist Rows: Clean left-right visual balance with bold symbol, EQ badge, registered company name, NSE Equity label, tabular live LTP, and color-coded Day Change.
+  4. **Screen 3 – Portfolio (`PortfolioScreen.tsx`, `SummaryCard.tsx`, `HoldingRow.tsx`)**:
+     - Refined summary card with 28px bold Current Value, Total P&L pill, and 3-column metric strip (`Invested`, `Today's Return`, and `Priced Holdings`).
+     - Segmented sort selector (`Name`, `Value`, `P&L`), filter bottom sheet integration with active chips, and subtle hairline dividers for individual stock holding rows.
+
+- **Rationale**:
+  - Delivers a unified, visually balanced, professional mobile trading experience that scales seamlessly across different screen sizes while maintaining full backward compatibility, O(1) virtualization indexing, and 60 FPS tick performance.
+
 
 
 
