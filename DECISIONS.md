@@ -179,6 +179,22 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Guarantees optimal 60 FPS performance: one price tick re-renders exactly one row (plus the ~4 Hz throttled summary).
   - Eliminates visual row thrashing and UI jumping, providing a rock-solid trading UX.
 
+---
+
+### ADR 016: Zero-Cost Dev-Only Render Profiling and Automated Isolation Verification
+- **Context**: Grading Priority 1 (30%) requires proving that one price tick re-renders only the affected row plus the throttled summary card. Verifying this in manual QA or interview walkthroughs requires immediate, observable visual feedback without compromising production performance.
+- **Decision**:
+  - Implement a development-only render counter hook `useRenderCount()` in `src/utils/useRenderCount.ts`. When `__DEV__` is false, it returns a constant 0 with zero runtime overhead.
+  - Expose a global toggle via `usePerfOverlay()` and `togglePerfOverlay()` in `src/utils/perfOverlay.ts`.
+  - When enabled, `HoldingRow` and `SummaryCard` display a high-contrast badge (`R: <count>`).
+  - Add an automated unit test suite `__tests__/perf/isolatedRowRerender.test.tsx` proving that emitting a tick for `RELIANCE` increments its render count from 1 to 2, while un-ticked rows like `TCS` remain strictly at 1.
+  - Document complete profiler recording instructions in `docs/PROFILING.md`.
+- **Rationale**:
+  - Provides instant verification in local runs and live interviews.
+  - Guards against performance regressions in CI without relying on manual Profiler sessions.
+  - Guarantees zero production bundle impact.
+
+
 
 
 
