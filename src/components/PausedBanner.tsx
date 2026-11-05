@@ -31,6 +31,8 @@ export const PausedBanner = memo(function PausedBanner({
   return (
     <View
       testID={testID}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
       style={[
         styles.banner,
         {

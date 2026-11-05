@@ -109,7 +109,10 @@ const styles = StyleSheet.create({
   retryButton: {
     marginTop: 16,
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    height: 44,
+    minWidth: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 8,
   },
   retryText: {

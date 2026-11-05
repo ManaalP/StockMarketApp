@@ -274,6 +274,23 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Decoupling validation into pure domain functions ensures 100% unit testability without React UI harness overhead.
   - Atomic execution satisfies the hard financial requirement that summary totals must equal the sum of displayed rows at all times.
 
+---
+
+### ADR 022: Global Accessibility Standards, SVG Tab Icons, and Theme Polishing
+- **Context**: Institutional financial applications require rigorous accessibility (WCAG 2.1 AA touch targets >= 44x44px, screen-reader cues, color-blind gain/loss cues) and visual polish across both Light and Dark modes without reliance on external font files.
+- **Decision**:
+  - Create native-vector SVG icons in `src/components/icons/index.tsx` (`PortfolioTabIcon`, `WatchlistTabIcon`, `ThemeToggleIcon`, `SearchIcon`, `BackIcon`), removing third-party icon font overhead.
+  - Integrate interactive theme toggle (☀️/🌙) into the main tab layout header, wired to `useTheme().toggleTheme()` and `useTheme().isDark`.
+  - Enforce touch target accessibility: all interactive touch areas (sort pills, clear buttons, watchlist add/done buttons, star toggle, back button, order chips, confirm button) meet or exceed the 44px minimum touch target standard.
+  - Multi-cue financial indicators: `PnLText` attaches `accessibilityRole="text"` and `accessibilityLabel` with explicit text cues ("Gain: +₹..." vs "Loss: -₹..."), preventing reliance on color alone.
+  - Alert announcements: `PausedBanner` is enhanced with `accessibilityRole="alert"` and `accessibilityLiveRegion="polite"`.
+  - Automated verification test suite in `__tests__/polish/statesAndAccessibility.test.tsx` testing token completeness, touch targets, and Indian formatting.
+- **Rationale**:
+  - Delivers a polished, accessible, institutional-grade experience.
+  - Protects against color-blind misinterpretation of critical financial gains and losses.
+  - Ensures seamless responsiveness across light, dark, and system themes.
+
+
 
 
 

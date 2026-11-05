@@ -229,8 +229,10 @@ const styles = StyleSheet.create({
   },
   addButton: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    height: 44,
     borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addButtonText: {
     color: '#ffffff',
@@ -242,7 +244,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   searchInput: {
-    height: 38,
+    height: 44,
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 12,

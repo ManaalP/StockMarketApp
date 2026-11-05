@@ -176,7 +176,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   doneButton: {
-    paddingVertical: 6,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 8,
   },
   doneText: {
@@ -187,7 +190,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   searchInput: {
-    height: 40,
+    height: 44,
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -198,7 +201,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   row: {
-    height: 56,
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -219,17 +222,21 @@ const styles = StyleSheet.create({
   },
   addedBadge: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    height: 38,
     borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addedText: {
     fontSize: 13,
     fontWeight: '600',
   },
   addButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    height: 38,
     borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addText: {
     color: '#ffffff',

@@ -374,7 +374,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   closeBtn: {
-    paddingVertical: 6,
+    minHeight: 44,
+    minWidth: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 8,
   },
   closeText: {
@@ -453,8 +456,11 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    height: 40,
+    minWidth: 44,
     borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   chipText: {
     fontSize: 13,
