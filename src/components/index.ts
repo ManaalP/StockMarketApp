@@ -6,3 +6,5 @@ export * from './SummaryCard';
 export * from './HoldingRow';
 export * from './WatchRow';
 export * from './WatchlistAddModal';
+export * from './StockStatsGrid';
+export * from './DayRangeBar';

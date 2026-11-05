@@ -227,6 +227,22 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Pure calculation functions ensure 100% testable day change arithmetic with zero float errors.
   - Consistent layout and visual tokens match the Portfolio screen and the Stitch design specification.
 
+---
+
+### ADR 019: Granular Stock Detail Market Stats and Unavailable/Paused Trading Guardrails
+- **Context**: The Stock Detail screen visualizes live tick updates, day range bounds, and market statistics (Open, High, Low, Prev. Close, Volume) for a selected stock. Updating any of these metrics at ~20 ticks/sec must not re-render the entire screen. Furthermore, unpriced stocks (like `OLDCO`) or periods of paused feeds must disallow trading actions and render `"--"` without crashing or guessing prices.
+- **Decision**:
+  - Decompose statistics into micro-components (`OpenStat`, `HighStat`, `LowStat`, `PrevCloseStat`, `VolumeStat`) inside `src/components/StockStatsGrid.tsx` wrapped in `React.memo`. Only updated stat values re-render on ticks.
+  - Pure function `dayRangePosition(low, high, ltp)` in `src/domain/calcs.ts` calculates a normalized range ratio [0.0, 1.0], rendering a visual progress track and indicator pin. If any bound is null, returns null and displays `"--"`.
+  - Missing price domain enforcement: when `ltp === null`, screen renders `"--"` for price and day change, shows a clear unavailable warning banner, and disables Buy and Sell action buttons.
+  - Paused banner integration: when `isPaused === true`, displays `PausedBanner` and disables order entry.
+  - Strictly omits extraneous un-contracted metrics (P/E, market cap, 52-week range, depth, range tabs) in compliance with domain guidelines.
+- **Rationale**:
+  - Eliminates screen-wide layout thrashing during high-frequency live ticks.
+  - Protects users from placing invalid orders when quotes are stale, paused, or missing.
+  - Adheres strictly to the institutional trading take-home spec.
+
+
 
 
 

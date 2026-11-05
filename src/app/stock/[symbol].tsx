@@ -1,25 +1,21 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import React, { useCallback } from 'react';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { StockDetailScreen } from '../../screens/StockDetailScreen';
 
-export default function StockDetailScreen() {
+export default function StockDetailRoute() {
+  const router = useRouter();
   const { symbol } = useLocalSearchParams<{ symbol: string }>();
 
+  const stockSymbol = typeof symbol === 'string' ? symbol : 'RELIANCE';
+
+  const handleBack = useCallback(() => {
+    router.back();
+  }, [router]);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Stock Detail: {symbol}</Text>
-    </View>
+    <StockDetailScreen
+      symbol={stockSymbol}
+      onBack={handleBack}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
