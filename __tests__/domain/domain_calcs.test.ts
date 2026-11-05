@@ -7,6 +7,7 @@ import {
   applyOrder,
   getSortedHoldingSymbols,
   quoteDayMetrics,
+  dayRangePosition,
   OrderValidationError,
   toPaise,
 } from '@/domain';
@@ -426,6 +427,33 @@ describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
       expect(unpricedMetrics.ltp).toBeNull();
       expect(unpricedMetrics.dayChangePaise).toBeNull();
       expect(unpricedMetrics.dayChangePct).toBeNull();
+    });
+  });
+
+  describe('dayRangePosition', () => {
+    it('calculates the normalized ratio between low and high', () => {
+      // low = 2400, high = 2600, ltp = 2500 -> 0.5
+      expect(dayRangePosition(240000, 260000, 250000)).toBe(0.5);
+      // at low -> 0
+      expect(dayRangePosition(240000, 260000, 240000)).toBe(0);
+      // at high -> 1
+      expect(dayRangePosition(240000, 260000, 260000)).toBe(1);
+      // at 25% -> 0.25
+      expect(dayRangePosition(240000, 260000, 245000)).toBe(0.25);
+    });
+
+    it('clamps values outside [0, 1]', () => {
+      expect(dayRangePosition(240000, 260000, 230000)).toBe(0);
+      expect(dayRangePosition(240000, 260000, 270000)).toBe(1);
+    });
+
+    it('returns null if any value is null or range is invalid', () => {
+      expect(dayRangePosition(null, 260000, 250000)).toBeNull();
+      expect(dayRangePosition(240000, null, 250000)).toBeNull();
+      expect(dayRangePosition(240000, 260000, null)).toBeNull();
+      // high <= low
+      expect(dayRangePosition(260000, 240000, 250000)).toBeNull();
+      expect(dayRangePosition(240000, 240000, 240000)).toBeNull();
     });
   });
 });

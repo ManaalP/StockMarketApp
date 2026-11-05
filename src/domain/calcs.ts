@@ -289,3 +289,29 @@ export function quoteDayMetrics(quote: Quote | null): QuoteDayMetrics {
     isPriced: true,
   };
 }
+
+/**
+ * Computes the normalized day range position (0 to 1) for the range bar.
+ *
+ * Rules:
+ *   - If low, high, or ltp is null, returns null.
+ *   - If high <= low, returns null.
+ *   - Clamps the result between 0.0 and 1.0.
+ */
+export function dayRangePosition(
+  low: Paise | null,
+  high: Paise | null,
+  ltp: Paise | null
+): number | null {
+  if (low === null || high === null || ltp === null) {
+    return null;
+  }
+  if (high <= low) {
+    return null;
+  }
+
+  const ratio = (ltp - low) / (high - low);
+  if (ratio < 0) return 0;
+  if (ratio > 1) return 1;
+  return Math.round(ratio * 10000) / 10000;
+}
