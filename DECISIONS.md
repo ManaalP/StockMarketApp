@@ -242,6 +242,22 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Protects users from placing invalid orders when quotes are stale, paused, or missing.
   - Adheres strictly to the institutional trading take-home spec.
 
+---
+
+### ADR 020: Hand-Rolled SVG Live Tick Chart with Throttled Ring Buffer and Reconciled Position Card
+- **Context**: Real-time visualization of price action during an active user session requires displaying tick trajectories without introducing third-party chart library bloat. Furthermore, stocks held by the user must display a reconciled "Your Position" section reflecting live position value and P&L derived identically to the Portfolio screen.
+- **Decision**:
+  - Implement a hand-rolled SVG line chart in `src/components/LiveLineChart.tsx` utilizing `react-native-svg` (`Path`, `Circle`).
+  - Derive chart SVG paths via pure domain function `chartPath(points, width, height, padding)` in `src/domain/chart.ts`, handling edge cases (fewer than 2 points, zero price variance) with deterministic Jest tests.
+  - Ring buffer capped at 120 ticks: incoming ticks append to a mutable ref buffer. A trailing timer flushes accumulated points to React state at ~4 Hz (250 ms), decoupling 20 Hz tick arrivals from SVG render passes.
+  - Directional coloring: line and current-price dot render in `tokens.gain` (green) if latest price >= session start price; `tokens.loss` (red) if below.
+  - Conditional "Your Position" section (`PositionCard.tsx`): rendered only when `useHolding(symbol)` returns an active position. Computes Invested, Current Value, Total P&L, and Today's P&L using pure `rowMetrics`. Unpriced holdings cleanly display `"--"`.
+- **Rationale**:
+  - Eliminates external chart library bundle weight while delivering pixel-perfect integration with design tokens.
+  - Caps chart re-renders at ~4 Hz, maintaining a smooth 60 FPS mobile UI.
+  - Re-using pure domain `rowMetrics` guarantees 100% arithmetic parity between the Portfolio and Stock Detail screens.
+
+
 
 
 

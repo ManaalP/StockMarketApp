@@ -46,6 +46,8 @@ describe('StockDetailScreen', () => {
     expect(texts).toContain('₹2,600.00');
     expect(texts).toContain('+₹100.00');
     expect(texts).toContain('Market Statistics');
+    expect(texts).toContain('Your Position');
+    expect(renderer.root.findByProps({ testID: 'live.chart.container' })).toBeDefined();
   });
 
   test('calls onBack when back button is pressed', () => {
