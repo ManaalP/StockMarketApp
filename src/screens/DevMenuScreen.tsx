@@ -1,4 +1,4 @@
-import React, { memo, useState, useEffect, useCallback } from 'react';
+import React, { memo, useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,16 @@ export const DevMenuScreen = memo(function DevMenuScreen({
 }: DevMenuScreenProps) {
   const { tokens } = useTheme();
   const showPerf = usePerfOverlay();
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+      }
+    };
+  }, []);
 
   const feed = portfolioStore.getFeed?.();
   const [currentRate, setCurrentRate] = useState<number>(() => {
@@ -234,6 +244,40 @@ export const DevMenuScreen = memo(function DevMenuScreen({
               ]}
             >
               {showPerf ? 'Disable Render Counters' : 'Enable Render Counters'}
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Portfolio Persistence & Storage Reset */}
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: tokens.surface,
+              borderColor: tokens.border,
+            },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
+            Portfolio Storage & Reset
+          </Text>
+          <Text style={{ color: tokens.textSecondary, fontSize: 13, marginBottom: 12 }}>
+            Clears local modifications in storage key &quot;portfolio:v1&quot; and restores CSV defaults.
+          </Text>
+          <Pressable
+            testID="dev.reset.portfolio.btn"
+            accessibilityRole="button"
+            accessibilityLabel="Reset portfolio to CSV defaults"
+            onPress={async () => {
+              await portfolioStore.resetPortfolio();
+              setResetSuccess(true);
+              if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+              resetTimerRef.current = setTimeout(() => setResetSuccess(false), 2000);
+            }}
+            style={[styles.actionButton, { backgroundColor: tokens.surfaceAlt }]}
+          >
+            <Text style={[styles.actionButtonText, { color: tokens.primary }]}>
+              {resetSuccess ? '✓ Portfolio Reset to CSV' : 'Reset Portfolio to CSV Defaults'}
             </Text>
           </Pressable>
         </View>

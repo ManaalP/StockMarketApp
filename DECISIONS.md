@@ -394,6 +394,37 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Delivers immediate physical and visual feedback during swipes, making tab switching intuitive, smooth, and easily discoverable.
   - Completely isolates gesture animation from React rendering performance, ensuring silky smooth interactions even under heavy simulated price tick streams.
 
+---
+
+### ADR 033: Portfolio and Order Persistence, Serialized Write Queue, Market Hours Enforcement, and Live OHLC Chart
+- **Context**:
+  1. The portfolio holdings and order state must persist locally across app restarts using AsyncStorage key `"portfolio:v1" = { version, holdings (paise), orders }`.
+  2. First launch or corrupted JSON must gracefully seed from `holdings.csv` without throwing unhandled exceptions.
+  3. Rapid successive order execution could cause race conditions if writes to storage are not serialized.
+  4. Trading in the Indian stock market (NSE/BSE) is strictly restricted to Monday through Friday, 09:15 AM to 03:30 PM IST (UTC+5:30); orders placed outside this window must be blocked with an informative reason.
+  5. The stock detail chart required real-time OHLC metrics and interactive Line / Candlestick mode switching.
+  6. WatchlistScreen was stuck in loading because `watchlistStore.hydrate()` was not eagerly called on startup.
+- **Decision**:
+  - Implement full storage hydration and persistence in `src/stores/portfolioStore.ts`:
+    - Storage key `"portfolio:v1"`.
+    - Serialized write queue with "latest wins" semantics: collapses intermediate snapshots during active I/O into a single tail write.
+    - Expose `getHydrationStatus(): 'loading' | 'ready'` and `usePortfolioHydration()`.
+    - Provide `resetPortfolio()` to clear modifications and restore starting CSV holdings.
+    - Strictly enforce that live market prices and tick data are NEVER saved to the persistence snapshot.
+  - Implement `checkIndianMarketHours` in `src/domain/marketHours.ts`:
+    - Converts UTC time to IST (UTC+5:30) and evaluates weekday + minute-of-day boundaries.
+    - Integrated with `validateOrder` in `src/domain/orders.ts` and `OrderSheet.tsx`.
+    - Includes `__DEV__` override toggle for rapid testing outside market hours.
+  - Upgrade `LiveLineChart.tsx`:
+    - Added real-time OHLC strip (Open, High, Low, Close/LTP).
+    - Added interactive Line vs OHLC Candlestick view toggle with SVG wicks, bodies, and price grid reference lines.
+  - Eagerly call `watchlistStore.hydrate()` on module load and in `src/app/_layout.tsx` to fix Watchlist rendering.
+- **Rationale**:
+  - Guarantees 100% data integrity across app restarts and app crashes.
+  - Prevents race conditions during rapid trading through deterministic write serialization.
+  - Ensures regulatory realism by aligning simulated trading permissions with official NSE market sessions.
+
+
 
 
 

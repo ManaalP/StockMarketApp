@@ -121,4 +121,28 @@ describe('DevMenuScreen', () => {
 
     expect(onBack).toHaveBeenCalledTimes(1);
   });
+
+  it('triggers portfolio reset when tapping reset portfolio button', async () => {
+    const resetSpy = jest.spyOn(portfolioStore, 'resetPortfolio').mockResolvedValue();
+
+    let tree: renderer.ReactTestRenderer | undefined;
+    act(() => {
+      tree = renderer.create(
+        <ThemeProvider>
+          <DevMenuScreen />
+        </ThemeProvider>
+      );
+    });
+
+    const resetBtn = tree!.root.findByProps({ testID: 'dev.reset.portfolio.btn' });
+    await act(async () => {
+      await resetBtn.props.onPress();
+    });
+
+    expect(resetSpy).toHaveBeenCalledTimes(1);
+    act(() => {
+      tree!.unmount();
+    });
+    resetSpy.mockRestore();
+  });
 });
