@@ -28,4 +28,6 @@ export interface PriceFeed {
   onStatusChange?(handler: FeedStatusHandler): () => void;
   getStatus?(): FeedStatus;
   simulateDisconnect?(): void;
+  setTickRate?(rateHz: number): void;
+  getTickRate?(): number;
 }

@@ -140,3 +140,20 @@ export const BackIcon = memo(function BackIcon({
     </Svg>
   );
 });
+
+export const DevMenuIcon = memo(function DevMenuIcon({
+  color = '#64748b',
+  size = 22,
+}: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+});

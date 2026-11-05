@@ -7,6 +7,7 @@ import {
   WatchlistTabIcon,
   ThemeToggleIcon,
   OrdersIcon,
+  DevMenuIcon,
 } from '../../components/icons';
 
 export default function TabLayout() {
@@ -26,6 +27,16 @@ export default function TabLayout() {
         },
         headerRight: () => (
           <View style={styles.headerRightContainer}>
+            <Pressable
+              testID="dev.header.button"
+              accessibilityRole="button"
+              accessibilityLabel="Developer controls"
+              onPress={() => router.push('/dev')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={styles.headerBtn}
+            >
+              <DevMenuIcon color={tokens.textSecondary} size={20} />
+            </Pressable>
             <Pressable
               testID="orders.header.button"
               accessibilityRole="button"
