@@ -7,8 +7,7 @@ import {
   type SummaryTotals,
 } from './types';
 import { mulQty, safePercent, type Paise } from './money';
-import { COMPANY_NAMES } from '../data/constants';
-import { MAX_ORDER_QUANTITY, MAX_SAFE_VALUE_PAISE } from './orders';
+import { COMPANY_NAMES, MAX_ORDER_QUANTITY, MAX_SAFE_VALUE_PAISE } from '../data/constants';
 
 /**
  * Typed domain error for invalid order requests.

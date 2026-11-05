@@ -29,6 +29,9 @@ export const ALLOWED_SYMBOLS = [
   'HCLTECH',
 ] as const;
 
+export const MAX_ORDER_QUANTITY = 100_000;
+export const MAX_SAFE_VALUE_PAISE = Number.MAX_SAFE_INTEGER;
+
 export type AllowedSymbol = (typeof ALLOWED_SYMBOLS)[number];
 
 /**

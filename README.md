@@ -6,14 +6,16 @@ An institutional-grade, real-time stock portfolio and watchlist tracking app bui
 
 ## Architecture Overview
 
+Refer to the take-home design & architectural specification PDF: [`docs/React_Native_Take-Home_Live_Portfolio.pdf`](./docs/React_Native_Take-Home_Live_Portfolio.pdf)
+
 ```mermaid
 flowchart TD
     API["OHLC REST API (HTTP 201)"] -->|Initial Fetch & Pull-to-Refresh| PS["portfolioStore"]
     FEED["Simulated Feed (~20 ticks/sec)"] -->|queueTick| PRICE_STORE["priceStore (External Store)"]
     PRICE_STORE -->|100ms Batch Flush| SYNC["useSyncExternalStore (Per-Symbol)"]
     PS -->|Holdings & Order Execution| ROWS["HoldingRow (React.memo)"]
-    SYNC -->|usePrice(symbol)| ROWS
-    SYNC -->|usePrice(symbol)| WATCH_ROWS["WatchRow (React.memo)"]
+    SYNC -->|useLtp(symbol)| ROWS
+    SYNC -->|useLtp(symbol)| WATCH_ROWS["WatchRow (React.memo)"]
     PRICE_STORE -->|250ms Throttled Flusher| SUMMARY_STORE["summaryStore (~4 Hz)"]
     SUMMARY_STORE -->|useSummary()| SUMMARY["SummaryCard"]
     STORAGE["AsyncStorage (StorageBackend)"] -->|Hydrate & Persist| WS["watchlistStore"]
@@ -177,3 +179,23 @@ See [`DECISIONS.md`](./DECISIONS.md) for detailed rationale and trade-offs cover
 - **ADR 027–028**: Migration to `react-native-safe-area-context` root provider and routing composition separation.
 - **ADR 045–051**: Live chart domain functions, Pan gesture scrub crosshairs, candles aggregation, fine-grained `useLtp` selectors.
 - **ADR 052–055**: Heartbeat stall intervals, single-copy `mergeTicks`, screen decomposition, and coverage threshold enforcement.
+
+---
+
+## Future Enhancements & Production Roadmap
+
+What else could be done to elevate this beyond a local take-home simulation into an institutional production system:
+
+1. **Persistent Time-Series & OHLC Candle Storage**:
+   - *Current State*: Live ticks are collected into an in-memory 120-point ring buffer scoped to the detail screen session, and the feed is a real-time simulator.
+   - *Production Solution*: Implement an embedded SQLite database (via `expo-sqlite` or `op-sqlite` with CR-SQLite / WatermelonDB) to persist historical ticks, 1-minute, 5-minute, and 1-day OHLC candles across sessions.
+   - *Offline Continuity*: Cache historical chart series locally so when a user opens a stock chart offline, historical candles load instantly while new real-time ticks append seamlessly.
+
+2. **Real WebSocket / FIX Protocol Transport**:
+   - The architecture's `PriceFeed` interface (`connect()`, `disconnect()`, `onTick()`, `onStatusChange()`) was intentionally designed as an abstract port. Swapping `SimulatedFeed` for a binary Protobuf WebSocket feed (or FIX engine) requires only creating a `WebSocketPriceFeed` implementing `PriceFeed`.
+
+3. **Background Sync & Server-Side Price Alerts**:
+   - Register native background fetch tasks (`expo-task-manager` / `expo-background-fetch`) or push notification triggers (APNs / FCM) that alert the user when target price limit orders are filled or when significant portfolio swings occur.
+
+4. **Multi-Portfolio & Tax-Lot Tracking**:
+   - Extend the pure domain ledger to support multiple segregated accounts (e.g., Long-Term Equity vs Intraday) with FIFO / LIFO tax lot accounting and capital gains estimation.

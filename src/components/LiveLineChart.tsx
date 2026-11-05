@@ -8,12 +8,6 @@ import {
   type LayoutChangeEvent,
 } from 'react-native';
 import Svg, { Path, Circle, Line as SvgLine, Rect, Text as SvgText } from 'react-native-svg';
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  runOnJS,
-} from 'react-native-reanimated';
 import { useTheme } from '../theme/useTheme';
 import { priceStore } from '../stores/priceStore';
 import { formatINR } from '../domain/format';
@@ -29,7 +23,6 @@ import {
   niceTicks,
   timeLabels,
   direction,
-  nearestPointIndex,
 } from '../domain/chart';
 
 export const MAX_RING_BUFFER_POINTS = 120;
@@ -61,13 +54,6 @@ export const LiveLineChart = memo(function LiveLineChart({
   const [renderedPoints, setRenderedPoints] = useState<TickPoint[]>([]);
   const [tickCount, setTickCount] = useState<number>(0);
 
-  // Scrub readout state
-  const [scrubPoint, setScrubPoint] = useState<TickPoint | null>(null);
-
-  // Reanimated shared values for UI thread crosshair
-  const crosshairX = useSharedValue(-100);
-  const isScrubbing = useSharedValue(false);
-
   const handleLayout = useCallback((e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
     if (w > 0) {
@@ -88,7 +74,6 @@ export const LiveLineChart = memo(function LiveLineChart({
       setTickCount(0);
     }
     setSelectedCandle(null);
-    setScrubPoint(null);
 
     let timer: ReturnType<typeof setTimeout> | null = null;
     let isMounted = true;
@@ -134,45 +119,6 @@ export const LiveLineChart = memo(function LiveLineChart({
   const plotPaddingBottom = 26;
   const usableWidth = Math.max(100, containerWidth - plotPaddingRight - 24);
   const usableHeight = Math.max(80, height - plotPaddingTop - plotPaddingBottom - 80);
-
-  const updateScrubState = (idx: number) => {
-    if (idx >= 0 && idx < renderedPoints.length) {
-      setScrubPoint(renderedPoints[idx]!);
-    }
-  };
-
-  const clearScrubState = () => {
-    setScrubPoint(null);
-  };
-
-  const panGesture = Gesture.Pan()
-    .minDistance(0)
-    .onBegin((e) => {
-      'worklet';
-      isScrubbing.value = true;
-      crosshairX.value = Math.max(0, Math.min(usableWidth, e.x));
-      const idx = nearestPointIndex(renderedPoints, e.x, usableWidth);
-      runOnJS(updateScrubState)(idx);
-    })
-    .onUpdate((e) => {
-      'worklet';
-      crosshairX.value = Math.max(0, Math.min(usableWidth, e.x));
-      const idx = nearestPointIndex(renderedPoints, e.x, usableWidth);
-      runOnJS(updateScrubState)(idx);
-    })
-    .onFinalize(() => {
-      'worklet';
-      isScrubbing.value = false;
-      crosshairX.value = -100;
-      runOnJS(clearScrubState)();
-    });
-
-  const animatedCrosshairStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: crosshairX.value }],
-      opacity: isScrubbing.value ? 1 : 0,
-    };
-  });
 
   if (renderedPoints.length < 2) {
     return (
@@ -231,11 +177,6 @@ export const LiveLineChart = memo(function LiveLineChart({
   const candleSlotWidth = candles.length > 0 ? usableWidth / candles.length : 0;
   const candleBodyWidth = Math.max(4, Math.min(20, candleSlotWidth * 0.7));
 
-  const scrubDate = scrubPoint ? new Date(scrubPoint.t) : null;
-  const scrubTimeStr = scrubDate
-    ? `${String(scrubDate.getHours()).padStart(2, '0')}:${String(scrubDate.getMinutes()).padStart(2, '0')}:${String(scrubDate.getSeconds()).padStart(2, '0')}`
-    : '';
-
   return (
     <View
       testID={testID}
@@ -259,7 +200,7 @@ export const LiveLineChart = memo(function LiveLineChart({
         </Text>
       </View>
 
-      {/* Controls / Readout Row */}
+      {/* Controls / View Mode Toggle */}
       <View style={styles.controlsRow}>
         <View style={[styles.modeToggleGroup, { backgroundColor: tokens.surfaceAlt, borderColor: tokens.border }]}>
           <Pressable
@@ -306,45 +247,18 @@ export const LiveLineChart = memo(function LiveLineChart({
           </Pressable>
         </View>
 
-        {scrubPoint ? (
-          <View testID="detail.chart.scrub.readout" style={styles.readoutRow}>
-            <Text style={[styles.readoutText, { color: tokens.textPrimary }]}>
-              {formatINR(scrubPoint.price)} at {scrubTimeStr}
-            </Text>
-          </View>
-        ) : selectedCandle ? (
+        {selectedCandle ? (
           <View testID="detail.chart.candle.readout" style={styles.readoutRow}>
             <Text style={[styles.candleReadoutText, { color: tokens.textSecondary }]}>
               O: {formatINR(selectedCandle.open)} H: {formatINR(selectedCandle.high)} L: {formatINR(selectedCandle.low)} C: {formatINR(selectedCandle.close)}
             </Text>
           </View>
-        ) : (
-          <View style={styles.readoutRow}>
-            <Text style={[styles.hintText, { color: tokens.textMuted }]}>
-              Press and drag to inspect
-            </Text>
-          </View>
-        )}
+        ) : null}
       </View>
 
-      {/* Interactive SVG Plot Canvas */}
-      <GestureDetector gesture={panGesture}>
-        <View style={[styles.plotArea, { height: usableHeight + plotPaddingTop + plotPaddingBottom }]}>
-          {/* Reanimated Vertical Crosshair on UI thread */}
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.crosshairLine,
-              {
-                height: usableHeight,
-                top: plotPaddingTop,
-                backgroundColor: tokens.primary,
-              },
-              animatedCrosshairStyle,
-            ]}
-          />
-
-          <Svg width={containerWidth - 24} height={usableHeight + plotPaddingTop + plotPaddingBottom}>
+      {/* SVG Plot Canvas */}
+      <View style={[styles.plotArea, { height: usableHeight + plotPaddingTop + plotPaddingBottom }]}>
+        <Svg width={containerWidth - 24} height={usableHeight + plotPaddingTop + plotPaddingBottom}>
             {prevCloseY !== null ? (
               <>
                 <SvgLine
@@ -484,10 +398,9 @@ export const LiveLineChart = memo(function LiveLineChart({
             })}
           </Svg>
         </View>
-      </GestureDetector>
-    </View>
-  );
-});
+      </View>
+    );
+  });
 
 const styles = StyleSheet.create({
   container: {
