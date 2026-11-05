@@ -58,6 +58,38 @@ export const WatchlistTabIcon = memo(function WatchlistTabIcon({
   );
 });
 
+export const OrdersIcon = memo(function OrdersIcon({
+  color = '#64748b',
+  size = 22,
+}: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Rect
+        x="9"
+        y="3"
+        width="6"
+        height="4"
+        rx="1"
+        stroke={color}
+        strokeWidth="2"
+      />
+      <Path
+        d="M9 12h6M9 16h4"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+});
+
 export const ThemeToggleIcon = memo(function ThemeToggleIcon({
   color = '#64748b',
   size = 22,

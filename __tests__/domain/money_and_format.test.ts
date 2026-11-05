@@ -11,6 +11,7 @@ import {
   formatSigned,
   formatPercent,
   formatVolume,
+  formatOrderTimestamp,
 } from '@/domain/format';
 
 describe('Domain: Money Primitives (src/domain/money.ts)', () => {
@@ -203,6 +204,23 @@ describe('Domain: Indian Number Formatting (src/domain/format.ts)', () => {
 
     it('handles negative volume defensively', () => {
       expect(formatVolume(-5000)).toBe('-5,000');
+    });
+  });
+
+  describe('formatOrderTimestamp', () => {
+    it('returns "--" for invalid, zero, or negative timestamps', () => {
+      expect(formatOrderTimestamp(0)).toBe('--');
+      expect(formatOrderTimestamp(-1)).toBe('--');
+      expect(formatOrderTimestamp(NaN)).toBe('--');
+    });
+
+    it('formats timestamp into Indian date and 12-hour time format', () => {
+      // 2026-11-05T10:30:00.000Z in local time
+      const date = new Date(2026, 10, 5, 14, 30); // 05 Nov 2026, 02:30 PM
+      expect(formatOrderTimestamp(date.getTime())).toBe('05 Nov 2026, 02:30 PM');
+
+      const morning = new Date(2026, 0, 15, 9, 5); // 15 Jan 2026, 09:05 AM
+      expect(formatOrderTimestamp(morning.getTime())).toBe('15 Jan 2026, 09:05 AM');
     });
   });
 });

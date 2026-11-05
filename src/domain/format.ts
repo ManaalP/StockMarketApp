@@ -105,3 +105,34 @@ export function formatVolume(volume: number | null): string {
   const grouped = groupIndian(absVol.toString());
   return (isNegative ? '-' : '') + grouped;
 }
+
+const MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+] as const;
+
+/**
+ * Formats an order execution timestamp into deterministic "DD MMM YYYY, hh:mm A".
+ * Examples:
+ *   Date(2026, 10, 5, 14, 30) -> "05 Nov 2026, 02:30 PM"
+ *   0, negative, NaN -> "--"
+ */
+export function formatOrderTimestamp(timestamp: number): string {
+  if (!Number.isFinite(timestamp) || timestamp <= 0) {
+    return '--';
+  }
+
+  const date = new Date(timestamp);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = MONTHS[date.getMonth()] ?? '';
+  const year = date.getFullYear();
+
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const formattedHours = String(hours).padStart(2, '0');
+
+  return `${day} ${month} ${year}, ${formattedHours}:${minutes} ${ampm}`;
+}

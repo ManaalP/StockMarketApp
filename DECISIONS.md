@@ -276,18 +276,19 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 
 ---
 
-### ADR 024: Resilient Price Feed Reconnect with Exponential Backoff and Single Catch-Up Fetch
-- **Context**: In real-world market feeds, network drops, packet drops, and transport interruptions occur. If an app attempts immediate tight-loop reconnection, it risks network flooding and rate-limiting. Furthermore, during the disconnected window, ticks were missed, which can leave prices stale if the stream simply resumes from new ticks. However, polling the REST API is strictly forbidden by the spec ("Fetch the OHLC API once at start and on pull-to-refresh only. Never poll.").
+### ADR 025: Persisted Order History Ledger and OrderStore Architecture
+- **Context**: The Buy/Sell sheet executes local orders, but users need an audit ledger to review historical trades, executed prices, total outlay, and timestamps across app restarts.
 - **Decision**:
-  - Implement pure domain calculation `computeBackoffDelay(attempt, baseDelayMs, maxDelayMs, rng)` in `src/domain/backoff.ts` with exponential backoff and up to 20% random jitter.
-  - Implement `createResilientFeed(underlyingFeed, options)` in `src/feed/resilientFeed.ts` as a 100% functional decorator around any `PriceFeed`.
-  - When an unexpected drop occurs (`underlyingFeed` status changes to `'disconnected'` without user-initiated `disconnect()`), the feed transitions to `'reconnecting'` and schedules exponential backoff.
-  - Upon successful reconnection, the manager invokes a **single catch-up fetch** (`options.catchUpFetch()`) to fetch fresh OHLC snapshots for the 25 allowed symbols, re-seeds `priceStore`, and resets the attempt counter to 0.
-  - No polling is ever introduced: the REST fetch triggers strictly as a one-time event upon reconnection to heal the gap.
+  - Implement pure domain timestamp formatting in `src/domain/format.ts` (`formatOrderTimestamp(timestamp)` -> `"DD MMM YYYY, hh:mm A"`).
+  - Implement `createOrderStore` in `src/stores/orderStore.ts` using pluggable `StorageBackend` backed by `AsyncStorage` (`@live_portfolio_order_history_v1`).
+  - Automatically record executed trades by connecting `portfolioStore.executeOrder` directly to `orderStore.recordOrder(order)`.
+  - Maintain reverse-chronological order (newest trade at the top) and provide safe fallback to an empty array on JSON corruption.
+  - Implement `OrderHistoryScreen` in `src/screens/OrderHistoryScreen.tsx` with side badges (BUY green / SELL red), executed share quantities, tabular rupee formatting, formatted timestamps, empty state, and history clearing.
+  - Expose `/orders` route and header action icon on Portfolio and Watchlist headers.
 - **Rationale**:
-  - Complies strictly with the no-polling invariant while maintaining institutional resilience across network interruptions.
-  - Exponential backoff with jitter prevents thundering herd effects.
-  - Fully decoupled through `PriceFeed` interface, keeping UI and stores oblivious to transport failures.
+  - Delivers complete trade visibility and compliance for local-only trading simulation.
+  - Pure domain formatting and decoupled store architecture guarantee fast, hermetic unit tests with zero flaky date calculations.
+
 
 
 
