@@ -15,6 +15,7 @@ export {
   createPortfolioHooks,
   portfolioStore,
   usePortfolioHoldings,
+  useHolding,
   useAppStatus,
   type PortfolioStore,
   type PortfolioStoreOptions,

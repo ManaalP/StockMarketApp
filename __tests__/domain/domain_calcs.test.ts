@@ -5,6 +5,7 @@ import {
   rowMetrics,
   summarize,
   applyOrder,
+  getSortedHoldingSymbols,
   OrderValidationError,
   toPaise,
 } from '@/domain';
@@ -310,6 +311,68 @@ describe('Domain: Pure Calculations (src/domain/calcs.ts)', () => {
           fillPaise: 100,
         })
       ).toThrow(OrderValidationError);
+    });
+  });
+
+  describe('getSortedHoldingSymbols', () => {
+    const holdings: Holding[] = [
+      { symbol: 'RELIANCE', qty: 10, avgPaise: 250000 }, // Invested 25,00,000 | Value 26,00,000 | P&L +1,00,000
+      { symbol: 'TCS', qty: 5, avgPaise: 350000 },      // Invested 17,50,000 | Value 16,00,000 | P&L -1,50,000
+      { symbol: 'INFY', qty: 20, avgPaise: 150000 },    // Invested 30,00,000 | Value 36,00,000 | P&L +6,00,000
+      { symbol: 'OLDCO', qty: 100, avgPaise: 12375 },   // Unpriced
+    ];
+
+    const quotes = {
+      RELIANCE: { ltp: 260000, open: 250000, high: 265000, low: 248000, prevClose: 250000, volume: 1000, seq: 1 },
+      TCS: { ltp: 320000, open: 350000, high: 355000, low: 318000, prevClose: 350000, volume: 2000, seq: 1 },
+      INFY: { ltp: 180000, open: 150000, high: 185000, low: 149000, prevClose: 150000, volume: 3000, seq: 1 },
+      OLDCO: { ltp: null, open: 0, high: 0, low: 0, prevClose: 0, volume: 0, seq: 0 },
+    };
+
+    it('filters symbols by case-insensitive substring', () => {
+      expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: 'rel' })).toEqual(['RELIANCE']);
+      expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: 'co' })).toEqual(['OLDCO']);
+      expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: 'tc' })).toEqual(['TCS']);
+      expect(getSortedHoldingSymbols(holdings, quotes, { searchQuery: '   ' })).toEqual([
+        'INFY',
+        'OLDCO',
+        'RELIANCE',
+        'TCS',
+      ]);
+    });
+
+    it('sorts by name ascending and descending', () => {
+      const asc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'name', direction: 'asc' });
+      expect(asc).toEqual(['INFY', 'OLDCO', 'RELIANCE', 'TCS']);
+
+      const desc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'name', direction: 'desc' });
+      expect(desc).toEqual(['TCS', 'RELIANCE', 'OLDCO', 'INFY']);
+    });
+
+    it('sorts by value with unpriced placed last in descending order', () => {
+      // Values:
+      // INFY: 20 * 180000 = 36,00,000
+      // RELIANCE: 10 * 260000 = 26,00,000
+      // TCS: 5 * 320000 = 16,00,000
+      // OLDCO: unpriced (null)
+      const desc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'value', direction: 'desc' });
+      expect(desc).toEqual(['INFY', 'RELIANCE', 'TCS', 'OLDCO']);
+
+      const asc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'value', direction: 'asc' });
+      expect(asc).toEqual(['OLDCO', 'TCS', 'RELIANCE', 'INFY']);
+    });
+
+    it('sorts by P&L with unpriced placed last in descending order', () => {
+      // P&L:
+      // INFY: +6,00,000
+      // RELIANCE: +1,00,000
+      // TCS: -1,50,000
+      // OLDCO: unpriced
+      const desc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'pnl', direction: 'desc' });
+      expect(desc).toEqual(['INFY', 'RELIANCE', 'TCS', 'OLDCO']);
+
+      const asc = getSortedHoldingSymbols(holdings, quotes, { sortBy: 'pnl', direction: 'asc' });
+      expect(asc).toEqual(['OLDCO', 'TCS', 'RELIANCE', 'INFY']);
     });
   });
 });

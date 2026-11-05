@@ -162,6 +162,24 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
   - Guarantees exact arithmetic reconciliation: summary totals match the exact sum of displayed priced rows to the paise.
   - Adheres to trading standards: never estimates, fakes, or assumes 0 for missing scrip prices.
 
+---
+
+### ADR 015: Virtualized Holdings List, Isolated Row Subscriptions, and Interval-Throttled Sorting
+- **Context**: In a portfolio tracking 21+ equity positions with market updates arriving ~20 times per second, passing quote objects down to a `FlatList` causes the entire list to re-render continuously. Furthermore, sorting holdings by dynamic price metrics (e.g. Current Value or P&L) on every tick causes rows to rapidly jump positions on screen, creating an unreadable and disorienting UI.
+- **Decision**:
+  - The `FlatList` `data` prop is an array of symbol strings (`string[]`), never objects.
+  - `HoldingRow` is wrapped in `React.memo` and receives only `symbol: string` and stable `onPress`. It isolates its subscriptions by reading quote via `usePrice(symbol)` and holding position via `useHolding(symbol)`.
+  - Enforce a fixed row height (`HOLDING_ROW_HEIGHT = 72`) with `getItemLayout` for O(1) virtualization scroll calculations, bypassing costly dynamic measurement.
+  - **Interval-Throttled Sorting Rule**:
+    - User actions (filtering by symbol, toggling sort column, toggling direction) trigger immediate re-sorting.
+    - When sorting by 'name', market ticks have zero effect on ordering.
+    - When sorting by dynamic metrics ('value' or 'pnl'), ordering is refreshed at most once every 2 seconds via a slow interval timer. High-frequency price updates (~20 Hz) never trigger list re-ordering.
+  - Unpriced holdings (`OLDCO`) consistently display `"--"` for price and P&L, and sort to the end of the list when descending.
+- **Rationale**:
+  - Guarantees optimal 60 FPS performance: one price tick re-renders exactly one row (plus the ~4 Hz throttled summary).
+  - Eliminates visual row thrashing and UI jumping, providing a rock-solid trading UX.
+
+
 
 
 
