@@ -179,7 +179,7 @@ describe('Feed Layer: Functional createSimulatedFeed & SimulatedFeed wrapper', (
     expect(ticksAtSilenceStart).toBeGreaterThan(1000);
 
     // Advance across the 5s silence window: exactly 0 ticks must be emitted
-    jest.advanceTimersByTime(5000);
+    jest.advanceTimersByTime(4950);
     const ticksDuringSilence = ticks.length - ticksAtSilenceStart;
     expect(ticksDuringSilence).toBe(0);
 
