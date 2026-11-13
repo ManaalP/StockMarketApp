@@ -125,7 +125,7 @@ export function HoldingsList({
         renderItem={renderItem}
         getItemLayout={getItemLayout}
         ListHeaderComponent={ListHeader}
-        ListEmptyComponent={ListEmpty}
+        ListEmptyComponent={ListEmpty ?? undefined}
         onScroll={(e) => {
           const y = e.nativeEvent.contentOffset.y;
           setShowBackToTop(y > 240);

@@ -872,6 +872,18 @@ This file tracks non-obvious technical decisions, architecture trade-offs, and r
 - **Rationale**:
   - Completely eliminates runtime Metro circular dependency warnings and prevents unexpected touch/click gesture crashes on native SVG charts.
 
+---
+
+### ADR 051: Upgrade to Expo SDK 58 for Expo Go Compatibility
+- **Context**: The mobile Expo Go client was updated to Expo SDK 58, rejecting SDK 57 project bundles with an incompatible version runtime error.
+- **Decision**:
+  - Upgraded Expo core and modules (`expo`, `expo-router`, `react-native`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-worklets`) to SDK 58 releases (`expo@~58.0.25`, `react-native@0.88.1`, `react-native-gesture-handler@~3.3.0`, `react-native-reanimated@4.7.1`, `react-native-worklets@0.13.0`).
+  - Switched `Swipeable` import in `src/components/WatchRow.tsx` to `react-native-gesture-handler/ReanimatedSwipeable` (the modern gesture-handler component) and updated ref typing to `SwipeableMethods`.
+  - Updated `ListEmptyComponent` in `HoldingsList.tsx` to ensure `Element | undefined` compatibility with React Native 0.88 VirtualizedList typings.
+  - Mocked `react-native-worklets` and `useEnsureGestureHandlerRootView` in `jest.setup.ts` to allow hermetic, fast Jest testing without requiring native runtime worklet binaries.
+- **Trade-off**: Requires mock support in Jest for worklet and gesture detector internals, but guarantees seamless live debugging on the latest Expo Go client while keeping 100% test pass rate and strict TypeScript compliance.
+
+
 
 
 

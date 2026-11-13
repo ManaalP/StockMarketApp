@@ -7,7 +7,9 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import Swipeable, {
+  type SwipeableMethods,
+} from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useTheme } from '../theme/useTheme';
 import { useLtp, useDayRefs } from '../stores/priceStore';
 import { quoteDayMetrics } from '../domain/calcs';
@@ -53,7 +55,7 @@ export const WatchRow = memo(function WatchRow({
   const ltp = useLtp(symbol);
   const dayRefs = useDayRefs(symbol);
   const metrics = quoteDayMetrics({ ltp, prevClose: dayRefs.prevClose });
-  const swipeableRef = React.useRef<Swipeable | null>(null);
+  const swipeableRef = React.useRef<SwipeableMethods | null>(null);
   const renderCount = useRenderCount();
 
   const handlePress = useCallback(() => {
